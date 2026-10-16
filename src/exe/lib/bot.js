@@ -519,11 +519,13 @@ class WhatsAppBot extends EventEmitter {
         for (const msg of messages) {
           if (!msg.message) continue;
           // Allow owner's self-messages (fromMe) but skip bot's own responses to avoid loops
-          // Bot responses contain "Powered by Awais AI" footer (2026-10-17 per Hudson)
+          // Bot responses contain "Powered by Awais AI" footer; owner commands don't (2026-10-17 per Hudson)
           if (msg.key.fromMe) {
-            const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            if (msgText.includes('Powered by Awais AI')) continue; // Bot's own response, skip
-            // Otherwise it's the owner's command from the bot's number, process it
+            const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || '';
+            // Skip if it's the bot's own response (has footer) — process only owner commands
+            if (msgText.includes('Powered by Awais AI') || msgText.includes('Awais AI')) continue;
+            // Also skip non-text messages from self (media, etc.) to be safe
+            if (!msgText.trim()) continue;
           }
 
           const from = msg.key.remoteJid;
@@ -937,9 +939,20 @@ class WhatsAppBot extends EventEmitter {
 
     // ─── Access Control (2026-10-17 per Hudson) ───
     // OWNER: full access | ADMIN: use only | Others: bot is private (silent)
-    const { isOwner, isAdmin } = await import('./access.js');
-    const senderIsOwner = isOwner(sender);
-    const senderIsAdmin = isAdmin(sender);
+    let senderIsOwner = false;
+    let senderIsAdmin = false;
+    try {
+      const { isOwner, isAdmin } = await import('./access.js');
+      senderIsOwner = isOwner(sender);
+      senderIsAdmin = isAdmin(sender);
+    } catch (e) {
+      console.error('[access] check failed:', e.message);
+      // Fail open for owner number to avoid lockout
+      if (sender && String(sender).includes('923293209581')) {
+        senderIsOwner = true;
+        senderIsAdmin = true;
+      }
+    }
 
     // Bot is private: non-owner/non-admin get silence
     // Per Hudson: only owner and admin can use the bot
