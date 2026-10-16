@@ -530,7 +530,11 @@ class WhatsAppBot extends EventEmitter {
           if (from === 'status@broadcast') continue;
 
           const isGroup = from.endsWith('@g.us');
-          const sender = isGroup ? msg.key.participant : from;
+          // For fromMe (owner's own messages), participant may be undefined — use bot's own JID
+          let sender = isGroup ? msg.key.participant : from;
+          if (msg.key.fromMe && !sender) {
+            sender = this.user?.id || from;
+          }
           const senderName = msg.pushName || 'Friend';
 
           // Extract text
