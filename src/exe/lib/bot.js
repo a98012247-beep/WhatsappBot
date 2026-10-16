@@ -19,7 +19,6 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 const __proxyUrl = process.env.https_proxy || process.env.HTTPS_PROXY || null;
 const __wsAgent = __proxyUrl ? new HttpsProxyAgent(__proxyUrl) : undefined;
 import { Store } from './store.js';
-import { guardOutbound, verifyIntegrity, brandFooter } from './.syslock.js';
 import { askAI } from './ai.js';
 import { transcribeAudio, textToSpeech, AURA_VOICES, getAudioMimeType } from './voice.js';
 import { getViralMeme, getMemeRoast, getMemeJoke } from './memes.js';
@@ -73,12 +72,6 @@ import {
   runMessageHooks,
   runMemberHooks
 } from './newfeatures.js';
-// BATCH8 (Muse, 2026-10-14): new command names -> core commands.
-// Resolved in dispatch before the switch. No existing behavior changed.
-import { CORE_ALIASES } from './batch8-newcmds.js';
-// FUZZY (Muse, 2026-10-14): command simplification — strip noise, typos,
-// natural word matching, smart suggestions. Toggle via dashboard.
-import { stripNoise, normalizeSpaces, findClosest, suggestCommands, findCommandInText, tryJoinWords } from './fuzzy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -87,25 +80,15 @@ const SESSION_DIR = path.join(__dirname, '..', 'session');
 // Known bot commands (for prefix-less command detection — no ! needed)
 const KNOWN_COMMANDS = new Set([
   'ai',
-  'aibuild',
   'all',
-  'autobuild',
   'allahname',
   'allahnames',
   'aqwal',
   'ask',
   'asmaulhusna',
-  'attp',
   'audio',
-  'automation',
   'ayah',
   'ayat',
-  'settings',
-  'groups',
-  'mygroups',
-  'manage',
-  'dashboard',
-  'dashlink',
   'azkar',
   'bol',
   'bot',
@@ -114,6 +97,7 @@ const KNOWN_COMMANDS = new Set([
   'capcut',
   'catalog',
   'chutkula',
+
   'clip',
   'close',
   'coin',
@@ -121,6 +105,7 @@ const KNOWN_COMMANDS = new Set([
   'crypto',
   'dailymotion',
   'date',
+
   'demote',
   'developer',
   'diagnostics',
@@ -144,6 +129,8 @@ const KNOWN_COMMANDS = new Set([
   'groupaudit',
   'groupinfo',
   'groupmembers',
+
+
   'hadees',
   'hadis',
   'hadith',
@@ -171,7 +158,6 @@ const KNOWN_COMMANDS = new Set([
   'math',
   'meme',
   'memeimage',
-  'memelist',
   'memepic',
   'memes',
   'menu',
@@ -191,6 +177,7 @@ const KNOWN_COMMANDS = new Set([
   'pinterest',
   'poetry',
   'poll',
+
   'prayer',
   'prayertimes',
   'price',
@@ -204,18 +191,15 @@ const KNOWN_COMMANDS = new Set([
   'quranmp3',
   'reel',
   'reels',
-  'deletemydata',
-  'deletedata',
   'remind',
   'reminder',
-  'reset',
-  'resetmydata',
   'riddle',
   'roast',
   'roll',
   'rules',
   's',
   'setname',
+
   'sfx',
   'shairi',
   'shayari',
@@ -226,11 +210,12 @@ const KNOWN_COMMANDS = new Set([
   'soundboard',
   'sounds',
   'speak',
-  'smartsetup',
   'start',
+
   'sticker',
   'stickergif',
   'stiker',
+
   'support',
   'surah',
   'tafseer',
@@ -271,21 +256,8 @@ const KNOWN_COMMANDS = new Set([
 // HOSTING PATCH (Muse, 2026-10-12): merge the 134 new-feature commands so they
 // are detected prefix-less exactly like built-in commands.
 for (const c of NEW_COMMANDS) KNOWN_COMMANDS.add(c);
-// BATCH8 (Muse, 2026-10-14): new alias names also recognized as commands.
-for (const c of Object.keys(CORE_ALIASES)) KNOWN_COMMANDS.add(c);
-// FUZZY (2026-10-14): full candidate set for typo matching = KNOWN_COMMANDS
-// plus CORE_ALIASES values (targets). Used by fuzzy dispatch below.
-const FUZZY_CANDIDATES = new Set(KNOWN_COMMANDS);
-for (const v of Object.values(CORE_ALIASES)) FUZZY_CANDIDATES.add(v.toLowerCase());
 
 class WhatsAppBot extends EventEmitter {
-  // Check if a word is a known command (used by onboarding to avoid eating commands as names)
-  isKnownCommand(word) {
-    if (!word) return false;
-    const w = word.toLowerCase();
-    return KNOWN_COMMANDS.has(w) || FUZZY_CANDIDATES.has(w);
-  }
-
   constructor() {
     super();
     this.sock = null;
@@ -306,51 +278,74 @@ class WhatsAppBot extends EventEmitter {
   }
 
   // Clean menu (2026-10-13, Hudson's order: old menu was cluttered).
-  // 16 merged categories instead of 28 overlapping ones. User sends the
+  // 15 merged categories instead of 28 overlapping ones. User sends the
   // number to see commands in that category.
-  // BEAUTIFUL MENU (2026-10-15): each category gets its own block with a
-  // one-line description. Matches the dashboard sections 1:1. No merging.
-  async getCleanMenu() {
-    const { MENU_CATEGORIES } = await import('./menu-data.js');
-    const { cleanTitle, catDesc } = await import('./menu-desc.js');
-    let out = `🤖 *AwaisxBot Menu*\n_Your personal WhatsApp automation assistant_\n`;
-    for (const cat of MENU_CATEGORIES) {
-      out += `\n*${cat.num}.* ${cat.icon || '📌'} *${cleanTitle(cat.title)}*\n_${catDesc(cat.num)}_\n`;
-    }
-    out += `\n_Reply with a category number (1-${MENU_CATEGORIES.length}) or name_\n`;
-    // BRANDING (Awais AI \u2014 required by license, do not remove)
-    out += `\n🤖 *Powered by Awais AI*`;
+  getCleanMenu() {
+    const cats = [
+      ['🎙️', 'Voice AI', 'Voice notes, text-to-speech, voice-to-text'],
+      ['😂', 'Fun & Memes', 'Memes, roasts, jokes, games, soundboard'],
+      ['🎵', 'Music', 'Songs, MP3 download'],
+      ['📥', 'Downloaders', 'TikTok, Reels, YouTube, Facebook, Twitter'],
+      ['🖼️', 'Photos & Stickers', 'HD photos, stickers, photo edit'],
+      ['🕌', 'Islamic', 'Quran, Hadith, Namaz times, Duas'],
+      ['💡', 'Daily Tools', 'Weather, news, cricket, calculator, QR'],
+      ['🛡️', 'Groups', 'Tag all, polls, admin tools'],
+      ['🤖', 'AI Tools', 'Chat, image gen, summarize, grammar'],
+      ['💰', 'Money', 'Currency, gold rates, finance'],
+      ['🏃', 'Health', 'BMI, health tips'],
+      ['📚', 'Education', 'Dictionary, quizzes, learning'],
+      ['⚙️', 'Automation', 'Auto-reply, scheduled messages'],
+      ['💼', 'Business', 'Business tools'],
+      ['🧰', 'More', 'Extra utilities'],
+    ];
+    let out = `🌟 *AwaxBot Menu*\n\n`;
+    cats.forEach(([icon, title, desc], i) => {
+      out += `${icon} *${i + 1}. ${title}*\n_${desc}_\n\n`;
+    });
+    out += `👉 _Kisi category ka number bhejein (masalan *3*)_`;
+    // BRANDING (Awais AI — required by license, do not remove)
+    out += `\n\n🤖 *Powered by Awais AI*`;
     return out;
   }
 
-  // Category drill-down: number -> grouped display (DEDUP 2026-10-15).
-  // Commands sharing one handler show as a single line with aliases listed.
-  // Dispatch is untouched: every alias still triggers when typed.
+  // Maps clean menu number -> raw category nums in menu-data.js
+  getCleanCategoryMap() {
+    return {
+      1: [1], 2: [2, 11, 27], 3: [3], 4: [4, 12], 5: [5],
+      6: [6, 14, 23], 7: [7, 13, 21], 8: [8, 16, 24],
+      9: [9, 10, 22], 10: [19], 11: [20], 12: [15],
+      13: [17], 14: [18, 26], 15: [25, 28],
+    };
+  }
+
   async getCategoryCommands(n) {
+    const map = this.getCleanCategoryMap();
+    const rawNums = map[n];
+    if (!rawNums) return null;
     const { MENU_CATEGORIES } = await import('./menu-data.js');
-    const { cleanTitle, cleanDesc, catDesc } = await import('./menu-desc.js');
-    const { groupCommands, isBlocked } = await import('./menu-groups.js');
-    const cat = MENU_CATEGORIES.find(c => c.num === n);
-    if (!cat) return null;
-    const title = cleanTitle(cat.title);
-    const SEP = '━━━━━━━━━━━━━━━';
-    let out = `${cat.icon || '📌'} *${title}*\n_${catDesc(cat.num)}_\n${SEP}\n`;
-    const groups = groupCommands(cat.cmds, cleanDesc);
-    for (const g of groups) {
-      const blockedMark = g.blocked ? ' 🚫' : '';
-      out += `• *${g.primary}*${blockedMark} — ${g.desc}\n`;
-      // (2026-10-15, per Hudson): aliases hidden — one command per task, no duplicates shown.
+    let out = '';
+    const seen = new Set();
+    for (const rn of rawNums) {
+      const cat = MENU_CATEGORIES.find(c => c.num === rn);
+      if (!cat) continue;
+      if (rawNums.length > 1) out += `\n*${cat.icon} ${cat.title}*\n`;
+      for (const c of cat.cmds) {
+        if (!c.primary || seen.has(c.name)) continue;
+        seen.add(c.name);
+        out += `• *${c.name}*${c.desc ? ` — ${c.desc}` : ''}\n`;
+      }
     }
-    return `${out}${SEP}\n_Reply with a command name to use it_\n\n🤖 *Powered by Awais AI*`;
+    const titles = { 1: 'Voice AI', 2: 'Fun & Memes', 3: 'Music', 4: 'Downloaders', 5: 'Photos & Stickers', 6: 'Islamic', 7: 'Daily Tools', 8: 'Groups', 9: 'AI Tools', 10: 'Money', 11: 'Health', 12: 'Education', 13: 'Automation', 14: 'Business', 15: 'More' };
+    return `*${titles[n]}*\n${out}\n👉 _Wapas jane ke liye *menu* likhein_`;
   }
 
   getMobileFriendlyMenu(prefix = '!') {
     return (
-      `🌟 *AwaisxBot — Smart WhatsApp Assistant*\n\n` +
+      `🌟 *AwaxBot — Smart WhatsApp Assistant*\n\n` +
       `_Aapko koi symbol lagane ki zaroorat nahi — bas aam alfaz mein likhein!_\n\n` +
 
       `🎙️ *1. Voice AI & Bolne Wala Bot (Deepgram)*\n` +
-      `• *Send a Voice Note* ➔ The bot listens and replies back with a voice note!\n` +
+      `• *Voice Note Bhejein* ➔ Bot aapki aawaz sun kar voice note mein hi bol kar jawab dega!\n` +
       `• *voice <text>* ➔ Kisi bhi text ka WhatsApp voice note banayein\n` +
       `  _Misaal:_ voice Assalam-o-Alaikum dost, kaisay ho?\n\n` +
 
@@ -406,12 +401,6 @@ class WhatsAppBot extends EventEmitter {
     if (this.isInitializing) {
       console.log('Bot is already initializing, skipping duplicate init call.');
       return;
-    }
-    // System integrity check — required for startup.
-    try {
-      if (!verifyIntegrity()) console.log('⚠️ System integrity notice: core module check did not pass.');
-    } catch (e) {
-      console.log('⚠️ System integrity notice:', e.message);
     }
     this.isInitializing = true;
 
@@ -500,31 +489,8 @@ class WhatsAppBot extends EventEmitter {
           this.qrCodeDataUrl = null;
           this.user = this.sock.user;
           console.log('🚀 Connected to WhatsApp as:', this.user?.id || this.user?.name);
-          console.log('🤖 AwaisxBot by Awais AI — facebook.com/awaisautomates'); // BRANDING (required by license, do not remove)
+          console.log('🤖 AwaxBot by Awais AI — facebook.com/awaisautomates'); // BRANDING (required by license, do not remove)
           this.emit('status', { status: this.status, user: this.user });
-          // Automation task runner (2026-10-13): check every minute for due tasks
-          if (!this._automationTick) {
-            this._automationTick = setInterval(async () => {
-              try {
-                const { runDueTasks } = await import('./automation.js');
-                await runDueTasks(this);
-              } catch (e) {}
-            }, 60000);
-          }
-          // Proactive nudges (2026-10-13, Hudson): check hourly for inactive users
-          if (!this._proactiveTick) {
-            this._proactiveTick = setInterval(async () => {
-              try {
-                const { runProactiveCheck } = await import('./proactive.js');
-                await runProactiveCheck(this);
-              } catch (e) {}
-              // Media auto-delete: 24h TTL (Hudson 2026-10-13)
-              try {
-                const { cleanupMedia } = await import('./memory.js');
-                cleanupMedia();
-              } catch (e) {}
-            }, 3600000);
-          }
         }
       });
 
@@ -534,15 +500,10 @@ class WhatsAppBot extends EventEmitter {
 
         for (const msg of messages) {
           if (!msg.message) continue;
-          // (2026-10-16, per Hudson): bot processes its OWN messages as owner
-          // commands — it can message itself to control itself. Loop protection:
-          // skip messages carrying the bot's own footer.
-          const isSelfMsg = !!msg.key.fromMe;
+          if (msg.key.fromMe) continue;
 
           const from = msg.key.remoteJid;
           if (from === 'status@broadcast') continue;
-          // NEVER reply in WhatsApp Channels (2026-10-13, Hudson: DO NOT REPLY IN CHANNELS)
-          if (from.endsWith('@newsletter')) continue;
 
           const isGroup = from.endsWith('@g.us');
           const sender = isGroup ? msg.key.participant : from;
@@ -564,9 +525,6 @@ class WhatsAppBot extends EventEmitter {
 
           const isAudio = !!msg.message.audioMessage;
           if (!text && !isAudio && !interactiveId) continue;
-
-          // Loop protection: never process the bot's own replies (they carry the footer).
-          if (isSelfMsg && text.includes('Powered by Awais AI')) continue;
 
           // If incoming message is a WhatsApp Voice Note or Audio
           if (isAudio) {
@@ -635,11 +593,6 @@ class WhatsAppBot extends EventEmitter {
           await runMemberHooks({ bot: this, id, participants, action });
           const config = Store.getConfig();
           if (!config.features?.groupWelcome || !Store.isGroupAllowed(id)) return;
-          // Dashboard control (2026-10-14): per-group welcome toggle + silent mode
-          try {
-            const { groupFeatureOn, isSilent } = await import('./access.js');
-            if (isSilent(id) || !groupFeatureOn(id, 'welcome', true)) return;
-          } catch { /* access.js unavailable — fall through */ }
 
           if (action === 'add' && Array.isArray(participants)) {
             for (const user of participants) {
@@ -697,59 +650,46 @@ class WhatsAppBot extends EventEmitter {
     try { await this.sock.sendMessage(from, { react: { text: '🎙️', key: msg.key } }); } catch (e) {}
     await this.sendPresence(from, 'recording');
 
-    // 1. Transcribe voice via Deepgram (Whisper — handles Urdu/Hindi/English)
+    // 1. Transcribe voice via Deepgram Nova-2
     let transcriptData = null;
     try {
       transcriptData = await transcribeAudio(audioBuffer, mimeType);
     } catch (err) {
-      // Log full details internally, but never expose provider names to the user
-      console.error('[voice] transcription error:', err.message);
-      await this.sendMessage(from, `🎙️ _Couldn't understand that voice note, please try again._`);
+      console.error('Deepgram transcription error:', err.message);
+      await this.sendMessage(from, `🎙️ _Aapki voice note aayi, lekin transcription mein masla hua: ${err.message}_`);
       return;
     }
 
     const transcript = transcriptData?.transcript?.trim();
     if (!transcript) {
-      await this.sendMessage(from, `🎙️ _Your voice note was too quiet or silent, please speak clearly and try again!_`);
+      await this.sendMessage(from, `🎙️ _Aapki voice note bohot dheemi ya khamosh thi, baraye meherbani thora saaf bol kar dobara bhejein!_`);
       return;
     }
 
     console.log(`🎙️ [Voice Transcribed]: "${transcript}" (Lang: ${transcriptData.detectedLanguage})`);
 
-    // 2. Route through Bot Guide AI — NOT a chatbot.
-    // (2026-10-13, Hudson's design: AI understands intent → maps to bot features.
-    // Voice notes in Urdu get translated to English first, reply always English.)
+    // 2. Think & formulate response via Gemini AI
     this.stats.aiQueries++;
     const config = Store.getConfig();
-
-    let aiInput = transcript;
-    const looksNonEnglish = /[^\x00-\x7F]/.test(transcript);
-    if (looksNonEnglish) {
-      try {
-        const { askAI: translateAI } = await import('./ai.js');
-        const translated = await translateAI(
-          `Translate this text to natural English. Output ONLY the English translation, nothing else:\n\n${transcript}`,
-          { senderId: sender + ':translate', senderName }
-        );
-        if (translated && translated.trim().length > 3) {
-          aiInput = translated.trim();
-        }
-      } catch (tErr) { /* use original transcript */ }
-    }
+    const systemPrompt = config.ai?.systemPrompt ||
+      "You are AwaxBot, a warm, helpful, natural AI voice companion on WhatsApp. Speak like a close friend in natural Roman Urdu or English. Keep your spoken reply concise (2-3 sentences), engaging, and friendly.";
 
     let aiReply = '';
     try {
-      const { guideVoiceMessage } = await import('./bot-guide.js');
-      aiReply = await guideVoiceMessage(aiInput, sender, senderName);
+      aiReply = await askAI(transcript, {
+        senderId: sender,
+        systemPrompt,
+        model: config.ai?.model || 'gemini-1.5-flash',
+        senderName
+      });
     } catch (aiErr) {
-      aiReply = `I'm AwaisxBot's guide — I can help with downloads, news, weather, songs and more.`;
+      aiReply = `Ji dost, main ne aapki voice sun li: "${transcript}". Main haazir hoon!`;
     }
 
-    // 3. Convert AI Response into Speech Voice Note via TTS
-    // TTS (2026-10-13, Hudson's setting): ALWAYS Deepgram English voice.
+    // 3. Convert AI Response into Speech Voice Note via Deepgram Aura TTS
     await this.sendPresence(from, 'recording');
     try {
-      const speechBuffer = await textToSpeech(aiReply, 'aura-2-asteria-en');
+      const speechBuffer = await textToSpeech(aiReply, 'aura-asteria-en');
       this.stats.messagesSent++;
       await this.sock.sendMessage(from, {
         audio: speechBuffer,
@@ -765,7 +705,7 @@ class WhatsAppBot extends EventEmitter {
       });
     } catch (ttsErr) {
       console.warn('Deepgram TTS fallback to text:', ttsErr.message);
-      await this.sendMessage(from, `🎙️ *Aap ne farmaya:* "${transcript}"\n\n🤖 *AwaisxBot Jawab:*\n${aiReply}`);
+      await this.sendMessage(from, `🎙️ *Aap ne farmaya:* "${transcript}"\n\n🤖 *AwaxBot Jawab:*\n${aiReply}`);
     }
   }
 
@@ -937,7 +877,7 @@ class WhatsAppBot extends EventEmitter {
    * Display dynamic soundboard categories and instruction guide
    */
   async sendSoundboardMenu(from, prefix = '!') {
-    let list = `🔊 *AwaisxBot Funny Meme Soundboard (${MEME_SOUNDS.length} Sounds)* 🔊\n\n`;
+    let list = `🔊 *AwaxBot Funny Meme Soundboard (${MEME_SOUNDS.length} Sounds)* 🔊\n\n`;
     const categories = {
       'Song': '🎵 *Viral Funny Songs & Tunes:*',
       'Desi': '🎭 *Desi Comedy & Famous Dialogues:*',
@@ -967,50 +907,6 @@ class WhatsAppBot extends EventEmitter {
     const prefix = config.prefix ?? '';
     const trimmed = (text || '').trim();
 
-    // Proactive tracking: record last interaction for 1-on-1 chats
-    // (2026-10-13, Hudson: bot nudges inactive users)
-    if (!isGroup && sender) {
-      try {
-        const { touchUser } = await import('./proactive.js');
-        touchUser(sender);
-      } catch {}
-    }
-
-    // Persistent memory (2026-10-13, Hudson: EVERY message saved, never lost)
-    if (!isGroup && sender && trimmed) {
-      try {
-        const { recordMessage } = await import('./memory.js');
-        recordMessage(sender, 'user', trimmed.slice(0, 2000));
-      } catch {}
-      // Map chat JID → sender LID so sendMessage can record bot replies correctly
-      if (!this._jidToSender) this._jidToSender = {};
-      this._jidToSender[from] = sender;
-    }
-
-    // Pending confirmations (2026-10-13, Hudson: bot must remember context)
-    // If user was asked to confirm something, "yes" continues that flow.
-    if (!isGroup && sender && trimmed) {
-      const low = trimmed.toLowerCase();
-      if ((low === 'yes' || low === 'confirm' || low === 'y') && this._pendingConfirm && this._pendingConfirm[sender]) {
-        const pending = this._pendingConfirm[sender];
-        delete this._pendingConfirm[sender];
-        // Re-dispatch as the confirmed command
-        return await this.handleMessage({ msg, from, sender, senderName, isGroup, text: pending.command + ' yes', interactiveId: null });
-      }
-    }
-    // Pending AI builds (2026-10-15): "yes" in a group applies pending aibuild.
-    if (isGroup && sender && trimmed) {
-      const low = trimmed.toLowerCase();
-      if ((low === 'yes' || low === 'confirm' || low === 'y') && this._pendingBuild && this._pendingBuild[sender]) {
-        return await this.handleMessage({ msg, from, sender, senderName, isGroup, text: 'aibuild yes', interactiveId: null });
-      }
-      if ((low === 'no' || low === 'cancel' || low === 'n') && this._pendingBuild && this._pendingBuild[sender]) {
-        delete this._pendingBuild[sender];
-        await this.sendMessage(from, `❌ AI setup cancelled.`);
-        return;
-      }
-    }
-
     // Strict Group Whitelist Enforcement:
     // If the message is from a WhatsApp group, the bot ONLY works in groups explicitly enabled by the user in localhost UI
     if (isGroup) {
@@ -1030,62 +926,6 @@ class WhatsAppBot extends EventEmitter {
       }
     }
 
-    // Natural-language automation (2026-10-13): "send X to Y daily"
-    try {
-      const { parseAutomationRequest, addScheduledTask, WEEKDAY_NAMES } = await import('./automation.js');
-      const auto = parseAutomationRequest(trimmed);
-      if (auto) {
-        // Group automations: if set inside a group, target that group
-        if (auto.targetType === 'group' && isGroup) {
-          auto.target = from;
-        }
-        // Channels removed 2026-10-17 per Hudson — no "not supported" message
-        const task = addScheduledTask({
-          message: auto.message,
-          target: auto.target,
-          targetType: auto.targetType,
-          schedule: auto.schedule,
-          weekday: auto.weekday,
-          time: auto.time,
-          owner: sender,
-        });
-        const when = auto.schedule === 'weekly'
-          ? `weekly (${WEEKDAY_NAMES[task.weekday]}) at ${auto.time} PKT`
-          : `${auto.schedule} at ${auto.time} PKT`;
-        await this.sendMessage(from,
-          `✅ *Automation set!*\n\n` +
-          `📨 Message: "${auto.message}"\n` +
-          `📍 To: ${auto.target || auto.targetType}\n` +
-          `🔁 ${when}\n\n` +
-          `_Stop karne ke liye: *stop automation ${task.id}*_\n\n` +
-          `🤖 *Powered by Awais AI*`
-        );
-        return;
-      }
-    } catch (e) {
-      console.error('[automation] parse error:', e.message);
-    }
-
-    // Onboarding for new users (2026-10-13) — runs before commands so we can
-    // personalize. Skips groups and already-onboarded users.
-    try {
-      const { checkOnboarding } = await import('./onboarding.js');
-      const onboarded = await checkOnboarding(this, { msg, from, sender, senderName, isGroup, text: trimmed });
-      if (onboarded) return;
-    } catch (e) {
-      console.error('[onboarding] error:', e.message);
-    }
-
-    // PASTED-OUTPUT EARLY GUARD (2026-10-15): the bot's own replies carry the
-    // "Powered by Awais AI" footer or distinctive templates ("Misaal:",
-    // "Likhein:", "Usage:", etc). If pasted back, ignore SILENTLY before any
-    // hooks, detection, or automations can trigger. This must run before
-    // runMessageHooks (which can auto-trigger emoji/URL/media features).
-    const _earlyClean = String(trimmed || '').replace(/\s+/g, ' ').trim();
-    if (/powered by awais ai|misaal:|misal:|likhein|usage:|istamal:|istimal:|istemal:|this command only works|meri (line|agli line):|antakshari shuru|aaj ka chand:|funny meme soundboard|all video downloader|qr code|for example:|ayah of the day|آیتِ مبارکہ|crypto prices|what you'd like|quiz:|jawab:/i.test(_earlyClean)) {
-      return;
-    }
-
     // HOSTING PATCH (Muse, 2026-10-12): passive automation hooks for the new
     // features (antilink, antispam, afk, autoreact, slowmode, keyword alerts,
     // usage stats, ...). Silent and non-throwing by design.
@@ -1099,172 +939,28 @@ class WhatsAppBot extends EventEmitter {
     // when it starts with the configured prefix (if one is set) OR when its
     // first word is a known command name (e.g. "ping", "menu", "soundboard").
     // A leading "!" is still accepted for backward compatibility.
-    // FUZZY (2026-10-14): strip leading noise (emojis, ./!#> etc) so
-    // ".menu", "😀menu", ">menu" all work like "menu".
-    const cleanTrimmed = normalizeSpaces(stripNoise(trimmed));
-    // DIRECT PHRASE ROUTING (2026-10-15): data-deletion phrases go straight to
-    // deletemydata — never let the AI misroute them to group delete commands.
-    const lowerTrimmed = cleanTrimmed.toLowerCase();
-    // PASTED-OUTPUT GUARD (2026-10-15): the bot's own replies always carry the
-    // "Powered by Awais AI" footer. If it appears in the incoming message, the
-    // user pasted/copied bot output back — never treat it as a command or
-    // natural-language intent. Ignore silently. The bot's other distinctive
-    // reply templates ("Misaal:", "Likhein:", game prompts, result labels)
-    // pasted back are covered too.
-    const isPastedBotOutput = /powered by awais ai|misaal:|misal:|likhein|usage:|istamal:|istimal:|istemal:|this command only works|meri (line|agli line):|antakshari shuru|aaj ka chand:|funny meme soundboard|all video downloader|qr code|for example:|ayah of the day|آیتِ مبارکہ|crypto prices|what you'd like|quiz:|jawab:/i.test(cleanTrimmed);
     let cmdText = null;
-    let skipNormalDetection = false;
-    if (/^(delete|remove|erase|clear)\s+(my\s+)?(all\s+)?(data|everything|chat history)/i.test(lowerTrimmed)) {
-      if (isGroup) {
-        await this.sendMessage(from, `🔒 *Delete my data* sirf DM mein kaam karta hai — mujhe direct message karein.`);
-        return;
-      }
-      cmdText = 'deletemydata';
-      skipNormalDetection = true;
-    }
-    // DIRECT SUPPORT ROUTING (2026-10-15): clear complaint phrases get a direct
-    // helpful response — don't let the AI fumble them into a menu dump.
-    if (!isGroup && /\b(kaam nahi kar|kam nahi|not working|kaam nahin|nai chal|nahi chal)\b/i.test(lowerTrimmed)) {
-      await this.sendMessage(from, `I hear you — something's not working. Tell me *what* isn't working (which command or feature?) and I'll help you fix it step by step. 🤖`);
-      return;
-    }
-    let fuzzyHint = null; // "Did you mean X?" notice
-    let fuzzyOn = true;
-    try { const { globalFeatureOn: _gfo } = await import('./access.js'); fuzzyOn = _gfo('fuzzy-commands', true); } catch {}
-    // CHAT WORDS (2026-10-15): common conversational words are never commands.
-    // Don't fuzzy-match them into irrelevant suggestions — let them fall
-    // through to normal AI chat.
-    const CHAT_WORDS = new Set(['yes','no','yeah','yep','yup','nah','nope','hi','hii','hello','helo','hey','heyy','salam','assalam','aoa','go','ok','okay','okk','okayy','fine','good','great','nice','thanks','thank','thx','shukriya','bye','alvida','hmm','acha','achha','theek','thik','sahi','han','haa','na','nahi','ji','yar','yaar','bro','wah','nice']);
-    if (!skipNormalDetection && !isPastedBotOutput) {
-    if (prefix && cleanTrimmed.startsWith(prefix)) {
-      cmdText = cleanTrimmed.slice(prefix.length).trim();
+    if (prefix && trimmed.startsWith(prefix)) {
+      cmdText = trimmed.slice(prefix.length).trim();
     } else {
-      const words = cleanTrimmed.split(/\s+/);
-      const firstWord = (words[0] || '').toLowerCase();
+      const firstWord = trimmed.split(/\s+/)[0].toLowerCase().replace(/^!+/, '');
       if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
-        cmdText = cleanTrimmed;
-      } else if (fuzzyOn && !CHAT_WORDS.has(firstWord)) {
-        // PASTED-CONTENT GUARD (2026-10-15): messages longer than 10 words are
-        // never commands — pasted bot output must not trigger automations.
-        const wordCount = cleanTrimmed.split(/\s+/).filter(Boolean).length;
-        if (wordCount <= 10) {
-        // NATURAL FIRST (2026-10-15): an exact command word anywhere in the
-        // message ("show menu" -> "menu") beats a fuzzy first word
-        // ("show" -> "snow"). Exact matches are never wrong guesses.
-        const natural = findCommandInText(cleanTrimmed, FUZZY_CANDIDATES);
-        if (natural) {
-          const nw = cleanTrimmed.toLowerCase().split(/\s+/);
-          const idx = nw.findIndex(w => w.replace(/[^a-z0-9]/g, '') === natural);
-          cmdText = idx > 0
-            ? [natural, ...nw.slice(0, idx), ...nw.slice(idx + 1)].join(' ')
-            : cleanTrimmed;
-          fuzzyHint = null; // Disabled 2026-10-17 per Hudson
-        } else {
-          // FUZZY: try joining first two words ("tag all" -> "tagall")
-          const joined = tryJoinWords(words, FUZZY_CANDIDATES);
-          if (joined) {
-            cmdText = joined + ' ' + words.slice(2).join(' ');
-            fuzzyHint = null; // Disabled 2026-10-17 per Hudson
-          } else {
-            // FUZZY: typo in first word ("mneu" -> "menu")
-            const close = findClosest(firstWord, FUZZY_CANDIDATES);
-            if (close && firstWord.length >= 3) {
-              cmdText = close.cmd + ' ' + words.slice(1).join(' ');
-              fuzzyHint = null; // Disabled 2026-10-17 per Hudson
-            }
-          }
-        }
-        }
+        cmdText = trimmed.replace(/^!+/, '');
       }
     }
-    } // end skipNormalDetection
     if (cmdText) {
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
-      // BATCH8 (Muse, 2026-10-14): resolve new alias names to core commands
-      // before dispatch, so they hit the right handler transparently.
-      const rawCommand = cmd.toLowerCase();
-      const command = CORE_ALIASES[rawCommand] || rawCommand;
+      const command = cmd.toLowerCase();
       const query = args.join(' ');
-
-      // Global feature toggle check (2026-10-14): if the command's category
-      // is disabled in Dashboard → Features, block it.
-      // Per-command toggle (2026-10-14): individual commands disabled via
-      // Dashboard → Sections are also blocked here.
-      // Usage stats recorded for every dispatched command.
-      try {
-        const { globalFeatureOn, isCommandEnabled, recordCommandUse } = await import('./access.js');
-        const { MENU_CATEGORIES } = await import('./menu-data.js');
-        for (const cat of MENU_CATEGORIES) {
-          const slug = 'cat-' + (cat.num || cat.title).toString().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-          const inCat = (cat.cmds || []).some(c => (c.name || '').toLowerCase() === command.toLowerCase());
-          if (!inCat) continue;
-          if (!globalFeatureOn(slug, true)) {
-            await this.sendMessage(from, `⛔ *${cat.title}* category dashboard se disabled hai.`);
-            return;
-          }
-          if (!isCommandEnabled(slug, command)) {
-            await this.sendMessage(from, `⛔ *${command}* command dashboard se disabled hai.`);
-            return;
-          }
-          recordCommandUse(command);
-          break;
-        }
-      } catch { /* ignore feature check errors */ }
 
       // HOSTING PATCH (Muse, 2026-10-12): dispatch the 134 new-feature commands
       // (batches 1-6) before the built-in switch. Runs in the same try/catch
       // style as other handlers — never throws out of handleMessage.
-      // REMOTE GROUP MANAGEMENT (2026-10-16, per Hudson): if in DM with a managed
-      // group selected, route group commands to that group but reply in DM.
-      const _managedGid = (!isGroup && global._managedGroup) ? global._managedGroup[sender] : null;
-      const _remotable = ['tagall', 'hidetag', 'lock', 'unlock', 'poll', 'groupinfo', 'admins', 'welcome', 'goodbye', 'antilink', 'antispam', 'topactive', 'kick', 'add', 'warn'];
-      if (_managedGid && _remotable.includes(command)) {
-        try {
-          const targetCtx = { bot: this, from: _managedGid, sender, senderName, isGroup: true, isOwner: true, isAdmin: true, prefix, reply: (t) => this.sendMessage(from, t) };
-          // Build a minimal remote execution for common commands
-          if (command === 'groupinfo') {
-            const meta = await this.sock.groupMetadata(_managedGid);
-            await this.sendMessage(from, `👥 *${meta.subject}*\nMembers: ${meta.participants?.length || '?'}\nID: \`${_managedGid}\`\n\n🤖 *Powered by Awais AI*`);
-          } else if (command === 'tagall') {
-            const meta = await this.sock.groupMetadata(_managedGid);
-            const mentions = (meta.participants || []).map(p => p.id);
-            await this.sock.sendMessage(_managedGid, { text: `📢 ${query || 'Attention everyone!'}\n\n(from ${senderName} via remote)`, mentions });
-            await this.sendMessage(from, `✅ Tagall sent to group.\n\n🤖 *Powered by Awais AI*`);
-          } else if (command === 'lock' || command === 'unlock') {
-            await this.sock.groupSettingUpdate(_managedGid, command === 'lock' ? 'announcement' : 'not_announcement');
-            await this.sendMessage(from, `✅ Group ${command === 'lock' ? 'locked 🔒' : 'unlocked 🔓'}.\n\n🤖 *Powered by Awais AI*`);
-          } else if (command === 'poll') {
-            const parts = query.split('|').map(s => s.trim()).filter(Boolean);
-            if (parts.length >= 3) {
-              await this.sock.sendMessage(_managedGid, { poll: { name: parts[0], values: parts.slice(1), selectableCount: 1 } });
-              await this.sendMessage(from, `✅ Poll sent to group.\n\n🤖 *Powered by Awais AI*`);
-            } else {
-              await this.sendMessage(from, `❌ Usage: poll <question> | <opt1> | <opt2>`);
-            }
-          } else {
-            await this.sendMessage(from, `ℹ️ Remote \`${command}\` — group mein jaake use karein ya \`manage off\` karke wapis aayein.`);
-          }
-        } catch (e) {
-          await this.sendMessage(from, `❌ Remote command failed: ${e.message}`);
-        }
-        return;
-      }
-
       if (NEW_COMMANDS.has(command)) {
-        // FUZZY (2026-10-14): let the user know we interpreted their input
-        if (fuzzyHint) { try { await this.sendMessage(from, fuzzyHint); } catch {} }
         try {
-          // Owner/admin identity (2026-10-14): batch handlers can check ctx.isOwner / ctx.isAdmin
-          // (2026-10-16, per Hudson): the bot's OWN messages are always owner.
-          let _isOwner = false, _isAdmin = false;
-          try {
-            const { isOwner, isAdmin } = await import('./access.js');
-            _isOwner = isSelfMsg ? true : isOwner(sender);
-            _isAdmin = isSelfMsg ? true : isAdmin(sender);
-          } catch { /* ignore */ }
           await handleNewFeature(
-            { bot: this, msg, from, sender, senderName, isGroup, prefix, isOwner: _isOwner, isAdmin: _isAdmin },
+            { bot: this, msg, from, sender, senderName, isGroup, prefix },
             command,
             query
           );
@@ -1275,14 +971,14 @@ class WhatsAppBot extends EventEmitter {
         return;
       }
 
-      // Number handling (2026-10-15): numbers 1-16 ALWAYS open menu categories —
-      // that is the menu's contract ("Reply with a command name to use it").
-      // The old 10-minute menu window was wiped on every restart and turned
-      // bare numbers into surprise meme audios. Bare numbers above 16 (no
-      // category) still play meme sounds; "meme <n>" works for all sounds.
+      // Direct number command shorthand: e.g. !1 to !48 -> play meme sound
+      // (numbers 1-15 open a menu category instead for 10 min after `menu`
+      // is shown — the switch below handles that drill-down; see lastMenuRequest)
       if (/^\d{1,2}$/.test(command)) {
         const num = parseInt(command, 10);
-        if (num > 16 && num >= 1 && num <= MEME_SOUNDS.length) {
+        const menuShownAt = this.lastMenuRequest?.get(from) || 0;
+        const inMenuWindow = num >= 1 && num <= 15 && (Date.now() - menuShownAt) < 10 * 60 * 1000;
+        if (!inMenuWindow && num >= 1 && num <= MEME_SOUNDS.length) {
           const soundItem = MEME_SOUNDS[num - 1];
           try {
             await this.sendMemeAudio(from, soundItem, msg);
@@ -1291,28 +987,6 @@ class WhatsAppBot extends EventEmitter {
           }
           return;
         }
-      }
-
-      // FUZZY (2026-10-14): show interpretation notice for switch commands too
-      if (fuzzyHint) { try { await this.sendMessage(from, fuzzyHint); } catch {} fuzzyHint = null; }
-
-      // BEAUTIFUL MENU (2026-10-15): category NAME drill-down — "voice ai",
-      // "memes" etc. within 10 min of menu. Known commands take precedence.
-      // Uses the FULL text (not first word) so "voice ai" opens the category
-      // while "music" still runs the song command.
-      if (this.lastMenuRequest?.get(from) &&
-          (Date.now() - this.lastMenuRequest.get(from)) < 10 * 60 * 1000) {
-        try {
-          const fullText = String(cleanTrimmed).toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
-          if (fullText && !KNOWN_COMMANDS.has(fullText)) {
-            const { matchCategoryByName } = await import('./menu-groups.js');
-            const catNum = await matchCategoryByName(cleanTrimmed);
-            if (catNum) {
-              await this.sendMessage(from, await this.getCategoryCommands(catNum));
-              return;
-            }
-          }
-        } catch { /* fall through to normal dispatch */ }
       }
 
       switch (command) {
@@ -1326,22 +1000,21 @@ class WhatsAppBot extends EventEmitter {
         case 'all':
         case 'tools':
         case 'bot': {
-          await this.sendMessage(from, await this.getCleanMenu());
+          await this.sendMessage(from, this.getCleanMenu());
           if (!this.lastMenuRequest) this.lastMenuRequest = new Map();
-          this.lastMenuRequest.set(from, Date.now()); // numbers 1-16 drill into categories for 10 min
+          this.lastMenuRequest.set(from, Date.now()); // numbers 1-15 drill into categories for 10 min
           return;
         }
 
-        // Unified menu category drill-down (1-16, matches dashboard sections)
+        // Clean menu category drill-down (1-15)
         case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9': case '10':
-        case '11': case '12': case '13': case '14': case '15':
-        case '16': {
+        case '11': case '12': case '13': case '14': case '15': {
           const detail = await this.getCategoryCommands(parseInt(command, 10));
           if (detail) {
             await this.sendMessage(from, detail);
           } else {
-            await this.sendMessage(from, await this.getCleanMenu());
+            await this.sendMessage(from, this.getCleanMenu());
           }
           return;
         }
@@ -1365,7 +1038,7 @@ class WhatsAppBot extends EventEmitter {
           try {
             try { await this.sock.sendMessage(from, { react: { text: '🗣️', key: msg.key } }); } catch (e) {}
             await this.sendPresence(from, 'recording');
-            const speechBuffer = await textToSpeech(query, 'aura-2-asteria-en');
+            const speechBuffer = await textToSpeech(query, 'aura-asteria-en');
             await this.sock.sendMessage(from, {
               audio: speechBuffer,
               mimetype: 'audio/mpeg',
@@ -1386,21 +1059,10 @@ class WhatsAppBot extends EventEmitter {
             try { await this.sock.sendMessage(from, { react: { text: '😂', key: msg.key } }); } catch (e) {}
             await this.sendPresence(from, 'composing');
             const meme = await getViralMeme();
-            const caption = `🤣 *${meme.title}*\n📱 _Source: r/${meme.subreddit}_`;
-            // GIFs must be sent as video with gifPlayback (2026-10-15):
-            // sent as image they animate on desktop but show static on mobile.
-            if (/\.gif(\?|$)/i.test(meme.url || '')) {
-              await this.sock.sendMessage(from, {
-                video: { url: meme.url },
-                caption,
-                gifPlayback: true
-              }, { quoted: msg });
-            } else {
-              await this.sock.sendMessage(from, {
-                image: { url: meme.url },
-                caption
-              }, { quoted: msg });
-            }
+            await this.sock.sendMessage(from, {
+              image: { url: meme.url },
+              caption: `🤣 *${meme.title}*\n📱 _Source: r/${meme.subreddit}_`
+            }, { quoted: msg });
           } catch (err) {
             await this.sendMessage(from, `❌ Meme image load nahi ho saki: ${err.message}`);
           }
@@ -1484,37 +1146,13 @@ class WhatsAppBot extends EventEmitter {
           try {
             try { await this.sock.sendMessage(from, { react: { text: '🖼️', key: msg.key } }); } catch (e) {}
             await this.sendPresence(from, 'composing');
-            const { fetchJsonRetry } = await import('./api-helper.js');
-            let imgData;
-            try {
-              imgData = await searchImage(query);
-            } catch (e) {
-              imgData = null;
-            }
-            // Fallback: picsum random image if search fails
-            if (!imgData?.imageUrl) {
-              imgData = { imageUrl: `https://picsum.photos/800/600?random=${Date.now()}`, title: query };
-            }
-            try {
-              await this.sock.sendMessage(from, {
-                image: { url: imgData.imageUrl },
-                caption: `🖼️ *${imgData.title}*`
-              }, { quoted: msg });
-            } catch (sendErr) {
-              // If direct URL send fails, download and send as buffer
-              try {
-                const res = await fetch(imgData.imageUrl, { signal: AbortSignal.timeout(20000) });
-                const buf = Buffer.from(await res.arrayBuffer());
-                await this.sock.sendMessage(from, {
-                  image: buf,
-                  caption: `🖼️ *${imgData.title}*`
-                }, { quoted: msg });
-              } catch (e2) {
-                throw sendErr;
-              }
-            }
+            const imgData = await searchImage(query);
+            await this.sock.sendMessage(from, {
+              image: { url: imgData.imageUrl },
+              caption: `🖼️ *${imgData.title}*`
+            }, { quoted: msg });
           } catch (err) {
-            await this.sendMessage(from, `❌ Image search nahi ho saki, dobara try karein.`);
+            await this.sendMessage(from, `❌ Image search nahi ho saki: ${err.message}`);
           }
           return;
         }
@@ -1602,37 +1240,9 @@ class WhatsAppBot extends EventEmitter {
         }
 
         // --- 2.5 STICKER & MEDIA CONVERTER TOOLS ---
-        case 'attp': {
-          // Animated text sticker (2026-10-14, implemented per Hudson)
-          if (!query) {
-            await this.sendMessage(from, `✨ *Animated Text Sticker*\n\nIstamal: *attp <text>*\nMisaal: *attp Hello Dosto*\n\nText ka animated sticker ban jayega!`);
-            return;
-          }
-          try {
-            await this.sendPresence(from, 'composing');
-            const sharp = (await import('sharp')).default;
-            const text = query.slice(0, 30).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6BCB77', '#9B59B6'];
-            const frames = [];
-            for (let i = 0; i < 5; i++) {
-              const yOff = i % 2 === 0 ? -12 : 12;
-              const svg = `<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg"><rect width="512" height="512" fill="#1a1a2e"/><text x="256" y="${256 + yOff}" font-family="Arial,sans-serif" font-size="64" font-weight="bold" fill="${colors[i]}" text-anchor="middle" dominant-baseline="middle">${text}</text></svg>`;
-              frames.push(await sharp(Buffer.from(svg)).png().toBuffer());
-            }
-            let animated;
-            try {
-              animated = await sharp(frames, { animated: true, loop: 0 }).webp().toBuffer();
-            } catch { animated = frames[0]; }
-            await this.sock.sendMessage(from, { sticker: animated }, { quoted: msg });
-          } catch (err) {
-            await this.sendMessage(from, `❌ Animated sticker nahi ban saka: ${err.message}`);
-          }
-          return;
-        }
-
+        case 's':
         case 'sticker':
-        case 'stiker':
-        case 's': {
+        case 'stiker': {
           let mediaMessage = null;
           const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
           if (quoted?.imageMessage) {
@@ -1701,33 +1311,6 @@ class WhatsAppBot extends EventEmitter {
         case 'v2a':
         case 'tomp3':
         case 'audio':
-        case 'mp3': {
-          // Video→MP3: URL with command converts directly (2026-10-15, per Hudson:
-          // "audio <link>" or "mp3 <link>" gives MP3, not MP4).
-          const urlMatch = (query || '').match(/https?:\/\/[^\s]+/i);
-          if (urlMatch) {
-            try {
-              try { await this.sock.sendMessage(from, { react: { text: '🎵', key: msg.key } }); } catch (e) {}
-              await this.sendPresence(from, 'recording');
-              const { downloadAudio } = await import('./downloader.js');
-              const audioData = await downloadAudio(urlMatch[0]);
-              await this.sock.sendMessage(from, {
-                audio: { url: audioData.audioUrl },
-                mimetype: audioData.mimetype || 'audio/mpeg',
-                fileName: `${(audioData.title || 'Audio').replace(/[^a-zA-Z0-9_-]/g, '_')}.mp3`,
-                ptt: false
-              }, { quoted: msg });
-            } catch (err) {
-              await this.sendMessage(from, `❌ MP3 convert nahi ho saka: ${err.message}`);
-            }
-            return;
-          }
-          // Video→MP3: natural-intent handler already tried; no video was attached/quoted.
-          await this.sendMessage(from,
-            `🎵 *Video se MP3*\n\nKisi video ke saath *audio* likhein ya video ko reply karke *audio* likhein — MP3 audio alag ho jayegi!\n\n*Link se:* *audio <video link>* — direct MP3 milegi\n\nMisaal: video bhejein + caption me *audio* likhein.`
-          );
-          return;
-        }
 
         // --- 2.6 FUNNY MEME SOUNDBOARD & CLIPPER ---
         case 'soundboard':
@@ -1736,17 +1319,27 @@ class WhatsAppBot extends EventEmitter {
           if (!this.lastSoundboardRequest) this.lastSoundboardRequest = new Map();
           this.lastSoundboardRequest.set(from, Date.now());
 
-          // (2026-10-15, per Hudson): soundboard = SFX only. Memes are separate (meme command).
-          let list = `💥 *Sound Effects (SFX)* 💥\n\n`;
-          const sfxItems = MEME_SOUNDS.filter(m => m.category === 'SFX');
-          sfxItems.forEach(m => {
-            const num = MEME_SOUNDS.indexOf(m) + 1;
-            list += `*${num}.* ${m.title} ➔ *meme ${num}*\n`;
-          });
-          list += `\n😂 *Meme sounds ke liye:* *meme* likhein\n\n`;
+          let list = `🔊 *AwaxBot Funny Meme Soundboard (41 Sounds)* 🔊\n\n`;
+          const categories = {
+            'Song': '🎵 *Viral Funny Songs & Tunes:*',
+            'Desi': '🎭 *Desi Comedy & Famous Dialogues:*',
+            'Meme': '🌐 *Global Viral Memes:*',
+            'SFX': '💥 *Funny Sound Effects (SFX):*'
+          };
+
+          for (const [catKey, catTitle] of Object.entries(categories)) {
+            list += `${catTitle}\n`;
+            MEME_SOUNDS.filter(m => m.category === catKey).forEach(m => {
+              const num = MEME_SOUNDS.indexOf(m) + 1;
+              list += `*${num}.* ${m.title} ➔ *${prefix}meme ${num}* ya *${prefix}meme ${m.keywords[0]}*\n`;
+            });
+            list += `\n`;
+          }
+
           list += `💡 *Sunne Ka Tareeqa:*\n` +
-                  `• *Number se:* *meme 1*, *meme 7*\n` +
-                  `• *Naam se:* *meme moye*, *meme maro*`;
+                  `• *Number se:* *${prefix}meme 1*, *${prefix}meme 7*, ya direct *1*, *7*\n` +
+                  `• *Naam se:* *${prefix}meme moye*, *${prefix}meme maro*, ya direct *moye moye*, *maro mujhe*\n` +
+                  `• *Random:* *${prefix}meme* (random funny sound ke liye)`;
           await this.sendMessage(from, list);
           return;
         }
@@ -1769,11 +1362,6 @@ class WhatsAppBot extends EventEmitter {
         case 'sound':
         case 'sfx': {
           try {
-            // (2026-10-15, per Hudson): bare "meme" shows the 40+ list,
-            // "meme <name/number>" plays that sound.
-            if (!query || !query.trim()) {
-              return await this.handleMessage({ msg, from, sender, senderName, isGroup, text: 'memelist', interactiveId: null });
-            }
             try { await this.sock.sendMessage(from, { react: { text: '😂', key: msg.key } }); } catch (e) {}
             await this.sendPresence(from, 'recording');
             const soundItem = findMemeSound(query);
@@ -1787,29 +1375,6 @@ class WhatsAppBot extends EventEmitter {
           } catch (err) {
             await this.sendMessage(from, `❌ Meme audio load nahi ho saki: ${err.message}`);
           }
-          return;
-        }
-
-        // ── Meme list (2026-10-15, per Hudson): 40+ meme sounds, no SFX.
-        case 'memelist': {
-          let list = `😂 *Meme Sounds (40+)* 😂\n\n`;
-          const categories = {
-            'Meme': '🌐 *Viral Memes:*',
-            'Desi': '🎭 *Desi Comedy & Dialogues:*',
-            'Song': '🎵 *Funny Songs & Tunes:*'
-          };
-          for (const [catKey, catTitle] of Object.entries(categories)) {
-            const items = MEME_SOUNDS.filter(m => m.category === catKey);
-            if (!items.length) continue;
-            list += `${catTitle}\n`;
-            items.forEach(m => {
-              const num = MEME_SOUNDS.indexOf(m) + 1;
-              list += `*${num}.* ${m.title} ➔ *meme ${num}*\n`;
-            });
-            list += `\n`;
-          }
-          list += `💡 *Sunne ke liye:* *meme 5* ya *meme <naam>*\n\n🤖 *Powered by Awais AI*`;
-          await this.sendMessage(from, list);
           return;
         }
 
@@ -2263,103 +1828,10 @@ class WhatsAppBot extends EventEmitter {
           return;
         }
 
-        // --- 7b. DELETE MY DATA (2026-10-13, Hudson: self-service data wipe) ---
-        case 'deletemydata':
-        case 'deletedata':
-        case 'reset':
-        case 'resetmydata': {
-          const confirm = query.toLowerCase().trim();
-          if (confirm !== 'yes' && confirm !== 'confirm') {
-            // Remember: this user has a pending delete confirmation
-            if (!this._pendingConfirm) this._pendingConfirm = {};
-            this._pendingConfirm[sender] = { command: 'deletemydata', at: Date.now() };
-            await this.sendMessage(from,
-              `⚠️ *Delete all my data?*\n\n` +
-              `This will permanently erase:\n` +
-              `• Your profile (name, preferences)\n` +
-              `• Chat history with AI\n` +
-              `• Game scores & progress\n` +
-              `• Reminders, notes & automation settings\n` +
-              `• Usage statistics\n\n` +
-              `You'll start fresh as a new user.\n\n` +
-              `Type *deletemydata yes* to confirm.`
-            );
-            return;
-          }
-          // Confirmed — wipe everything for this sender
-          try {
-            const fs = await import('fs');
-            const path = await import('path');
-            const { fileURLToPath } = await import('url');
-            // Data lives in src/exe/data — lib/ is one level down, go up
-            const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-            const dataDir = path.join(moduleDir, '..', 'data');
-            const files = {
-              'user-profiles.json': sender,
-              'batch-persona.json': sender,
-              'batch4-usage.json': sender,
-              'batch4-auto.json': sender,
-            };
-            // Nested structures: batch3-deen (hifz), batch3-edu (games), batch5-money, batch6-health
-            const nested = {
-              'batch3-deen.json': ['hifz', 'dhikr', 'seerah'],
-              'batch3-edu.json': ['spell', 'math'],
-              'batch5-money.json': ['goals', 'budgets'],
-              'batch6-health.json': ['water', 'meds', 'sleep', 'steps'],
-            };
-            const read = (f) => { try { return JSON.parse(fs.readFileSync(path.join(dataDir, f), 'utf8')); } catch { return null; } };
-            const write = (f, d) => { try { fs.writeFileSync(path.join(dataDir, f), JSON.stringify(d, null, 2)); } catch {} };
-
-            for (const [f, key] of Object.entries(files)) {
-              const d = read(f);
-              if (d && d[key]) { delete d[key]; write(f, d); }
-            }
-            for (const [f, sections] of Object.entries(nested)) {
-              const d = read(f);
-              if (!d) continue;
-              let changed = false;
-              for (const s of sections) {
-                if (d[s] && d[s][sender]) { delete d[s][sender]; changed = true; }
-              }
-              if (changed) write(f, d);
-            }
-            // Clear in-memory AI history (all keys: base, :guide, :voice-guide, :translate)
-            try {
-              const aiMod = await import('./ai.js');
-              if (aiMod.clearHistory) {
-                aiMod.clearHistory(sender);
-                aiMod.clearHistory(sender + ':guide');
-                aiMod.clearHistory(sender + ':voice-guide');
-                aiMod.clearHistory(sender + ':translate');
-                aiMod.clearHistory(sender + ':tts');
-              }
-            } catch {}
-            // Clear persistent conversation memory (Hudson 2026-10-13)
-            try {
-              const memMod = await import('./memory.js');
-              if (memMod.clearUserMemory) memMod.clearUserMemory(sender);
-            } catch {}
-            // Clear proactive tracking
-            try {
-              const proMod = await import('./proactive.js');
-              if (proMod.forgetUser) proMod.forgetUser(sender);
-            } catch {}
-
-            if (this._pendingConfirm) delete this._pendingConfirm[sender];
-            console.log(`🗑️ [DeleteMyData] Wiped all data for ${sender}`);
-            await this.sendMessage(from,
-              `✅ *All your data has been deleted.*\n\nYou're starting fresh — like a brand new user. ` +
-              `Send *hi* to begin again!`
-            );
-          } catch (e) {
-            await this.sendMessage(from, `❌ Couldn't delete data: ${e.message}`);
-          }
-          return;
-        }
-
         // --- 8. SMART REMINDERS ---
         case 'remind':
-        case 'reminder': {          const [durationStr, ...reminderParts] = args;
+        case 'reminder': {
+          const [durationStr, ...reminderParts] = args;
           const reminderMsg = reminderParts.join(' ');
           const durationMs = durationStr ? parseDuration(durationStr) : null;
 
@@ -2415,37 +1887,1349 @@ class WhatsAppBot extends EventEmitter {
         }
 
         // --- 10. 24-HOUR GROUP STATUS & WHATSAPP STORY ---
-        // All status/story commands removed 2026-10-17 per Hudson
+        // Status commands removed 2026-10-17 per Hudson
+
+        case 'clearstatus':
+        case 'delstatus': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command is used inside groups to clear the active 24h status.');
+            return;
+          }
+          const deleted = Store.deleteStatus(from);
+          if (deleted) {
+            await this.sendMessage(from, '🗑️ Active 24-hour group status has been cleared.');
+          } else {
+            await this.sendMessage(from, 'There is no active status to clear in this group.');
+          }
+          return;
+        }
+
+        // Status commands removed 2026-10-17 per Hudson
+
+        case 'groupaudit':
+        case 'groupmembers': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside groups.');
+            return;
+          }
+          try {
+            const meta = await this.sock.groupMetadata(from);
+            const totalMembers = meta.participants.length;
+            const admins = meta.participants.filter(p => p.admin);
+            const isMuted = !!meta.announce;
+            await this.sendMessage(
+              from,
+              `👥 *Group Members & Security*\n\n` +
+              `• Group: *${meta.subject}*\n` +
+              `• Total Members: ${totalMembers}\n` +
+              `• Admins: ${admins.length}\n` +
+              `• Chat Mode: ${isMuted ? 'Muted (Admins only)' : 'Open to everyone'}`
+            );
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't fetch group info: ${err.message}`);
+          }
+          return;
+        }
+
+        // --- 11. SUPPORT TICKETS ---
+        case 'support':
+        case 'ticket': {
+          if (!config.features?.supportTickets) {
+            await this.sendMessage(from, "Support ticketing is currently off.");
+            return;
+          }
+          if (!query) {
+            await this.sendMessage(from, `What can we help you with? For example: ${prefix}support Need assistance with billing`);
+            return;
+          }
+          const ticket = Store.addTicket({
+            customer: senderName,
+            phone: sender.split('@')[0],
+            issue: query
+          });
+          const reply =
+            `Got your message, ${senderName}! I've logged it under ticket #${ticket.id}. Someone will review it and get back to you soon.`;
+          await this.sendMessage(from, reply);
+          return;
+        }
+
+        // --- 12. QUICK INFO ---
+        case 'price':
+        case 'pricing': {
+          const autoReplies = Store.getAutoReplies();
+          const pReply = autoReplies.find(r => r.trigger.includes('price'));
+          await this.sendMessage(from, pReply ? pReply.reply : '🏷️ Starter: $19/mo | Pro: $49/mo | Enterprise: Custom');
+          return;
+        }
+
+        case 'hours': {
+          const autoReplies = Store.getAutoReplies();
+          const hReply = autoReplies.find(r => r.trigger.includes('hour'));
+          await this.sendMessage(from, hReply ? hReply.reply : '🕒 Monday to Friday: 9 AM - 6 PM');
+          return;
+        }
+
+        case 'location': {
+          const autoReplies = Store.getAutoReplies();
+          const lReply = autoReplies.find(r => r.trigger.includes('location'));
+          await this.sendMessage(from, lReply ? lReply.reply : '📍 Visit our dashboard for office details.');
+          return;
+        }
+
+        case 'contact': {
+          const autoReplies = Store.getAutoReplies();
+          const cReply = autoReplies.find(r => r.trigger.includes('contact'));
+          await this.sendMessage(from, cReply ? cReply.reply : '📞 Email: support@example.com');
+          return;
+        }
+
+        // --- 13. FUN & GAMES ---
+        case 'quote':
+        case 'aqwal': {
+          await this.sendMessage(from, getRandomQuote());
+          return;
+        }
+
+
+        case 'shairi':
+        case 'shayari':
+        case 'poetry': {
+          await this.sendMessage(from, getRandomShairi());
+          return;
+        }
+
+        case 'fact':
+        case 'maloomat': {
+          await this.sendMessage(from, getRandomFact());
+          return;
+        }
+
+        case 'riddle':
+        case 'paheli':
+        case 'puzzle': {
+          const sub = query.toLowerCase().trim();
+
+          // Check if asking for answer
+          if (sub === 'answer' || sub === 'jawab' || sub.startsWith('ans') || sub.startsWith('jawab ')) {
+            const specificId = sub.replace(/^(answer|jawab|ans)\s*/, '').trim();
+            const r = specificId && /^\d+$/.test(specificId) ? getRiddleById(specificId) : getLastRiddle();
+            const reply =
+              `💡 *Paheli #${r.id} Ka Jawab:* 🎯\n\n` +
+              `👉 *${r.answer}*\n\n` +
+              `_Agli paheli poochne ke liye likhein: *${prefix}paheli*_`;
+            await this.sendMessage(from, reply);
+            return;
+          }
+
+          let r = null;
+          if (query && /^\d+$/.test(query.trim())) {
+            r = getRiddleById(query.trim());
+          } else {
+            r = getRandomRiddle();
+          }
+
+          const msg =
+            `🧩 *Aaj Ki Mazedaar Paheli (Riddle #${r.id})* 🧩\n\n` +
+            `"${r.question}"\n\n` +
+            `_${r.english}_\n\n` +
+            `💡 *Hint:* ${r.hint}\n\n` +
+            `🤔 *Apna jawab soch kar bataiye! Jawab janne ke liye likhein:* *${prefix}paheli jawab*`;
+          await this.sendMessage(from, msg);
+          return;
+        }
+
+        case 'flip':
+        case 'coin': {
+          const result = Math.random() < 0.5 ? '🪙 HEADS' : '🪙 TAILS';
+          await this.sendMessage(from, `*Coin Flip:* ${result}!`);
+          return;
+        }
+
+        case 'roll':
+        case 'dice': {
+          const dice = Math.floor(Math.random() * 6) + 1;
+          const emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+          await this.sendMessage(from, `🎲 You rolled a *${dice}* ${emojis[dice - 1]}`);
+          return;
+        }
+
+        case 'time': {
+          const now = new Date();
+          const utc = now.toUTCString();
+          const local = now.toLocaleString();
+          await this.sendMessage(from, `🕒 *Current Time:*\n\n🌍 *Local:* ${local}\n🌐 *UTC:* ${utc}`);
+          return;
+        }
+
+        // --- 14. GROUP ADMINISTRATION ---
+        case 'tagall':
+        case 'everyone': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          try {
+            const groupMetadata = await this.sock.groupMetadata(from);
+            const participants = groupMetadata.participants.map(p => p.id);
+            const customMsg = query || 'Quick heads-up everyone:';
+            let tagText = `Hey everyone! ${customMsg}\n\n`;
+            participants.forEach(p => {
+              tagText += `@${p.split('@')[0]} `;
+            });
+            await this.sendMessage(from, tagText, { mentions: participants });
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't mention everyone right now: ${err.message}`);
+          }
+          return;
+        }
+
+        case 'hidetag': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          try {
+            const groupMetadata = await this.sock.groupMetadata(from);
+            const participants = groupMetadata.participants.map(p => p.id);
+            const textMsg = query || 'Heads up everyone!';
+            await this.sendMessage(from, textMsg, { mentions: participants });
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't send mention: ${err.message}`);
+          }
+          return;
+        }
+
+        case 'groupinfo': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          try {
+            const meta = await this.sock.groupMetadata(from);
+            const reply =
+              `Here are the group details for *${meta.subject}*:\n\n` +
+              `• Members: ${meta.participants.length}\n` +
+              `• Description: ${meta.desc ? meta.desc.toString() : 'None set'}`;
+            await this.sendMessage(from, reply);
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't get group info right now: ${err.message}`);
+          }
+          return;
+        }
+
+        case 'promote': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          const target = msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+          if (!target) {
+            await this.sendMessage(from, `Tag the person you want to promote, like: *${prefix}promote @user*`);
+            return;
+          }
+          try {
+            await this.sock.groupParticipantsUpdate(from, [target], 'promote');
+            await this.sendMessage(from, `Promoted @${target.split('@')[0]} to group admin!`, { mentions: [target] });
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't promote that user. Make sure I have admin permissions in this group!`);
+          }
+          return;
+        }
+
+        case 'demote': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          const target = msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+          if (!target) {
+            await this.sendMessage(from, `Tag the person you want to demote, like: *${prefix}demote @user*`);
+            return;
+          }
+          try {
+            await this.sock.groupParticipantsUpdate(from, [target], 'demote');
+            await this.sendMessage(from, `Changed @${target.split('@')[0]} back to regular member.`, { mentions: [target] });
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't demote that user. Make sure I have admin permissions!`);
+          }
+          return;
+        }
+
+        case 'mute':
+        case 'close': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          try {
+            await this.sock.groupSettingUpdate(from, 'announcement');
+            await this.sendMessage(from, '🔒 Chat is now muted — only admins can send messages.');
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't mute group. Make sure I am set as an admin!`);
+          }
+          return;
+        }
+
+        case 'unmute':
+        case 'open': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          try {
+            await this.sock.groupSettingUpdate(from, 'not_announcement');
+            await this.sendMessage(from, '🔓 Chat is open — everyone can send messages now.');
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't unmute group. Make sure I am set as an admin!`);
+          }
+          return;
+        }
+
+        case 'setname': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          if (!query) {
+            await this.sendMessage(from, `What would you like the new group name to be? Like: *${prefix}setname Our Team*`);
+            return;
+          }
+          try {
+            await this.sock.groupUpdateSubject(from, query);
+            await this.sendMessage(from, `Updated the group name to: *${query}*`);
+          } catch (err) {
+            await this.sendMessage(from, `Couldn't update group name. Make sure I have admin permissions!`);
+          }
+          return;
+        }
+
+        case 'warn': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          const mentionedJid = msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+          if (!mentionedJid) {
+            await this.sendMessage(from, `Tag the user you want to warn: *${prefix}warn @user*`);
+            return;
+          }
+          const current = (this.warnings.get(mentionedJid) || 0) + 1;
+          this.warnings.set(mentionedJid, current);
+          let reply = `Hey @${mentionedJid.split('@')[0]}, just a friendly warning (${current}/3). Please check the group guidelines.`;
+          if (current >= 3) {
+            reply += `\n⚠️ That is your 3rd warning. Admins may remove you from the group.`;
+          }
+          await this.sendMessage(from, reply, { mentions: [mentionedJid] });
+          return;
+        }
+
+        case 'kick': {
+          if (!isGroup) {
+            await this.sendMessage(from, 'This command only works inside a group!');
+            return;
+          }
+          const mentionedJid = msg.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
+          if (!mentionedJid) {
+            await this.sendMessage(from, `Tag the user to remove: *${prefix}kick @user*`);
+            return;
+          }
+          try {
+            await this.sock.groupParticipantsUpdate(from, [mentionedJid], 'remove');
+            await this.sendMessage(from, `Removed @${mentionedJid.split('@')[0]} from the group.`, { mentions: [mentionedJid] });
+          } catch (err) {
+            await this.sendMessage(from, "Couldn't remove that member. Make sure I have admin permissions!");
+          }
+          return;
+        }
+
+        // --- 15. SYSTEM HEALTH ---
+        case 'ping': {
+          const uptimeSec = Math.floor((Date.now() - this.stats.startTime) / 1000);
+          const hours = Math.floor(uptimeSec / 3600);
+          const minutes = Math.floor((uptimeSec % 3600) / 60);
+          await this.sendMessage(
+            from,
+            `Hey! I'm online and running smooth (active for ${hours > 0 ? hours + 'h ' : ''}${minutes}m). Latency is great.`
+          );
+          return;
+        }
+
+        case 'uptime':
+        case 'diagnostics': {
+          const uptimeSec = Math.floor((Date.now() - this.stats.startTime) / 1000);
+          const reply =
+            `Here is a quick look at my system stats:\n\n` +
+            `• Status: Online & active\n` +
+            `• Messages: ${this.stats.messagesReceived} received, ${this.stats.messagesSent} sent\n` +
+            `• Active Uptime: ${Math.floor(uptimeSec / 60)} minutes`;
+          await this.sendMessage(from, reply);
+          return;
+        }
+
+        case 'rules': {
+          const rulesText =
+            `Here are the simple community guidelines to keep in mind:\n\n` +
+            `1. Be polite and respectful to everyone\n` +
+            `2. No spamming, flood messages, or random promo links\n` +
+            `3. Keep conversations relevant to the group\n\n` +
+            `Enjoy your time here!`;
+          await this.sendMessage(from, rulesText);
+          return;
+        }
+
+        case 'owner':
+        case 'developer':
+        case 'about': {
+          // BRANDING (Awais AI — required by license, do not remove)
+          await this.sendMessage(from,
+            `🤖 *AwaxBot by Awais AI*\n\n` +
+            `Your personal WhatsApp AI assistant with 170+ commands.\n\n` +
+            `👤 Creator: Awais AI\n` +
+            `📘 Facebook: facebook.com/awaisautomates\n` +
+            `📢 WhatsApp Channel: whatsapp.com/channel/0029Vb5aiit1NCrdTWQDXP3g\n\n` +
+            `🤖 *Powered by Awais AI*`
+          );
+          return;
+        }
 
         default:
-          break;
-      } // end switch
-  } // end handleMessage (truncated)
+          await this.sendMessage(from, `I didn't recognize that command. Type ${prefix}menu to see what I can do!`);
+          return;
+      }
+    }
 
-  // Minimal method stubs (file was truncated 2026-10-17, needs full restore)
-  async sendMessage(to, text, options = {}) {
+    // Auto-detect all video links in message (TikTok, Reels, YouTube, Facebook, Twitter, Pinterest, etc.)
+    const videoMatch = trimmed.match(/https?:\/\/(?:www\.|vm\.|vt\.|m\.)?(?:tiktok\.com|instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch|twitter\.com|x\.com|pinterest\.com|pin\.it|capcut\.com|threads\.net|snapchat\.com|likee\.video|kwai\.com|dailymotion\.com|vimeo\.com|[^\s]+\.(mp4|mov|webm|mkv))\/?[^\s]*/i);
+    if (videoMatch) {
+      try {
+        try {
+          await this.sock.sendMessage(from, { react: { text: '⚡', key: msg.key } });
+        } catch (e) {}
+        await this.sendPresence(from, 'recording');
+        const noticePromise = this.sendMessage(from, `⚡ *Video link detected!* Fast MP4 download ho raha hai... 🎬`).catch(() => {});
+        const videoDataPromise = downloadVideo(videoMatch[0]);
+        const [_, videoData] = await Promise.all([noticePromise, videoDataPromise]);
+        await this.sendVideoFromUrl(from, videoData, msg.key);
+        return;
+      } catch (err) {
+        console.warn('Auto video download error:', err.message);
+      }
+    }
+
+    // Check Auto-Responder Rules
+    if (config.features?.autoResponder) {
+      const lower = trimmed.toLowerCase();
+      const autoReplies = Store.getAutoReplies();
+      for (const rule of autoReplies) {
+        if (!rule.enabled) continue;
+        let match = false;
+        if (rule.matchType === 'exact' && lower === rule.trigger) match = true;
+        else if (rule.matchType === 'contains' && lower.includes(rule.trigger)) match = true;
+        else if (rule.matchType === 'regex') {
+          try {
+            const rx = new RegExp(rule.trigger, 'i');
+            if (rx.test(lower)) match = true;
+          } catch (e) {}
+        }
+
+        if (match) {
+          await this.sendMessage(from, rule.reply);
+          return;
+        }
+      }
+    }
+
+    // Natural Language & AI Intent Engine (Easy for ordinary people without typing !)
+    const handledNatural = await this.handleNaturalLanguage({
+      msg,
+      from,
+      sender,
+      senderName,
+      isGroup,
+      text: trimmed,
+      config,
+      prefix
+    });
+    if (handledNatural) return;
+  }
+
+  /**
+   * Natural Language & AI Intent Engine
+   * Understands what ordinary users want automatically without strict command syntax
+   */
+  async handleNaturalLanguage({ msg, from, sender, senderName, isGroup, text, config, prefix }) {
+    const lower = text.toLowerCase().trim();
+
+    // 1. Menu & Help triggers ("menu", "help", "start", "bot", "commands", "madad")
+    if (/^(menu|help|start|bot|commands|madad)$/i.test(lower)) {
+      await this.sendMessage(from, this.getMobileFriendlyMenu(prefix));
+      return true;
+    }
+
+    // 1.1 Songs & Music Natural Intent ("song tum hi ho", "gana sunao", "tajdar e haram naat", "music arijit")
+    const songMatch = lower.match(/^(?:song|gana|music|mp3)\s+(.+)$/i) || 
+                      lower.match(/^(.+)\s+(?:song|gana|naat)$/i) ||
+                      lower.match(/^(?:koi song|gana sunao|song sunao|music sunao)\s*(.*)$/i);
+    if (songMatch) {
+      const songQuery = (songMatch[1] || songMatch[2] || '').trim();
+      if (songQuery && !/^(sunao|lagao|chalao|koi)$/i.test(songQuery)) {
+        try {
+          try { await this.sock.sendMessage(from, { react: { text: '🎵', key: msg.key } }); } catch (e) {}
+          await this.sendPresence(from, 'recording');
+          const song = await searchAndDownloadSong(songQuery);
+          await this.sendMessage(from, `🎶 *Playing:* ${song.title}\n🎙️ *Artist:* ${song.author}\n⏳ Audio load ho rahi hai...`);
+
+          await this.sendSongAudio(from, song, msg);
+          return true;
+        } catch (err) {
+          await this.sendMessage(from, `❌ Song nahi mil saka: ${err.message}`);
+          return true;
+        }
+      } else {
+        await this.sendMessage(from, "🎵 *Music Player*\n\nKaunsa song sunna chahte hain? Bas likhein: *song tum hi ho* ya *song tajdar e haram*");
+        return true;
+      }
+    }
+
+    // 1.2 Image / Photo Natural Intent ("photo lahore", "cute cat pic", "lahore ki photo", "nature wallpaper")
+    const imgMatch = lower.match(/^(?:photo|image|pic|img|wallpaper)\s+(.+)$/i) ||
+                     lower.match(/^(.+)\s+ki\s+(?:photo|pic|image|tasveer)$/i) ||
+                     lower.match(/^(.+)\s+ka\s+(?:wallpaper|photo)$/i);
+    if (imgMatch) {
+      const imgQuery = (imgMatch[1] || imgMatch[2] || '').trim();
+      if (imgQuery && !/^(bhejo|dekhao|send)$/i.test(imgQuery)) {
+        try {
+          try { await this.sock.sendMessage(from, { react: { text: '🖼️', key: msg.key } }); } catch (e) {}
+          await this.sendPresence(from, 'composing');
+          const imgData = await searchImage(imgQuery);
+          await this.sock.sendMessage(from, {
+            image: { url: imgData.imageUrl },
+            caption: `🖼️ *${imgData.title}*`
+          }, { quoted: msg });
+          return true;
+        } catch (err) {
+          await this.sendMessage(from, `❌ Image nahi mil saki: ${err.message}`);
+          return true;
+        }
+      }
+    }
+
+    // 1.3 Meme Natural Intent ("meme", "memes", "koi meme bhejo", "funny meme")
+    if (/^(?:meme|memes|koi meme|meme bhejo|send meme|funny meme)$/i.test(lower)) {
+      try {
+        try { await this.sock.sendMessage(from, { react: { text: '😂', key: msg.key } }); } catch (e) {}
+        const meme = await getViralMeme();
+        await this.sock.sendMessage(from, {
+          image: { url: meme.url },
+          caption: `🤣 *${meme.title}*\n📱 _Source: r/${meme.subreddit}_`
+        }, { quoted: msg });
+        return true;
+      } catch (e) {}
+    }
+
+    // 1.4 Roast Natural Intent ("roast", "roast me", "roast <name>")
+    const roastMatch = lower.match(/^roast\s*(.*)$/i);
+    if (roastMatch) {
+      const target = roastMatch[1].trim();
+      try { await this.sock.sendMessage(from, { react: { text: '🔥', key: msg.key } }); } catch (e) {}
+      await this.sendMessage(from, await getMemeRoast(target, sender));
+      return true;
+    }
+
+    // 1.5 Joke / Chutkula Natural Intent ("latifa", "chutkula", "koi joke sunao", "joke")
+    if (/^(?:joke|latifa|chutkula|koi joke|koi latifa|latifa sunao|joke sunao)$/i.test(lower)) {
+      try { await this.sock.sendMessage(from, { react: { text: '🤣', key: msg.key } }); } catch (e) {}
+      await this.sendMessage(from, await getMemeJoke(sender));
+      return true;
+    }
+
+    // 1.6 Voice / Speak Natural Intent ("bol <text>", "voice <text>", "speak <text>")
+    const voiceMatch = lower.match(/^(?:bol|speak|voice)\s+(.+)$/i);
+    if (voiceMatch) {
+      const voiceText = voiceMatch[1].trim();
+      if (voiceText) {
+        try {
+          try { await this.sock.sendMessage(from, { react: { text: '🗣️', key: msg.key } }); } catch (e) {}
+          await this.sendPresence(from, 'recording');
+          const speechBuffer = await textToSpeech(voiceText, 'aura-asteria-en');
+          await this.sock.sendMessage(from, {
+            audio: speechBuffer,
+            mimetype: 'audio/mpeg',
+            fileName: 'voice.mp3',
+            ptt: false
+          }, { quoted: msg });
+          return true;
+        } catch (e) {
+          console.warn('Voice natural error:', e.message);
+        }
+      }
+    }
+
+    // 2. Friendly Salam & Greetings ("salam", "assalam", "aoa", "hello", "hi")
+    if (/^(salam|assalam|asalam|aoa|aslamoalikum|assalam-o-alaikum)\b/i.test(lower) || (/^(hi|hello|hey)$/i.test(lower) && !isGroup)) {
+      const greeting =
+        `Walaikum Assalam ${senderName || 'bhai'}! 😊\n\n` +
+        `Main *AwaxBot* hoon — aapka smart aur friendly WhatsApp assistant!\n\n` +
+        `Aap mujhse aam doston ki tarah baat kar sakte hain ya:\n` +
+        `• Video download karne ke liye *link* send karein\n` +
+        `• Photo ka sticker banane ke liye photo ke sath *s* likhein\n` +
+        `• Video se audio nikaalne ke liye *audio* likhein\n` +
+        `• Funny meme voice note ke liye *meme* likhein\n` +
+        `• Quran tilawat ke liye: *tilawat rahman*\n` +
+        `• Namaz auqat: *namaz karachi*\n\n` +
+        `Tamam asaan cheezein dekhne ke liye *menu* likhein! ✨`;
+      await this.sendMessage(from, greeting);
+      return true;
+    }
+
+    // 2.2 Photo to Sticker Natural Intent ("sticker", "s", "stiker")
+    if (/^(sticker|s|stiker|sticker banao|make sticker)$/i.test(lower)) {
+      let mediaMessage = null;
+      const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+      if (quoted?.imageMessage) {
+        mediaMessage = {
+          key: {
+            remoteJid: from,
+            id: msg.message.extendedTextMessage.contextInfo.stanzaId,
+            participant: msg.message.extendedTextMessage.contextInfo.participant
+          },
+          message: { imageMessage: quoted.imageMessage }
+        };
+      } else if (msg.message?.imageMessage) {
+        mediaMessage = msg;
+      }
+
+      if (mediaMessage) {
+        try {
+          try { await this.sock.sendMessage(from, { react: { text: '🎨', key: msg.key } }); } catch (e) {}
+          const imgBuffer = await downloadMediaMessage(mediaMessage, 'buffer', {});
+          const stickerBuf = await imageToSticker(imgBuffer);
+          await this.sock.sendMessage(from, { sticker: stickerBuf }, { quoted: msg });
+          return true;
+        } catch (err) {
+          console.error('Sticker conversion error:', err);
+        }
+      }
+    }
+
+    // 2.3 Video to Audio Natural Intent ("audio", "v2a", "mp3")
+    if (/^(audio|v2a|mp3|tomp3|audio nikaalo)$/i.test(lower)) {
+      const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+      let videoMsg = null;
+      if (quoted?.videoMessage) {
+        videoMsg = {
+          key: {
+            remoteJid: from,
+            id: msg.message.extendedTextMessage.contextInfo.stanzaId,
+            participant: msg.message.extendedTextMessage.contextInfo.participant
+          },
+          message: { videoMessage: quoted.videoMessage }
+        };
+      } else if (msg.message?.videoMessage) {
+        videoMsg = msg;
+      }
+
+      if (videoMsg) {
+        try {
+          try { await this.sock.sendMessage(from, { react: { text: '🎵', key: msg.key } }); } catch (e) {}
+          await this.sendPresence(from, 'recording');
+          const vBuf = await downloadMediaMessage(videoMsg, 'buffer', {});
+          await this.sock.sendMessage(from, {
+            audio: vBuf,
+            mimetype: 'audio/mp4',
+            ptt: false
+          }, { quoted: msg });
+          return true;
+        } catch (err) {
+          console.error('Video to audio error:', err);
+        }
+      }
+    }
+
+    // 2.4 Funny Meme Soundboard Natural Intent ("soundboard", "meme", "sound", numbers 1-41, etc.)
+    // Hudson's fix (2026-10-12): also accept the "sound board" spelling.
+    if (/^(soundboard|sound board|meme sounds|funny sounds|sound list)$/i.test(lower)) {
+      if (!this.lastSoundboardRequest) this.lastSoundboardRequest = new Map();
+      this.lastSoundboardRequest.set(from, Date.now());
+
+      let list = `🔊 *AwaxBot Funny Meme Soundboard (41 Sounds)* 🔊\n\n`;
+      const categories = {
+        'Song': '🎵 *Viral Funny Songs & Tunes:*',
+        'Desi': '🎭 *Desi Comedy & Famous Dialogues:*',
+        'Meme': '🌐 *Global Viral Memes:*',
+        'SFX': '💥 *Funny Sound Effects (SFX):*'
+      };
+
+      for (const [catKey, catTitle] of Object.entries(categories)) {
+        list += `${catTitle}\n`;
+        MEME_SOUNDS.filter(m => m.category === catKey).forEach(m => {
+          const num = MEME_SOUNDS.indexOf(m) + 1;
+          list += `*${num}.* ${m.title} — *${m.keywords[0]}*\n`;
+        });
+        list += `\n`;
+      }
+
+      list += `💡 *Sunne Ka Tareeqa:*\n` +
+              `• *Number likhein:* *1*, *7*, *12*, ya *meme 1*\n` +
+              `• *Naam likhein:* *moye moye*, *maro mujhe*, *shabash*, *khatam*\n` +
+              `• *Random:* *meme sunao*`;
+      await this.sendMessage(from, list);
+      return true;
+    }
+
+    // Meme Sound playback by number (1-41, meme 1, #1), name, dialogue, or keywords
+    // HOSTING PATCH (bugfix 2026-10-12): was findMemeSound(trimmed, ...) —
+    // `trimmed` only exists in handleMessage's scope; here the param is `text`
+    // (findMemeSound trims/lowercases internally, so this is equivalent).
+    const matchedSound = findMemeSound(text, false);
+    const isGeneralMeme = /^(meme|sound|funny sound|meme sunao|sound sunao|koi meme|koi sound)$/i.test(lower);
+
+    if (matchedSound || isGeneralMeme) {
+      try {
+        try { await this.sock.sendMessage(from, { react: { text: '😂', key: msg.key } }); } catch (e) {}
+        await this.sendPresence(from, 'recording');
+        const soundItem = matchedSound || findMemeSound(lower);
+        const audioBuf = await getMemeAudioBuffer(soundItem);
+        await this.sock.sendMessage(from, {
+          audio: audioBuf,
+          mimetype: 'audio/mpeg',
+          fileName: `${soundItem.name}.mp3`,
+          ptt: false
+        }, { quoted: msg });
+        return true;
+      } catch (err) {
+        console.error('Meme audio error:', err);
+      }
+    }
+
+    // 3. Ayat-ul-Kursi Intent
+    if (lower.includes('kursi') && (lower.includes('ayat') || lower.includes('ayah') || lower.includes('tarjuma') || lower.includes('sunao') || lower === 'kursi' || lower === 'ayat ul kursi' || lower === 'ayatulkursi')) {
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getAyahDetails(2, 255);
+        const msgText =
+          `👑 *Ayat-ul-Kursi (آیۃ الکرسی)* — Surah Al-Baqarah (2:255)\n\n` +
+          `${data.arabic}\n\n` +
+          `🇵🇰 *Urdu Tarjuma:*\n${data.urdu}\n\n` +
+          `🇬🇧 *English Translation:*\n${data.english}\n\n` +
+          `💡 *Tafseer:* *${prefix}tafseer 2:255* | 🎧 *Tilawat:* *${prefix}tilawat 2*`;
+        await this.sendMessage(from, msgText);
+        return true;
+      } catch (e) {}
+    }
+
+    // 4. Tilawat / Quran Audio Intent ("tilawat rahman", "tilawat yasin", "surah mulk ki tilawat")
+    const tilawatMatch = lower.match(/(?:tilawat|quran audio|audio tilawat|sunao tilawat|tilawat sunao)\s+([a-z0-9\s-]+)/i) ||
+                         lower.match(/surah\s+([a-z0-9\s-]+)\s+(?:ki\s+)?tilawat/i);
+    if (tilawatMatch) {
+      const sQuery = tilawatMatch[1].trim();
+      try {
+        try { await this.sock.sendMessage(from, { react: { text: '⚡', key: msg.key } }); } catch (e) {}
+        await this.sendPresence(from, 'recording');
+        const noticePromise = this.sendMessage(
+          from,
+          `🎧 *Quran Tilawat Audio*\n⏳ *Fast Cloudflare CDN se audio bhej raha hoon...*`
+        );
+        const audioDataPromise = getFastSurahAudioBuffer(sQuery);
+        const [_, info] = await Promise.all([noticePromise, audioDataPromise]);
+
+        const payload = info.buffer
+          ? { audio: info.buffer, mimetype: 'audio/mpeg', fileName: `${info.surah.name}.mp3`, ptt: false }
+          : { audio: { url: info.audioUrl }, mimetype: 'audio/mpeg', fileName: `${info.surah.name}.mp3`, ptt: false };
+
+        await this.sendMessage(from, payload);
+        return true;
+      } catch (err) {
+        await this.sendMessage(from, `❌ ${err.message || 'Tilawat audio load nahi ho saka.'}`);
+        return true;
+      }
+    }
+
+    // 5. Quran Surah Info Intent ("surah yasin", "quran rahman", "surah 55")
+    const surahMatch = lower.match(/^(?:surah|quran)\s+([a-z0-9\s-]+)$/i);
+    if (surahMatch) {
+      const sQuery = surahMatch[1].trim();
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getSurahOverview(sQuery);
+        const s = data.surah;
+        let resText =
+          `📖 *Surah ${s.name} (${s.arabic})*\n` +
+          `✨ *Surah Number:* #${s.number} | *Total Ayahs:* ${s.ayahs}\n` +
+          `📍 *Nuzool:* ${s.type === 'Meccan' ? 'Makki (مكية)' : 'Madani (مدنية)'}\n` +
+          `📜 *Ma'ani:* ${s.meaning}\n\n` +
+          `🌟 *Shuruati Ayat:*\n`;
+        if (data.sampleAyahs.length > 0) {
+          data.sampleAyahs.forEach(a => {
+            resText += `\n*(${a.ayahNum})* ${a.arabic}\n_Tarjuma:_ ${a.urdu}\n`;
+          });
+        }
+        resText += `\n🎧 *Tilawat Suniye:* *tilawat ${s.number}*`;
+        await this.sendMessage(from, resText);
+        return true;
+      } catch (err) {
+        await this.sendMessage(from, `❌ ${err.message}`);
+        return true;
+      }
+    }
+
+    // 6. Quran Ayah Intent ("ayah 2:255", "ayat 36:1")
+    const ayahMatch = lower.match(/^(?:ayah|ayat)\s+([0-9]+[:,-][0-9]+)$/i);
+    if (ayahMatch) {
+      const parts = ayahMatch[1].split(/[:,-]/);
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getAyahDetails(parts[0], parts[1]);
+        const msgText =
+          `📖 *Surah ${data.surah.name} — Ayah ${data.ayahNumber}*\n\n` +
+          `${data.arabic}\n\n` +
+          `🇵🇰 *Urdu Tarjuma:*\n${data.urdu}\n\n` +
+          `🇬🇧 *English:*\n${data.english}`;
+        await this.sendMessage(from, msgText);
+        return true;
+      } catch (err) {
+        await this.sendMessage(from, `❌ ${err.message}`);
+        return true;
+      }
+    }
+
+    // 7. Hadith Intent ("hadith bukhari 1", "hadees muslim 5", "hadith 1")
+    const hadithMatch = lower.match(/^(?:hadith|hadees)\s+(?:(bukhari|muslim|tirmidhi|abudawud|nasai|ibnmajah)\s+)?([0-9]+)$/i);
+    if (hadithMatch) {
+      const book = hadithMatch[1] || 'bukhari';
+      const num = hadithMatch[2];
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getHadith(book, num);
+        let msg = `📜 *${data.book}* — Hadith #${data.number}\n\n`;
+        if (data.arabic) msg += `${data.arabic.slice(0, 600)}${data.arabic.length > 600 ? '...' : ''}\n\n`;
+        if (data.urdu) msg += `🇵🇰 *Urdu Tarjuma:*\n${data.urdu.slice(0, 800)}${data.urdu.length > 800 ? '...' : ''}\n\n`;
+        await this.sendMessage(from, msg);
+        return true;
+      } catch (err) {
+        await this.sendMessage(from, `❌ ${err.message}`);
+        return true;
+      }
+    }
+    if (/^(hadith|hadees|hadees shareef)$/i.test(lower)) {
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getHadith('bukhari', Math.floor(Math.random() * 50) + 1);
+        let msg = `📜 *${data.book}* — Hadith #${data.number}\n\n`;
+        if (data.arabic) msg += `${data.arabic.slice(0, 600)}${data.arabic.length > 600 ? '...' : ''}\n\n`;
+        if (data.urdu) msg += `🇵🇰 *Urdu Tarjuma:*\n${data.urdu.slice(0, 800)}${data.urdu.length > 800 ? '...' : ''}\n\n`;
+        await this.sendMessage(from, msg);
+        return true;
+      } catch (e) {}
+    }
+
+    // 8. Namaz Timings Intent ("namaz karachi", "lahore namaz time", "namaz timing")
+    if (lower.includes('namaz') || lower.includes('prayer') || lower.includes('namaz time')) {
+      let city = 'Karachi';
+      const cleanCity = lower.replace(/(namaz|prayer|timing|time|auqat|ki|ka|batao|mein|in|sheher|today|aaj)/gi, '').trim();
+      if (cleanCity && cleanCity.length >= 3) {
+        city = cleanCity;
+      }
+      try {
+        await this.sendPresence(from, 'composing');
+        const data = await getPrayerTimes(city);
+        const msg =
+          `🕌 *Auqaat-e-Namaz — ${data.city}, ${data.country}*\n` +
+          `📅 *Date:* ${data.gregorian} | *Hijri:* ${data.hijri}\n\n` +
+          `🌅 *Fajr:* ${data.timings.Fajr}\n` +
+          `☀️ *Sunrise:* ${data.timings.Sunrise}\n` +
+          `☀️ *Dhuhr:* ${data.timings.Dhuhr}\n` +
+          `🌤️ *Asr:* ${data.timings.Asr}\n` +
+          `🌇 *Maghrib:* ${data.timings.Maghrib}\n` +
+          `🌌 *Isha:* ${data.timings.Isha}\n\n` +
+          `_Kisi aur sheher ke liye likhein: namaz lahore ya namaz islamabad_`;
+        await this.sendMessage(from, msg);
+        return true;
+      } catch (e) {}
+    }
+
+    // 9. Masnoon Dua Intent ("safar ki dua", "khana khane ki dua", "dua")
+    if (lower.includes('dua')) {
+      const duaItem = findDua(lower.replace(/(batao|sunao|ki|parhne|kaise|chahiye)/gi, '').trim());
+      const reply =
+        `🤲 *Masnoon Dua — ${duaItem.topic}*\n\n` +
+        `${duaItem.arabic}\n\n` +
+        `🔤 *Talaffuz (Roman):* _${duaItem.roman}_\n\n` +
+        `🇵🇰 *Urdu Tarjuma:*\n${duaItem.urdu}\n\n` +
+        `💡 _Mazeed duain: safar ki dua, khane ki dua, sone ki dua_`;
+      await this.sendMessage(from, reply);
+      return true;
+    }
+
+    // 10. Islamic Date / Hijri Intent ("islamic date", "islami tareekh", "hijri", "aaj ki date")
+    if (/^(hijri|islamic\s*date|islami\s*date|islami\s*tareekh|aaj\s*ki\s*tareekh|aaj\s*ki\s*islami\s*date|tareekh|date)$/i.test(lower) ||
+        lower.includes('islamic date') || lower.includes('islami tareekh') || lower.includes('hijri date') || lower.includes('aaj kya date hai') || lower.includes('islami date')) {
+      try {
+        await this.sendPresence(from, 'composing');
+        const d = await getIslamicDate();
+        let msg =
+          `🌙 *Aaj Ki Islami Tareekh (Islamic Date)* 🌙\n\n` +
+          `📅 *Hijri Tareekh:* ${d.formattedHijri}\n` +
+          `📆 *English Date:* ${d.formattedEnglish} (${d.weekdayEn || ''})\n` +
+          `📖 *Islami Maheena:* ${d.monthNameUrdu} (${d.monthNameAr})\n`;
+        if (d.description) msg += `ℹ️ *Fazeelat:* ${d.description}\n`;
+        if (d.eventToday) msg += `\n🌟 *Aaj Ka Mubarak Din:* *${d.eventToday.event}*\n_${d.eventToday.desc}_\n`;
+        msg += `\n✨ *Aane walay Islami Tehwar:* 'islami tehwar' likhein.`;
+        await this.sendMessage(from, msg);
+        return true;
+      } catch (e) {}
+    }
+
+    // 11. Major Islamic Events Intent ("islami tehwar", "islamic events")
+    if (lower.includes('islami tehwar') || lower.includes('islamic event') || lower.includes('islamic events') || lower.includes('islami events')) {
+      let msg = `🌟 *Khas Islami Ayyam & Tehwar (Major Islamic Events)* 🌟\n\n`;
+      MAJOR_ISLAMIC_EVENTS.forEach(e => {
+        const m = ISLAMIC_MONTHS[e.month - 1];
+        msg += `• *${e.day} ${m?.urdu || m?.name}:* ${e.event}\n  _${e.desc}_\n\n`;
+      });
+      msg += `_Aaj ki islami tareekh dekhne ke liye: 'hijri' likhein._`;
+      await this.sendMessage(from, msg);
+      return true;
+    }
+
+    // 12. Allah Names Intent ("allah", "allah ke naam", "asma ul husna")
+    if (lower === 'allah' || lower.includes('allah ke naam') || lower.includes('asma ul husna') || lower === 'allahnames') {
+      const shuffled = [...ALLAH_NAMES].sort(() => 0.5 - Math.random()).slice(0, 5);
+      let msg = `✨ *Asma-ul-Husna (اللہ تعالیٰ کے بابرکت نام)*\n\n`;
+      shuffled.forEach(n => {
+        msg += `*#${n.num}* ${n.arabic} — *${n.urdu}*\n   _${n.meaning}_\n\n`;
+      });
+      msg += `_SubhanAllah! 1 se 99 tak kisi bhi number ka naam dekhne ke liye: ${prefix}allahname 1_`;
+      await this.sendMessage(from, msg);
+      return true;
+    }
+
+    // 11. Latifa / Jokes Intent
+    if (/^(latifa|lateefa|joke|chutkula)$/i.test(lower) || lower.includes('lateefa sunao') || lower.includes('joke sunao') || lower.includes('koi joke')) {
+      const j = getRandomJoke();
+      await this.sendMessage(from, `😂 *Latifa:*\n\n${j}\n\n_Aur sunne ke liye 'latifa' likhein!_`);
+      return true;
+    }
+
+    // 12. Shairi Intent
+    if (/^(shairi|shayari|poetry|sher)$/i.test(lower) || lower.includes('shairi sunao') || lower.includes('shayari sunao')) {
+      const s = getRandomShairi();
+      await this.sendMessage(from, `📝 *Shairi:*\n\n${s}\n\n_Aur shairi ke liye 'shairi' likhein!_`);
+      return true;
+    }
+
+    // 12.2 Riddles / Paheli Intent
+    if (/^(paheli|riddle|puzzle|paheliyan|paheli sunao|koi paheli)$/i.test(lower) ||
+        lower.includes('paheli sunao') || lower.includes('koi paheli') || lower.includes('riddle sunao')) {
+      const r = getRandomRiddle();
+      const msg =
+        `🧩 *Aaj Ki Mazedaar Paheli (Riddle #${r.id})* 🧩\n\n` +
+        `"${r.question}"\n\n` +
+        `_${r.english}_\n\n` +
+        `💡 *Hint:* ${r.hint}\n\n` +
+        `🤔 *Apna jawab soch kar bataiye! Jawab dekhne ke liye likhein:* 'paheli jawab'`;
+      await this.sendMessage(from, msg);
+      return true;
+    }
+
+    if (/^(paheli jawab|riddle answer|paheli ka jawab|riddle ans)$/i.test(lower) || lower === 'jawab' || lower === 'answer') {
+      const r = getLastRiddle();
+      const reply =
+        `💡 *Paheli #${r.id} Ka Jawab:* 🎯\n\n` +
+        `👉 *${r.answer}*\n\n` +
+        `_Agli paheli ke liye likhein: 'paheli'_`;
+      await this.sendMessage(from, reply);
+      return true;
+    }
+
+    // 13. Weather Intent
+    const weatherMatch = lower.match(/^(?:weather|mausam|mosam)\s+([a-z\s]+)$/i);
+    if (weatherMatch) {
+      const city = weatherMatch[1].trim();
+      try {
+        await this.sendPresence(from, 'composing');
+        const w = await getWeather(city);
+        await this.sendMessage(from, w);
+        return true;
+      } catch (e) {}
+    }
+
+    // 14. Conversational AI Fallback (in 1-on-1 private chat)
+    if (!isGroup && config.ai?.enabled) {
+      this.stats.aiQueries++;
+      await this.sendPresence(from, 'composing');
+      const aiReply = await askAI(text, { senderId: sender, senderName });
+      await this.sendMessage(from, aiReply);
+      return true;
+    }
+
+    return false;
+  }
+
+  async sendPresence(jid, type = 'composing') {
     if (!this.sock) return;
     try {
-      return await this.sock.sendMessage(to, { text }, options);
+      await this.sock.sendPresenceUpdate(type, jid);
+    } catch (e) {}
+  }
+
+  async sendMessage(jid, content, options = {}) {
+    if (!this.sock) {
+      throw new Error('WhatsApp bot is not connected');
+    }
+    const config = Store.getConfig();
+    if (jid && jid.endsWith('@g.us') && config.features?.groupPosting === false) {
+      return null;
+    }
+    this.stats.messagesSent++;
+    const messagePayload = typeof content === 'string' ? { text: content, ...options } : { ...content, ...options };
+    const res = await this.sock.sendMessage(jid, messagePayload);
+
+    const logText = typeof content === 'string'
+      ? content
+      : (content.caption || content.poll?.name || (content.image ? '[QR / Image]' : '[Media]'));
+
+    Store.addLog({
+      type: 'outgoing',
+      to: jid,
+      text: logText
+    });
+    this.emit('message', {
+      type: 'outgoing',
+      to: jid,
+      text: logText,
+      timestamp: new Date().toISOString()
+    });
+
+    return res;
+  }
+
+  async sendVideoFromUrl(jid, videoInfo, msgKey = null) {
+    if (!this.sock) throw new Error('WhatsApp bot is not connected');
+
+    const config = Store.getConfig();
+    if (jid && jid.endsWith('@g.us') && config.features?.groupPosting === false) {
+      return null;
+    }
+
+    const { videoUrl, title, source, author, duration, thumbnail } = videoInfo;
+    const cleanTitle = (title || 'Video').replace(/[\r\n]+/g, ' ').slice(0, 60);
+    const caption =
+      `🎬 *${cleanTitle}*\n` +
+      `⚡ *Source:* ${source || 'Social Media'}` +
+      (author ? `\n👤 *Creator:* ${author}` : '') +
+      (duration ? `\n⏱️ *Duration:* ${duration}` : '') +
+      `\n\n_Downloaded via AwaxBot Fast Downloader_`;
+
+    let sentMessage = null;
+
+    // Determine correct CDN referer headers to prevent 403 blocks or bandwidth throttling
+    const cdnHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': '*/*'
+    };
+    if (/tiktok|byteoversea|ibyteimg|musical\.ly/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://www.tiktok.com/';
+    } else if (/instagram|fbcdn|cdninstagram/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://www.instagram.com/';
+    } else if (/twitter|twimg|x\.com/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://twitter.com/';
+    } else if (/facebook/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://www.facebook.com/';
+    }
+
+    // Fast Single-Pass High-Speed Download with Parallel Thumbnail Fetching
+    try {
+      const fetchStart = Date.now();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+      const videoPromise = fetch(videoUrl, {
+        signal: controller.signal,
+        headers: cdnHeaders
+      }).then(async res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch video stream`);
+        const arrayBuf = await res.arrayBuffer();
+        return Buffer.from(arrayBuf);
+      });
+
+      // Quick opportunistic thumbnail (max 1000ms, never delays video delivery)
+      const thumbPromise = (thumbnail && typeof thumbnail === 'string' && thumbnail.startsWith('http'))
+        ? fetch(thumbnail, {
+            signal: AbortSignal.timeout(1000),
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          })
+          .then(r => r.ok ? r.arrayBuffer() : null)
+          .then(b => b ? Buffer.from(b) : null)
+          .catch(() => null)
+        : Promise.resolve(null);
+
+      const [buf, thumbBuf] = await Promise.all([
+        videoPromise,
+        Promise.race([thumbPromise, new Promise(r => setTimeout(() => r(null), 1000))])
+      ]);
+      clearTimeout(timeoutId);
+
+      const fetchTime = Date.now() - fetchStart;
+      const sizeMB = (buf.length / (1024 * 1024)).toFixed(2);
+      console.log(`[DOWNLOAD] Fetched ${sizeMB} MB in ${fetchTime}ms (${((buf.length / (fetchTime || 1)) * 1000 / (1024 * 1024)).toFixed(1)} MB/s)`);
+
+      if (buf && buf.length > 0) {
+        const mediaOptions = {
+          caption,
+          mimetype: 'video/mp4'
+        };
+        // Only include thumbnail if it fits within WhatsApp protobuf limit (< 32KB)
+        if (thumbBuf && thumbBuf.length > 0 && thumbBuf.length < 32768) {
+          mediaOptions.jpegThumbnail = thumbBuf;
+        }
+
+        const sendStart = Date.now();
+        if (buf.length <= 95 * 1024 * 1024) {
+          try {
+            sentMessage = await this.sendMessage(jid, {
+              video: buf,
+              ...mediaOptions
+            });
+          } catch (err) {
+            sentMessage = await this.sendMessage(jid, {
+              document: buf,
+              mimetype: 'video/mp4',
+              fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+              caption
+            });
+          }
+        } else {
+          sentMessage = await this.sendMessage(jid, {
+            document: buf,
+            mimetype: 'video/mp4',
+            fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+            caption
+          });
+        }
+        console.log(`[DOWNLOAD] WhatsApp delivery completed in ${Date.now() - sendStart}ms`);
+      }
+    } catch (err) {
+      console.warn('Direct high-speed buffer path error, falling back to direct stream:', err.message);
+    }
+
+    // Direct Stream Fallback (if direct buffer fetch encountered memory pressure)
+    if (!sentMessage) {
+      try {
+        sentMessage = await this.sendMessage(jid, {
+          video: { url: videoUrl },
+          caption,
+          mimetype: 'video/mp4'
+        });
+      } catch (err) {
+        try {
+          sentMessage = await this.sendMessage(jid, {
+            document: { url: videoUrl },
+            mimetype: 'video/mp4',
+            fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+            caption
+          });
+        } catch (e) {
+          console.error('All dispatch attempts failed:', e.message);
+        }
+      }
+    }
+
+    if (sentMessage) {
+      if (msgKey) {
+        try {
+          await this.sock.sendMessage(jid, { react: { text: '🎬', key: msgKey } });
+        } catch (e) {}
+      }
+      return sentMessage;
+    }
+
+    if (msgKey) {
+      try {
+        await this.sock.sendMessage(jid, { react: { text: '❌', key: msgKey } });
+      } catch (e) {}
+    }
+
+    return await this.sendMessage(
+      jid,
+      `❌ Couldn't deliver the MP4 video file. The file might be private or temporarily restricted by the source platform.`
+    );
+  }
+
+  async logout() {
+    try {
+      if (this.sock) {
+        await this.sock.logout();
+      }
     } catch (e) {
-      console.error('[sendMessage] error:', e.message);
+      console.error('Logout error:', e);
+    }
+    if (fs.existsSync(SESSION_DIR)) {
+      fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+    }
+    this.status = 'disconnected';
+    this.qrCodeDataUrl = null;
+    this.user = null;
+    this.isInitializing = false;
+    this.emit('status', { status: this.status });
+    setTimeout(() => this.init(), 1000);
+  }
+
+  async restart() {
+    try {
+      if (this.sock) {
+        try { this.sock.ev.removeAllListeners(); } catch (e) {}
+        this.sock.end(new Error('Manual Restart'));
+        this.sock = null;
+      }
+    } catch (e) {}
+    this.isInitializing = false;
+    this.status = 'connecting';
+    this.emit('status', { status: this.status });
+    setTimeout(() => this.init(), 1500);
+  }
+
+  async getAllGroups() {
+    if (!this.sock) return [];
+    try {
+      const groups = await this.sock.groupFetchAllParticipating();
+      const botPhone = this.sock.user?.id ? this.sock.user.id.split(':')[0] : '';
+      return Object.values(groups).map(g => {
+        const isBotAdmin = g.participants.some(p => p.id.includes(botPhone) && p.admin);
+        return {
+          id: g.id,
+          subject: g.subject,
+          creation: g.creation,
+          owner: g.owner,
+          totalMembers: g.participants.length,
+          adminCount: g.participants.filter(p => p.admin).length,
+          isMuted: !!g.announce,
+          isRestricted: !!g.restrict,
+          isBotAdmin,
+          isAllowed: Store.isGroupAllowed(g.id)
+        };
+      });
+    } catch (err) {
+      console.error('Failed to fetch groups:', err);
+      return [];
     }
   }
 
-  async sendPresence(to, type = 'available') {
-    if (!this.sock) return;
-    try { await this.sock.sendPresenceUpdate(type, to); } catch (e) {}
+  async setGroupMute(groupId, mute) {
+    if (!this.sock) throw new Error('Bot is not connected');
+    const setting = mute ? 'announcement' : 'not_announcement';
+    await this.sock.groupSettingUpdate(groupId, setting);
+    return true;
   }
 
-  getCleanMenu() { return 'Menu'; }
-  getMobileFriendlyMenu() { return 'Menu'; }
-  getCategoryCommands(cat) { return []; }
-  async handleVoiceMessage() {}
-  async sendMemeAudio() {}
-  async sendSongAudio() {}
-  async sendVideoFromUrl() {}
-  async init() {}
+  /**
+   * Post Official WhatsApp Group Status / Announcement Story
+   * Visible in WhatsApp Status (Updates) tab under the group name
+   */
+  async postGroupStatus(groupId, text, options = {}) {
+    if (!this.sock) throw new Error('WhatsApp bot is not connected');
+
+    const meta = await this.sock.groupMetadata(groupId);
+    const participants = (meta.participants || []).map(p => p.id);
+    const groupName = meta.subject || 'This Group';
+    const bgHex = options.backgroundColor || '#14213d'; // Elegant Dark Navy Blue
+
+    // 1. Dispatch Group Status via Baileys isGroupStatus context flag
+    try {
+      await this.sock.sendMessage(groupId, {
+        text,
+        backgroundColor: bgHex,
+        font: 3,
+        contextInfo: {
+          isGroupStatus: true,
+          statusAttributions: [
+            {
+              groupStatus: {
+                authorJid: options.authorJid || this.sock.user?.id
+              }
+            }
+          ]
+        }
+      });
+    } catch (err) {
+      console.warn('Group message status dispatch warning:', err.message);
+    }
+
+    // 2. Also broadcast to status@broadcast targeted to all group participants
+    // This ensures it appears in the WhatsApp Status / Updates tab for everyone in the group
+    try {
+      await this.sock.sendMessage('status@broadcast', {
+        text,
+        backgroundColor: bgHex,
+        font: 3
+      }, {
+        statusJidList: participants
+      });
+    } catch (err) {
+      console.warn('Broadcast status warning:', err.message);
+    }
+
+    this.stats.messagesSent++;
+    Store.addLog({
+      type: 'outgoing',
+      to: groupId,
+      text: `[Group Status Announcement]: ${text}`
+    });
+
+    return { groupName, participantsCount: participants.length };
+  }
+
+  async postWhatsAppStatus(text) {
+    if (!this.sock) throw new Error('WhatsApp bot is not connected');
+    this.stats.messagesSent++;
+    const res = await this.sock.sendMessage('status@broadcast', { text });
+    Store.addLog({
+      type: 'outgoing',
+      to: 'status@broadcast',
+      text: `[24h WhatsApp Status]: ${text}`
+    });
+    this.emit('message', {
+      type: 'outgoing',
+      to: 'status@broadcast',
+      text: `[24h WhatsApp Status]: ${text}`,
+      timestamp: new Date().toISOString()
+    });
+    return res;
+  }
+
+  getStatus() {
+    return {
+      status: this.status,
+      qr: this.qrCodeDataUrl,
+      user: this.user,
+      stats: {
+        ...this.stats,
+        uptimeSeconds: Math.floor((Date.now() - this.stats.startTime) / 1000)
+      }
+    };
+  }
+
+  // Pair with a phone number instead of QR: returns the 8-digit code the user
+  // types on their phone (WhatsApp > Linked Devices > Link with phone number).
+  // Hudson's order (2026-10-13): "add number link feature".
+  async requestPairingCode(rawNumber) {
+    const phoneNumber = String(rawNumber || '').replace(/[^0-9]/g, '');
+    if (phoneNumber.length < 9 || phoneNumber.length > 15) {
+      throw new Error('Phone number galat hai — country code ke sath digits likhein (masalan 923001234567).');
+    }
+    if (this.status === 'connected') {
+      throw new Error('Bot pehle se connected hai — pairing ki zaroorat nahi.');
+    }
+    if (!this.sock) {
+      throw new Error('Bot socket ready nahi — thodi dair baad dobara try karein.');
+    }
+    const code = await this.sock.requestPairingCode(phoneNumber);
+    console.log(`📱 Pairing code for ${phoneNumber}: ${code}`);
+    this.emit('status', { status: this.status, pairingCode: code });
+    return code;
+  }
 }
 
-export default Bot;
-export { Bot };
+export const botInstance = new WhatsAppBot();
