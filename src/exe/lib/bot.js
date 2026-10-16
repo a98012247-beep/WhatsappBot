@@ -87,7 +87,6 @@ const KNOWN_COMMANDS = new Set([
   'ask',
   'asmaulhusna',
   'audio',
-  'automation',
   'ayah',
   'ayat',
   'azkar',
@@ -1832,74 +1831,7 @@ class WhatsAppBot extends EventEmitter {
         // --- 8. SMART REMINDERS ---
         // Per-group automation management (2026-10-17 per Hudson)
         // Each group has its own automations. All editable.
-        case 'automation': {
-          const { getAllScheduledTasks, removeScheduledTask, updateScheduledTask } = await import('./automation.js');
-          const sub = (args[0] || '').toLowerCase();
-          const allTasks = getAllScheduledTasks().filter(t => t.active);
-
-          // Filter by group if in a group
-          const groupTasks = isGroup ? allTasks.filter(t => t.target === from) : allTasks;
-
-          if (!sub || sub === 'list') {
-            if (!groupTasks.length) {
-              await this.sendMessage(from, `📋 *Automations*${isGroup ? ' for this group' : ''}\n\nNo active automations.${isGroup ? '' : '\n\nIn a group, I show only that group\'s automations.'}\n\nCreate one: \`automation add <message> daily at 9am\``);
-            } else {
-              let msg = `📋 *Automations*${isGroup ? ' for this group' : ''} (${groupTasks.length})\n\n`;
-              groupTasks.forEach((t, i) => {
-                msg += `${i+1}. *${t.id.slice(-6)}* — ${t.message?.slice(0, 40) || 'No message'}\n   📅 ${t.schedule?.type || 'once'} ${t.schedule?.time || ''}\n`;
-              });
-              msg += `\nEdit: \`automation edit <id> message <new text>\`\nDelete: \`automation del <id>\``;
-              await this.sendMessage(from, msg);
-            }
-            return;
-          }
-
-          if (sub === 'del' || sub === 'delete' || sub === 'remove') {
-            const id = args[1];
-            if (!id) { await this.sendMessage(from, 'Usage: `automation del <id>`'); return; }
-            const task = allTasks.find(t => t.id.endsWith(id) || t.id === id);
-            if (!task) { await this.sendMessage(from, 'Automation not found.'); return; }
-            if (isGroup && task.target !== from) { await this.sendMessage(from, 'This automation belongs to another group.'); return; }
-            removeScheduledTask(task.id);
-            await this.sendMessage(from, `✅ Automation *${id}* deleted.`);
-            return;
-          }
-
-          if (sub === 'edit') {
-            const id = args[1];
-            const field = (args[2] || '').toLowerCase();
-            const newVal = args.slice(3).join(' ');
-            if (!id || !field || !newVal) {
-              await this.sendMessage(from, 'Usage: `automation edit <id> message|time <new value>`\nExample: `automation edit abc123 message Good morning!`');
-              return;
-            }
-            const task = allTasks.find(t => t.id.endsWith(id) || t.id === id);
-            if (!task) { await this.sendMessage(from, 'Automation not found.'); return; }
-            if (isGroup && task.target !== from) { await this.sendMessage(from, 'This automation belongs to another group.'); return; }
-            const updates = {};
-            if (field === 'message' || field === 'msg' || field === 'text') updates.message = newVal;
-            else if (field === 'time') { updates.schedule = { ...task.schedule, time: newVal }; }
-            else { await this.sendMessage(from, 'Editable fields: `message`, `time`'); return; }
-            updateScheduledTask(task.id, updates);
-            await this.sendMessage(from, `✅ Automation *${id}* updated.`);
-            return;
-          }
-
-          if (sub === 'add' || sub === 'create') {
-            const text = args.slice(1).join(' ');
-            if (!text) { await this.sendMessage(from, 'Usage: `automation add <message> daily at 9am`'); return; }
-            const { parseAutomationRequest, addScheduledTask } = await import('./automation.js');
-            const auto = parseAutomationRequest(text);
-            if (!auto) { await this.sendMessage(from, 'Could not understand. Try: `automation add Good morning daily at 9am`'); return; }
-            if (isGroup) auto.target = from;
-            const task = addScheduledTask(auto);
-            await this.sendMessage(from, `✅ Automation created!\n\n📝 ${auto.message}\n📅 ${auto.schedule?.type} ${auto.schedule?.time || ''}\n🆔 \`${task.id.slice(-6)}\``);
-            return;
-          }
-
-          await this.sendMessage(from, `📋 *Automation*\n\n\`automation\` — list\n\`automation add <msg> daily at 9am\` — create\n\`automation edit <id> message <text>\` — edit\n\`automation del <id>\` — delete`);
-          return;
-        }
+        // automation command removed 2026-10-17 per Hudson (dashboard only)
 
         case 'remind':
         case 'reminder': {
