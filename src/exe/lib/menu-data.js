@@ -699,7 +699,6 @@ export const MENU_CATEGORIES = [
     "desc": "BTC · ETH · SOL · BNB",
     "primary": true
    },
-  ,
    {
     "name": "chatbackup",
     "desc": "",

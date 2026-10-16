@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "stat-1792185707865",
+    "groupId": "120363410975468944@g.us",
+    "groupName": "bot",
+    "text": "Hi",
+    "author": "Dashboard",
+    "authorName": "Dashboard Admin",
+    "isBroadcast": false,
+    "createdAt": 1792185707865,
+    "expiresAt": 1792272107865
+  }
+]

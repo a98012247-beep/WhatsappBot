@@ -330,7 +330,7 @@ class WhatsAppBot extends EventEmitter {
       if (!cat) continue;
       if (rawNums.length > 1) out += `\n*${cat.icon} ${cat.title}*\n`;
       for (const c of cat.cmds) {
-        if (!c.primary || seen.has(c.name)) continue;
+        if (!c || !c.primary || seen.has(c.name)) continue;
         seen.add(c.name);
         out += `• *${c.name}*${c.desc ? ` — ${c.desc}` : ''}\n`;
       }
