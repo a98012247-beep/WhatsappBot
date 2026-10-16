@@ -722,11 +722,7 @@ export const MENU_CATEGORIES = [
   "title": "Group Tools",
   "icon": "👥",
   "cmds": [
-   {
-    "name": "status",
-    "desc": "Group story status lagayein",
-    "primary": true
-   },
+
    {
     "name": "groups",
     "desc": "Remote group management",

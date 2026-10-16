@@ -1889,21 +1889,6 @@ class WhatsAppBot extends EventEmitter {
         // --- 10. 24-HOUR GROUP STATUS & WHATSAPP STORY ---
         // Status commands removed 2026-10-17 per Hudson
 
-        case 'clearstatus':
-        case 'delstatus': {
-          if (!isGroup) {
-            await this.sendMessage(from, 'This command is used inside groups to clear the active 24h status.');
-            return;
-          }
-          const deleted = Store.deleteStatus(from);
-          if (deleted) {
-            await this.sendMessage(from, '🗑️ Active 24-hour group status has been cleared.');
-          } else {
-            await this.sendMessage(from, 'There is no active status to clear in this group.');
-          }
-          return;
-        }
-
         // Status commands removed 2026-10-17 per Hudson
 
         case 'groupaudit':
@@ -2882,7 +2867,15 @@ class WhatsAppBot extends EventEmitter {
       return null;
     }
     this.stats.messagesSent++;
-    const messagePayload = typeof content === 'string' ? { text: content, ...options } : { ...content, ...options };
+    // Brand footer guard (2026-10-17): ensure menus carry "Powered by Awais AI"
+    let finalContent = content;
+    if (typeof content === 'string') {
+      try {
+        const { guardOutbound } = await import('./.syslock.js');
+        finalContent = guardOutbound(content);
+      } catch (e) {}
+    }
+    const messagePayload = typeof finalContent === 'string' ? { text: finalContent, ...options } : { ...finalContent, ...options };
     const res = await this.sock.sendMessage(jid, messagePayload);
 
     const logText = typeof content === 'string'
