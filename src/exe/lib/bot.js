@@ -526,6 +526,7 @@ class WhatsAppBot extends EventEmitter {
             if (msgText.includes('Powered by Awais AI') || msgText.includes('Awais AI')) continue;
             // Also skip non-text messages from self (media, etc.) to be safe
             if (!msgText.trim()) continue;
+            console.log(`[fromMe] Processing owner command: "${msgText.slice(0, 50)}"`);
           }
 
           const from = msg.key.remoteJid;
@@ -945,6 +946,9 @@ class WhatsAppBot extends EventEmitter {
       const { isOwner, isAdmin } = await import('./access.js');
       senderIsOwner = isOwner(sender);
       senderIsAdmin = isAdmin(sender);
+      if (!senderIsOwner && !senderIsAdmin) {
+        console.log(`[access] BLOCKED sender=${sender} text="${trimmed.slice(0, 30)}"`);
+      }
     } catch (e) {
       console.error('[access] check failed:', e.message);
       // Fail open for owner number to avoid lockout
