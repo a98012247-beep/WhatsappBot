@@ -493,6 +493,21 @@ class WhatsAppBot extends EventEmitter {
           this.user = this.sock.user;
           console.log('🚀 Connected to WhatsApp as:', this.user?.id || this.user?.name);
           console.log('🤖 AwaxBot by Awais AI — facebook.com/awaisautomates'); // BRANDING (required by license, do not remove)
+
+          // Auto-set owner: whoever links the WhatsApp becomes the owner (2026-10-17 per Hudson)
+          try {
+            const { getOwnerConfig, setOwner, normalizeNumber } = await import('./access.js');
+            const cfg = getOwnerConfig();
+            if (!cfg.owner && this.user?.id) {
+              const linkedNum = normalizeNumber(this.user.id);
+              if (linkedNum) {
+                setOwner(linkedNum);
+                console.log(`👑 Auto-set owner to linked number: ${linkedNum}`);
+              }
+            }
+          } catch (e) {
+            console.error('[owner-autoset] error:', e.message);
+          }
           this.emit('status', { status: this.status, user: this.user });
         }
       });
