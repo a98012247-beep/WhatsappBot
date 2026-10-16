@@ -931,17 +931,18 @@ class WhatsAppBot extends EventEmitter {
     const senderIsOwner = isOwner(sender);
     const senderIsAdmin = isAdmin(sender);
 
-    // Bot is private: non-owner/non-admin get silence (except in allowed groups for members?)
+    // Bot is private: non-owner/non-admin get silence
     // Per Hudson: only owner and admin can use the bot
     if (!senderIsOwner && !senderIsAdmin) {
       return; // Fully private — no response
     }
 
     // Strict Group Whitelist Enforcement:
-    // If the message is from a WhatsApp group, the bot ONLY works in groups explicitly enabled by the user in localhost UI
+    // If the message is from a WhatsApp group, the bot ONLY works in groups explicitly enabled
+    // EXCEPT: owner/admin can use the bot in any group (2026-10-17 per Hudson)
     if (isGroup) {
-      if (!Store.isGroupAllowed(from)) {
-        return; // 100% strict silence in unselected groups
+      if (!senderIsOwner && !senderIsAdmin && !Store.isGroupAllowed(from)) {
+        return; // 100% strict silence in unselected groups (for non-owner/admin)
       }
     }
 
