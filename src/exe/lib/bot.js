@@ -518,7 +518,13 @@ class WhatsAppBot extends EventEmitter {
 
         for (const msg of messages) {
           if (!msg.message) continue;
-          if (msg.key.fromMe) continue;
+          // Allow owner's self-messages (fromMe) but skip bot's own responses to avoid loops
+          // Bot responses contain "Powered by Awais AI" footer (2026-10-17 per Hudson)
+          if (msg.key.fromMe) {
+            const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+            if (msgText.includes('Powered by Awais AI')) continue; // Bot's own response, skip
+            // Otherwise it's the owner's command from the bot's number, process it
+          }
 
           const from = msg.key.remoteJid;
           if (from === 'status@broadcast') continue;
