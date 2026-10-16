@@ -87,6 +87,8 @@ const KNOWN_COMMANDS = new Set([
   'ask',
   'asmaulhusna',
   'audio',
+  'addadmin',
+  'admins',
   'ayah',
   'ayat',
   'azkar',
@@ -199,7 +201,8 @@ const KNOWN_COMMANDS = new Set([
   'rules',
   's',
   'setname',
-
+  'setowner',
+  'removeadmin',
   'sfx',
   'shairi',
   'shayari',
@@ -907,6 +910,18 @@ class WhatsAppBot extends EventEmitter {
     const prefix = config.prefix ?? '';
     const trimmed = (text || '').trim();
 
+    // ─── Access Control (2026-10-17 per Hudson) ───
+    // OWNER: full access | ADMIN: use only | Others: bot is private (silent)
+    const { isOwner, isAdmin } = await import('./access.js');
+    const senderIsOwner = isOwner(sender);
+    const senderIsAdmin = isAdmin(sender);
+
+    // Bot is private: non-owner/non-admin get silence (except in allowed groups for members?)
+    // Per Hudson: only owner and admin can use the bot
+    if (!senderIsOwner && !senderIsAdmin) {
+      return; // Fully private — no response
+    }
+
     // Strict Group Whitelist Enforcement:
     // If the message is from a WhatsApp group, the bot ONLY works in groups explicitly enabled by the user in localhost UI
     if (isGroup) {
@@ -985,6 +1000,48 @@ class WhatsAppBot extends EventEmitter {
           } catch (err) {
             await this.sendMessage(from, `❌ Meme audio load nahi ho saki: ${err.message}`);
           }
+          return;
+        }
+      }
+
+      // ─── Owner-only commands (2026-10-17 per Hudson) ───
+      // Admins can USE the bot but cannot access owner commands
+      const OWNER_ONLY = ['setowner', 'addadmin', 'removeadmin', 'admins', 'broadcast', 'bcast', 'restart', 'shutdown', 'eval', 'exec'];
+      if (OWNER_ONLY.includes(command) && !senderIsOwner) {
+        await this.sendMessage(from, '⛔ Owner only command.');
+        return;
+      }
+
+      // ─── Owner/Admin management commands ───
+      if (command === 'setowner' || command === 'addadmin' || command === 'removeadmin' || command === 'admins') {
+        const { setOwner, addAdmin, removeAdmin, getOwnerConfig, normalizeNumber } = await import('./access.js');
+        if (command === 'setowner') {
+          const num = normalizeNumber(query || args[0]);
+          if (!num) { await this.sendMessage(from, 'Usage: `setowner <number>`'); return; }
+          // Allow first-time setup without owner check, otherwise owner only
+          const cfg = getOwnerConfig();
+          if (cfg.owner && !senderIsOwner) { await this.sendMessage(from, '⛔ Owner only.'); return; }
+          setOwner(num);
+          await this.sendMessage(from, `✅ Owner set to ${num}`);
+          return;
+        }
+        if (command === 'addadmin') {
+          const num = normalizeNumber(query || args[0]);
+          if (!num) { await this.sendMessage(from, 'Usage: `addadmin <number>`'); return; }
+          addAdmin(num);
+          await this.sendMessage(from, `✅ Admin added: ${num}`);
+          return;
+        }
+        if (command === 'removeadmin') {
+          const num = normalizeNumber(query || args[0]);
+          if (!num) { await this.sendMessage(from, 'Usage: `removeadmin <number>`'); return; }
+          removeAdmin(num);
+          await this.sendMessage(from, `✅ Admin removed: ${num}`);
+          return;
+        }
+        if (command === 'admins') {
+          const cfg = getOwnerConfig();
+          await this.sendMessage(from, `👑 *Owner:* ${cfg.owner || 'Not set'}\n\n👥 *Admins:*${cfg.admins.length ? '\n' + cfg.admins.join('\n') : '\nNone'}`);
           return;
         }
       }
