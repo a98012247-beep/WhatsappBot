@@ -1644,6 +1644,32 @@ function makeSwitchRow(title, preview, checked, onChange, readOnly) {
   return label;
 }
 
+// Edit/delete scheduled automations (2026-10-17 per Hudson)
+async function editScheduledItem(item) {
+  const newMsg = prompt('Edit message:', item.message || '');
+  if (newMsg === null) return;
+  try {
+    const res = await fetch('/api/automation/scheduled/' + encodeURIComponent(item.id), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: newMsg })
+    });
+    if (!res.ok) throw new Error('update failed');
+    showToast('Automation updated', 'success');
+    loadAutomation();
+  } catch (e) { showToast('Could not update', 'error'); }
+}
+
+async function deleteScheduledItem(id) {
+  if (!confirm('Delete this automation?')) return;
+  try {
+    const res = await fetch('/api/automation/scheduled/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (!res.ok) throw new Error('delete failed');
+    showToast('Automation deleted', 'success');
+    loadAutomation();
+  } catch (e) { showToast('Could not delete', 'error'); }
+}
+
 async function toggleAutomationItem(type, id, enabled, input) {
   try {
     const res = await fetch('/api/automation/toggle', {
@@ -1681,8 +1707,23 @@ async function loadAutomation() {
       sc.innerHTML = '';
       (data.scheduled || []).forEach(item => {
         const preview = [item.target, item.schedule].filter(Boolean).join(' · ');
-        sc.appendChild(makeSwitchRow(item.message, preview, item.enabled,
-          (v, inp) => toggleAutomationItem('scheduled', item.id, v, inp)));
+        const row = makeSwitchRow(item.message, preview, item.enabled,
+          (v, inp) => toggleAutomationItem('scheduled', item.id, v, inp));
+        // Add edit/delete buttons (2026-10-17 per Hudson)
+        const actions = document.createElement('span');
+        actions.className = 'row-actions';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-small';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => editScheduledItem(item);
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-small danger';
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => deleteScheduledItem(item.id);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        row.appendChild(actions);
+        sc.appendChild(row);
       });
       if (!(data.scheduled || []).length) sc.appendChild(emptyRowText('No scheduled messages.'));
     }

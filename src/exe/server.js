@@ -358,6 +358,32 @@ app.post('/api/automation/toggle', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Per-group automation CRUD (2026-10-17 per Hudson) ───
+app.post('/api/automation/scheduled', async (req, res) => {
+  try {
+    const { addScheduledTask } = await import('./lib/automation.js');
+    const task = addScheduledTask(req.body || {});
+    res.json({ ok: true, task });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/automation/scheduled/:id', async (req, res) => {
+  try {
+    const { updateScheduledTask } = await import('./lib/automation.js');
+    const task = updateScheduledTask(req.params.id, req.body || {});
+    if (!task) return res.status(404).json({ error: 'not found' });
+    res.json({ ok: true, task });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/automation/scheduled/:id', async (req, res) => {
+  try {
+    const { removeScheduledTask } = await import('./lib/automation.js');
+    const ok = removeScheduledTask(req.params.id);
+    res.json({ ok });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Global feature toggles (2026-10-14) ───
 app.get('/api/features', async (req, res) => {
   const { getGlobalFeatures } = await import('./lib/access.js');
