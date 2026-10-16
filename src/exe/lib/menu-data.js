@@ -12,16 +12,6 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "speak",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "tts",
-    "desc": "Bol kar sunayein",
-    "primary": true
-   },
-   {
     "name": "voicemode",
     "desc": "",
     "primary": true
@@ -133,38 +123,13 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "tiktok",
-    "desc": "TikTok download",
-    "primary": true
-   },
-   {
     "name": "insta",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "reel",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "fb",
     "desc": "",
     "primary": true
    },
    {
     "name": "twitter",
     "desc": "Twitter download",
-    "primary": true
-   },
-   {
-    "name": "yt",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "ytdl",
-    "desc": "",
     "primary": true
    },
    {
@@ -250,11 +215,6 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "s",
-    "desc": "Photo → sticker (reply)",
-    "primary": true
-   },
-   {
     "name": "toimg",
     "desc": "Sticker to image (reply)",
     "primary": true
@@ -267,11 +227,6 @@ export const MENU_CATEGORIES = [
    {
     "name": "attp",
     "desc": "Hmm sticker",
-    "primary": true
-   },
-   {
-    "name": "remini",
-    "desc": "Photo enhance",
     "primary": true
    },
    {
@@ -349,11 +304,6 @@ export const MENU_CATEGORIES = [
     "desc": "All member DPs (group)",
     "primary": true
    },
-   {
-    "name": "emix",
-    "desc": "Emoji mix shortcut",
-    "primary": true
-   }
   ,
    {
     "name": "editphoto",
@@ -495,18 +445,8 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "uptime",
-    "desc": "Bot uptime",
-    "primary": true
-   },
-   {
     "name": "stats",
     "desc": "Statistics",
-    "primary": true
-   },
-   {
-    "name": "sysinfo",
-    "desc": "System info",
     "primary": true
    },
    {
@@ -592,11 +532,6 @@ export const MENU_CATEGORIES = [
    {
     "name": "userinfo",
     "desc": "Apki info",
-    "primary": true
-   },
-   {
-    "name": "who",
-    "desc": "Kaun hai?",
     "primary": true
    },
    {
@@ -1188,17 +1123,7 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "rsswatch",
-    "desc": "",
-    "primary": true
-   },
-   {
     "name": "autoforward",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "fwd",
     "desc": "",
     "primary": true
    },
@@ -1218,17 +1143,7 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "welcomebiz",
-    "desc": "",
-    "primary": true
-   },
-   {
     "name": "apiinfo",
-    "desc": "",
-    "primary": true
-   },
-   {
-    "name": "botapi",
     "desc": "",
     "primary": true
    },
@@ -1439,11 +1354,6 @@ export const MENU_CATEGORIES = [
   "icon": "🏥",
   "cmds": [
    {
-    "name": "bmicalc",
-    "desc": "",
-    "primary": true
-   },
-   {
     "name": "water",
     "desc": "Pani reminders (hourly 9am-10pm)",
     "primary": true
@@ -1464,11 +1374,6 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "recipeur",
-    "desc": "Urdu recipe",
-    "primary": true
-   },
-   {
     "name": "medremind",
     "desc": "",
     "primary": true
@@ -1477,11 +1382,6 @@ export const MENU_CATEGORIES = [
    {
     "name": "calories",
     "desc": "Calories andaza",
-    "primary": true
-   },
-   {
-    "name": "cook",
-    "desc": "Recipe",
     "primary": true
    },
    {

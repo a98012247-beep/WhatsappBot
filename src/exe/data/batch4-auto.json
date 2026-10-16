@@ -2,6 +2,24 @@
   "__global__": {
     "fwd": {
       "enabled": true
-    }
+    },
+    "rss": [],
+    "keyword": [],
+    "rmsgs": [],
+    "bday": [],
+    "afk": {}
+  },
+  "69505992642696@lid": {
+    "rss": [],
+    "keyword": [
+      "aslam u alaikum"
+    ],
+    "fwd": {
+      "on": false,
+      "target": ""
+    },
+    "rmsgs": [],
+    "bday": [],
+    "afk": {}
   }
 }
