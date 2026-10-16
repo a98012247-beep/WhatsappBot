@@ -8,5 +8,10 @@
   },
   "120363413100580818@g.us": {
     "antilink": false
+  },
+  "120363413030623100@g.us": {
+    "antispam": false,
+    "silent": false,
+    "welcome": false
   }
 }

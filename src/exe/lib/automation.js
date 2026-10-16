@@ -82,6 +82,20 @@ export function removeScheduledTask(id) {
   return false;
 }
 
+export function updateScheduledTask(id, updates) {
+  const tasks = readTasks();
+  const t = tasks.find(x => x.id === id);
+  if (!t) return null;
+  Object.assign(t, updates);
+  t.updatedAt = new Date().toISOString();
+  writeTasks(tasks);
+  return t;
+}
+
+export function getAllScheduledTasks() {
+  return readTasks();
+}
+
 /**
  * Parse natural language automation requests.
  * Examples:

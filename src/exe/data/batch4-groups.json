@@ -90,8 +90,8 @@
     "stats": {
       "date": "2026-10-17",
       "msgs": 0,
-      "joins": 0,
-      "leaves": 0
+      "joins": 1,
+      "leaves": 1
     },
     "lastseen": {}
   },
@@ -145,6 +145,15 @@
       "date": "2026-10-17",
       "msgs": 0,
       "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {}
+  },
+  "120363412765148428@g.us": {
+    "stats": {
+      "date": "2026-10-17",
+      "msgs": 0,
+      "joins": 1,
       "leaves": 0
     },
     "lastseen": {}
