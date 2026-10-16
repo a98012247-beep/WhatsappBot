@@ -1089,6 +1089,74 @@ app.get('/api/automation/types', async (req, res) => {
           { name: 'to', label: 'Destination chat JID', type: 'text', required: true },
         ],
       },
+      {
+        id: 'autostatus', title: 'Auto Status Post',
+        desc: 'Automatically post status updates on a schedule',
+        fields: [
+          { name: 'message', label: 'Status text', type: 'textarea', required: true },
+          { name: 'media', label: 'Media URL (optional)', type: 'text', required: false },
+          { name: 'schedule', label: 'Schedule (cron or "9:00", "daily")', type: 'text', required: true, placeholder: '0 9 * * *' },
+        ],
+      },
+      {
+        id: 'autopost', title: 'Auto Post to Groups',
+        desc: 'Automatically post a message to multiple groups on schedule',
+        fields: [
+          { name: 'message', label: 'Message', type: 'textarea', required: true },
+          { name: 'targets', label: 'Target Groups (comma-separated)', type: 'group-select-multi', required: true },
+          { name: 'schedule', label: 'Schedule (cron or "9:00")', type: 'text', required: true, placeholder: '0 9 * * *' },
+          { name: 'silent', label: 'Silent (no command shown in chat)', type: 'select', options: ['yes', 'no'], default: 'yes' },
+        ],
+      },
+      {
+        id: 'bulkmessage', title: 'Bulk Message to Contacts',
+        desc: 'Send a message to multiple contacts (choose how many)',
+        fields: [
+          { name: 'message', label: 'Message', type: 'textarea', required: true },
+          { name: 'contacts', label: 'Contacts (comma-separated numbers)', type: 'textarea', required: true, placeholder: '923001234567, 923007654321' },
+          { name: 'delay', label: 'Delay between sends (seconds)', type: 'number', default: 5 },
+          { name: 'silent', label: 'Silent mode', type: 'select', options: ['yes', 'no'], default: 'yes' },
+        ],
+      },
+    ],
+  });
+});
+
+// ─── Automation Templates (2026-10-17 per Hudson) ───
+// Pre-built templates the user can select, edit, and deploy
+app.get('/api/automation/templates', async (req, res) => {
+  res.json({
+    templates: [
+      {
+        id: 'tpl-morning-status', name: 'Morning Status Update',
+        desc: 'Post a good-morning status every day at 8 AM',
+        type: 'autostatus',
+        defaults: { message: '🌅 Good morning! Have a blessed day! 🤲', schedule: '0 8 * * *' },
+      },
+      {
+        id: 'tpl-group-reminder', name: 'Daily Group Reminder',
+        desc: 'Send a daily reminder to your group at 9 AM',
+        type: 'autopost',
+        defaults: { message: '📢 Daily reminder: ...', schedule: '0 9 * * *', silent: 'yes' },
+      },
+      {
+        id: 'tpl-welcome-new', name: 'Welcome New Members',
+        desc: 'Auto-welcome when someone joins',
+        type: 'welcome',
+        defaults: { message: 'Welcome {name}! 🎉 Glad to have you here.' },
+      },
+      {
+        id: 'tpl-keyword-reply', name: 'Price Inquiry Auto-Reply',
+        desc: 'Reply automatically when someone asks about price',
+        type: 'autoreply',
+        defaults: { keyword: 'price', reply: 'Our prices start at... Contact us for details!', scope: 'global' },
+      },
+      {
+        id: 'tpl-bulk-announce', name: 'Bulk Announcement',
+        desc: 'Send an announcement to multiple contacts',
+        type: 'bulkmessage',
+        defaults: { message: '📢 Important announcement: ...', delay: 5, silent: 'yes' },
+      },
     ],
   });
 });
@@ -1196,6 +1264,27 @@ app.delete('/api/automation/:type/:id', async (req, res) => {
 
     if (!found) return res.status(404).json({ error: 'Automation not found' });
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Silent Command Execution (2026-10-17 per Hudson) ───
+// Execute a bot command from the dashboard WITHOUT any output appearing
+// in WhatsApp chat. The command runs in the background; output returns
+// to the dashboard only. Use for: tagall, status post, group management, etc.
+app.post('/api/command/exec', async (req, res) => {
+  try {
+    const { command, target, sender } = req.body || {};
+    if (!command || !target) {
+      return res.status(400).json({ error: 'command and target required' });
+    }
+    const bot = getBot();
+    if (!bot) return res.status(503).json({ error: 'Bot not initialized' });
+    // Sender defaults to owner for dashboard commands
+    const { getOwnerConfig } = await import('./lib/access.js');
+    const cfg = getOwnerConfig();
+    const senderJid = sender || (cfg.owner ? cfg.owner + '@s.whatsapp.net' : 'dashboard@silent');
+    const result = await bot.executeSilent(command, target, senderJid);
+    res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

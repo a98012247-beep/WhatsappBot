@@ -2963,6 +2963,13 @@ class WhatsAppBot extends EventEmitter {
   }
 
   async sendMessage(jid, content, options = {}) {
+    // Silent mode (2026-10-17 per Hudson): dashboard commands execute without
+    // showing in chat. Output is captured for dashboard display only.
+    if (this._silentMode) {
+      const text = typeof content === 'string' ? content : (content.caption || '[Media]');
+      this._silentOutput.push({ to: jid, text: text.slice(0, 2000) });
+      return { silent: true };
+    }
     if (!this.sock) {
       throw new Error('WhatsApp bot is not connected');
     }
@@ -2999,6 +3006,38 @@ class WhatsAppBot extends EventEmitter {
     });
 
     return res;
+  }
+
+  // Silent command execution (2026-10-17 per Hudson): run a bot command from
+  // the dashboard without any output appearing in WhatsApp chat. All
+  // sendMessage calls are captured and returned to the dashboard.
+  // Returns { success, output: [{to, text}], error }
+  async executeSilent(commandText, targetJid, senderJid) {
+    this._silentMode = true;
+    this._silentOutput = [];
+    try {
+      const isGroup = targetJid.endsWith('@g.us');
+      const mockMsg = {
+        key: { remoteJid: targetJid, fromMe: false, id: 'silent-' + Date.now() },
+        message: { conversation: commandText },
+        pushName: 'Dashboard',
+      };
+      await this.handleMessage({
+        msg: mockMsg,
+        from: targetJid,
+        sender: senderJid || 'dashboard@silent',
+        senderName: 'Dashboard',
+        isGroup,
+        text: commandText,
+        interactiveId: null,
+      });
+      return { success: true, output: this._silentOutput };
+    } catch (err) {
+      return { success: false, error: err.message, output: this._silentOutput };
+    } finally {
+      this._silentMode = false;
+      this._silentOutput = [];
+    }
   }
 
   async sendVideoFromUrl(jid, videoInfo, msgKey = null) {
