@@ -1,0 +1,6 @@
+node_modules/
+session/
+*.log
+tunnel/
+data/*.json
+!data/.gitkeep

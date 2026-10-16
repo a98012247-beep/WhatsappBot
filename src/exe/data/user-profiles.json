@@ -1,0 +1,83 @@
+{
+  "71022099333190@lid": {
+    "onboardingStep": "name",
+    "onboarded": false,
+    "updatedAt": "2026-10-13T13:43:08.060Z"
+  },
+  "120363418258523257@newsletter": {
+    "onboardingStep": "usage",
+    "onboarded": false,
+    "updatedAt": "2026-10-13T14:19:48.456Z",
+    "name": "*Join My AI",
+    "field": "*Join My AI Community 👇*\nhttps://chat.whatsapp.com/KQXumFnvnOf1nb1IhVVeTx\n\n> Note: If you're already a member of AI with Awais community, please don't join again. The same content is shared across all groups."
+  },
+  "181647672627326@lid": {
+    "onboardingStep": "done",
+    "onboarded": true,
+    "updatedAt": "2026-10-14T11:45:38.768Z",
+    "name": "Hi",
+    "field": "https://youtu.be/84K57URoAAw?si=_7YRnLSkTRgFzPGF",
+    "usage": "general",
+    "onboardedAt": "2026-10-14T11:45:38.768Z"
+  },
+  "151204424343791@lid": {
+    "onboardingStep": "done",
+    "onboarded": true,
+    "updatedAt": "2026-10-14T13:19:59.618Z",
+    "name": "Mr Bot😅",
+    "field": "Mitro mean?",
+    "usage": "general",
+    "onboardedAt": "2026-10-14T13:19:59.618Z"
+  },
+  "156694080413885@lid": {
+    "onboardingStep": "name",
+    "onboarded": false,
+    "updatedAt": "2026-10-14T12:49:56.423Z"
+  },
+  "2414409162801@lid": {
+    "onboardingStep": "done",
+    "nameAsks": 1,
+    "onboarded": true,
+    "updatedAt": "2026-10-14T13:48:52.336Z",
+    "name": "Hira Ismail",
+    "onboardedAt": "2026-10-14T13:48:52.336Z"
+  },
+  "204690323193903@lid": {
+    "onboardingStep": "done",
+    "nameAsks": 1,
+    "onboarded": true,
+    "updatedAt": "2026-10-14T13:49:39.234Z",
+    "name": "Already told you",
+    "onboardedAt": "2026-10-14T13:49:39.234Z"
+  },
+  "109711114383487@lid": {
+    "onboardingStep": "done",
+    "nameAsks": 1,
+    "onboarded": true,
+    "updatedAt": "2026-10-14T14:45:58.916Z",
+    "name": "My name is",
+    "onboardedAt": "2026-10-14T14:45:58.915Z"
+  },
+  "157836390727915@lid": {
+    "onboardingStep": "name",
+    "nameAsks": 1,
+    "onboarded": false,
+    "updatedAt": "2026-10-15T12:43:11.436Z"
+  },
+  "108074899644670@lid": {
+    "onboardingStep": "done",
+    "nameAsks": 1,
+    "onboarded": true,
+    "updatedAt": "2026-10-15T16:21:12.959Z",
+    "name": "Awais",
+    "onboardedAt": "2026-10-15T16:21:12.959Z"
+  },
+  "69505992642696@lid": {
+    "onboardingStep": "done",
+    "nameAsks": 2,
+    "onboarded": true,
+    "updatedAt": "2026-10-16T12:33:00.327Z",
+    "name": "Muse",
+    "onboardedAt": "2026-10-16T12:33:00.326Z"
+  }
+}

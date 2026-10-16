@@ -1,0 +1,12 @@
+{
+  "120363410975468944@g.us": {
+    "antilink": true,
+    "antispam": true,
+    "slowmode": false,
+    "antidelete": true,
+    "silent": true
+  },
+  "120363413100580818@g.us": {
+    "antilink": false
+  }
+}

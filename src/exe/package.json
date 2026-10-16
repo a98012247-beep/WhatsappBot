@@ -1,0 +1,31 @@
+{
+  "name": "whatsapp-superbot",
+  "version": "1.0.0",
+  "description": "All-in-one AI WhatsApp Bot with Live Web Dashboard, Auto-Responder, Support & Group Tools",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "ai",
+    "gemini",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "btch-downloader": "^6.4.0",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4",
+    "rahad-all-downloader-v2": "^2.7.1",
+    "socket.io": "^4.8.4"
+  }
+}

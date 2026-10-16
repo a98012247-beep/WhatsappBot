@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ORD-1001",
+    "customer": "John Doe",
+    "phone": "+1234567890",
+    "item": "Pro Plan Subscription",
+    "status": "PROCESSING",
+    "amount": "$49.00",
+    "date": "2026-10-11T09:30:00.000Z"
+  },
+  {
+    "id": "ORD-1002",
+    "customer": "Sarah Smith",
+    "phone": "+9876543210",
+    "item": "Custom AI Workflow Setup",
+    "status": "DELIVERED",
+    "amount": "$199.00",
+    "date": "2026-10-10T14:15:00.000Z"
+  }
+]

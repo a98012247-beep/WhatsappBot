@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AwaxBot</title>
+  <meta name="description" content="AwaxBot — your WhatsApp, in an app.">
+  <meta name="theme-color" content="#f2f2f7">
+  <link rel="stylesheet" href="style.css?v=5">
+</head>
+<body>
+  <div class="app">
+    <!-- ── Side rail (desktop) ── -->
+    <aside class="rail">
+      <div class="rail-app">
+        <div class="app-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <div class="rail-app-txt"><strong>AwaxBot</strong></div>
+      </div>
+
+      <div class="rail-status" id="connection-widget">
+        <span class="dot pulse-warning" id="status-dot"></span>
+        <div class="rail-status-txt"><strong id="status-label">Connecting…</strong><span id="status-phone">—</span></div>
+      </div>
+
+      <nav class="rail-nav">
+        <button class="nav-item active" data-tab="tab-overview" id="btn-tab-overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" data-tab="tab-chat" id="btn-tab-chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>Chat</span>
+          <em class="count" id="badge-messages-count">0</em>
+        </button>
+        <button class="nav-item" data-tab="tab-groups-status" id="btn-tab-groups">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.9-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.2 1.6 4.9 4.4"/></svg>
+          <span>Groups</span>
+        </button>
+        <button class="nav-item" data-tab="tab-access" id="btn-tab-access">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M15 5l3 3"/><path d="M18 8l2 2"/></svg>
+          <span>Access</span>
+        </button>
+        <button class="nav-item" data-tab="tab-downloader" id="btn-tab-downloader">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11"/><polyline points="7.5 10.5 12 15 16.5 10.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg>
+          <span>Videos</span>
+        </button>
+        <button class="nav-item" data-tab="tab-ai" id="btn-tab-ai">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>
+          <span>AI</span>
+        </button>
+        <button class="nav-item" data-tab="tab-monitor" id="btn-tab-monitor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>Monitor</span>
+        </button>
+        <button class="nav-item" data-tab="tab-allcmds" id="btn-tab-allcmds">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <span>Commands</span>
+        </button>
+        <button class="nav-item" data-tab="tab-automation" id="btn-tab-automation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Automation</span>
+        </button>
+        <button class="nav-item" data-tab="tab-commands" id="btn-tab-commands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="8.5 8 5 12 8.5 16"/><polyline points="15.5 8 19 12 15.5 16"/></svg>
+          <span>Guide</span>
+        </button>
+        <button class="nav-item" data-tab="tab-menu" id="btn-tab-menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          <span>Menu</span>
+        </button>
+        <button class="nav-item" data-tab="tab-features" id="btn-tab-features">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.4"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.4"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="2.4"/></svg>
+          <span>Features</span>
+        </button>
+        <button class="nav-item" data-tab="tab-logs" id="btn-tab-logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          <span>Logs</span>
+        </button>
+      </nav>
+
+      <div class="rail-foot">
+        <button class="mini-btn" id="btn-restart-bot" title="Restart bot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+        </button>
+        <button class="mini-btn danger" id="btn-logout-bot" title="Disconnect">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── Content ── -->
+    <main class="content">
+      <header class="pagehead">
+        <div>
+          <h1 id="page-heading">Home</h1>
+          <p id="page-subheading">Everything at a glance</p>
+        </div>
+        <div class="pagehead-right">
+          <span class="live"><i></i>Live</span>
+          <button class="icon-btn" id="btn-refresh-stats" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- HOME -->
+      <section class="tab-pane active" id="tab-overview">
+        <div class="hero">
+          <div class="hero-left">
+            <span class="hero-dot pulse-warning" id="hero-dot"></span>
+            <div><strong id="hero-status">Connecting to WhatsApp…</strong><span id="hero-sub">Setting up your session</span></div>
+          </div>
+          <div class="hero-qr" id="qr-box-wrapper">
+            <div class="qr-mini" id="qr-container">
+              <div class="qr-loading" id="qr-placeholder"><div class="spinner"></div></div>
+              <img id="qr-image" class="hidden" alt="Pairing QR">
+            </div>
+            <span class="pill" id="qr-badge">Checking…</span>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong id="stat-received">0</strong><span>Inbox</span></div>
+          <div class="stat"><strong id="stat-sent">0</strong><span>Sent</span></div>
+          <div class="stat"><strong id="stat-ai">0</strong><span>AI replies</span></div>
+          <div class="stat"><strong id="stat-uptime">0m</strong><span>Uptime</span></div>
+        </div>
+
+        <h2 class="section-title">Bot modules</h2>
+        <div class="group">
+          <label class="row"><span class="row-ic g">✦</span><span class="row-txt"><strong>AI assistant</strong><span>Human-like answers via Gemini</span></span><span class="switch"><input type="checkbox" id="toggle-feat-ai" checked><i></i></span></label>
+          <label class="row"><span class="row-ic b">⚡</span><span class="row-txt"><strong>Auto-responder</strong><span>Instant replies for FAQs</span></span><span class="switch"><input type="checkbox" id="toggle-feat-auto-reply" checked><i></i></span></label>
+          <label class="row"><span class="row-ic v">◉</span><span class="row-txt"><strong>Group tools</strong><span>Audit, mute, admin controls</span></span><span class="switch"><input type="checkbox" id="toggle-feat-group-status" checked><i></i></span></label>
+          <label class="row"><span class="row-ic o">♡</span><span class="row-txt"><strong>Welcome greetings</strong><span>Greet new members</span></span><span class="switch"><input type="checkbox" id="toggle-feat-groups" checked><i></i></span></label>
+          <label class="row"><span class="row-ic p">✉</span><span class="row-txt"><strong>Support tickets</strong><span>Collect via !support</span></span><span class="switch"><input type="checkbox" id="toggle-feat-tickets" checked><i></i></span></label>
+        </div>
+        <button class="btn-primary btn-block" id="btn-save-feature-toggles">Save</button>
+
+        <h2 class="section-title">Pair a phone</h2>
+        <div class="group">
+          <div class="row static">
+            <div class="qr-steps">
+              <p><strong>1.</strong> Open WhatsApp → <strong>Settings</strong> → <strong>Linked devices</strong></p>
+              <p><strong>2.</strong> Tap <strong>Link a device</strong> and scan the code above</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAT -->
+      <section class="tab-pane" id="tab-chat">
+        <div class="chat-wrap">
+          <div class="chat-scroll" id="chat-messages-container">
+            <div class="empty-state" id="chat-empty-state">
+              <div class="empty-ic">💬</div>
+              <h4>No messages yet</h4>
+              <p>New WhatsApp activity shows up here.</p>
+            </div>
+          </div>
+          <form class="chat-bar" id="quick-reply-form">
+            <input type="text" id="quick-reply-recipient" placeholder="To: 923… " required>
+            <input type="text" id="quick-reply-text" placeholder="Message…" required>
+            <button type="submit" id="btn-send-quick-reply" aria-label="Send">↑</button>
+          </form>
+        </div>
+        <button class="link-btn" id="btn-clear-chat-view">Clear view</button>
+      </section>
+
+      <!-- GROUPS -->
+      <section class="tab-pane" id="tab-groups-status">
+        <h2 class="section-title">Status story <span class="pill" id="qr-badge2" style="display:none"></span></h2>
+        <form id="form-post-status" class="group pad">
+          <div class="fld"><label for="status-target-select">Post to</label>
+            <select id="status-target-select" required><option value="status@broadcast">📱 My story — all contacts</option></select>
+          </div>
+          <div class="fld grow"><label for="status-text-input">Message</label>
+            <input type="text" id="status-text-input" placeholder="What's happening?" required>
+          </div>
+          <button type="submit" class="btn-primary" id="btn-post-status">Post</button>
+          <button type="button" class="icon-btn" id="btn-refresh-statuses" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+          </button>
+        </form>
+        <div class="group table-group">
+          <table class="tbl">
+            <tbody id="statuses-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="sect-head">
+          <h2 class="section-title" style="margin:0">Groups</h2>
+          <span class="pill pill-green" id="group-whitelist-counter">0 of 0</span>
+        </div>
+        <div class="group pad row-wrap">
+          <select id="select-group-mode">
+            <option value="whitelist">🛡️ Selected groups only</option>
+            <option value="all">🌐 All groups</option>
+            <option value="disabled">⛔ Disabled everywhere</option>
+          </select>
+          <input type="text" id="group-search-input" placeholder="Search groups…">
+          <div class="btn-row">
+            <button class="btn-soft" id="btn-select-all-groups">Select all</button>
+            <button class="btn-soft" id="btn-deselect-all-groups">None</button>
+            <button class="icon-btn" id="btn-refresh-groups" title="Refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="group table-group">
+          <table class="tbl"><tbody id="groups-tbody"><tr><td class="td-empty">Loading…</td></tr></tbody></table>
+        </div>
+
+        <h2 class="section-title">Support tickets</h2>
+        <div class="group table-group">
+          <table class="tbl"><tbody id="tickets-tbody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ACCESS -->
+      <section class="tab-pane" id="tab-access">
+        <h2 class="section-title">Owner</h2>
+        <div class="group pad">
+          <div class="row static">
+            <span class="row-ic o">👑</span>
+            <span class="row-txt"><strong id="owner-number-display">Not set</strong><span>Only the owner can change access settings</span></span>
+          </div>
+          <form id="form-set-owner" class="access-inline-form">
+            <input type="text" id="input-owner-number" placeholder="923…" required>
+            <button type="submit" class="btn-primary btn-sm" id="btn-set-owner">Set</button>
+          </form>
+        </div>
+
+        <h2 class="section-title">Admins</h2>
+        <div class="group" id="admin-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+        <form id="form-add-admin" class="group pad access-inline-form">
+          <input type="text" id="input-admin-number" placeholder="923…" required>
+          <button type="submit" class="btn-primary btn-sm" id="btn-add-admin">Add</button>
+        </form>
+
+        <h2 class="section-title">Global defaults</h2>
+        <div class="group">
+          <label class="row"><span class="row-ic v">🔇</span><span class="row-txt"><strong>Silent mode by default</strong><span>Suppress all announcements in new groups unless changed per group</span></span><span class="switch"><input type="checkbox" id="toggle-silent-default"><i></i></span></label>
+        </div>
+      </section>
+
+      <!-- AI -->
+      <section class="tab-pane" id="tab-ai">
+        <h2 class="section-title">Gemini AI</h2>
+        <form id="ai-config-form" class="group pad stack">
+          <div class="fld"><label for="ai-api-key">API keys <span id="ai-key-count" class="hint-inline"></span></label>
+            <textarea id="ai-api-key" rows="3" placeholder="AIzaSy… (one key per line)"></textarea>
+            <span class="hint">Add several keys, one per line — if a key hits its limit the bot automatically falls back to the next. Free from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></span>
+          </div>
+          <div class="fld"><label for="ai-groq-key">Groq API key <span class="hint-inline">fast + cheap — tried first</span></label>
+            <input type="password" id="ai-groq-key" placeholder="gsk_… (free at console.groq.com)" autocomplete="off">
+            <span class="hint">Free tier, no card needed — 14,400 requests/day. If set, the bot answers with Groq (Llama 3.3 70B) and falls back to Gemini on failure.</span>
+          </div>
+          <div class="fld"><label for="ai-model-select">Model</label>
+            <select id="ai-model-select">
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+              <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+            </select>
+          </div>
+          <div class="fld"><label for="ai-system-prompt">Persona</label>
+            <textarea id="ai-system-prompt" rows="2" placeholder="How should the bot sound?"></textarea>
+          </div>
+          <label class="row"><span class="row-txt"><strong>Reply to all private chats</strong><span>Every 1-on-1 message gets an AI answer</span></span><span class="switch"><input type="checkbox" id="ai-auto-reply-all"><i></i></span></label>
+          <div class="btn-row">
+            <button type="submit" class="btn-primary grow" id="btn-save-ai">Save</button>
+            <button type="button" class="btn-soft" id="btn-test-ai">Try a sample</button>
+          </div>
+          <div class="ai-sample hidden" id="ai-test-result-box"><p id="ai-test-result-text"></p></div>
+        </form>
+
+        <h2 class="section-title">Voice</h2>
+        <form id="voice-config-form" class="group pad stack">
+          <div class="fld"><label for="voice-api-key">Deepgram key</label><input type="password" id="voice-api-key" placeholder="••••••"></div>
+          <div class="fld"><label for="voice-model-select">Voice</label>
+            <select id="voice-model-select">
+              <option value="aura-asteria-en">Asteria — warm</option>
+              <option value="aura-luna-en">Luna — lively</option>
+              <option value="aura-stella-en">Stella — calm</option>
+              <option value="aura-athena-en">Athena — pro</option>
+              <option value="aura-helios-en">Helios — warm male</option>
+              <option value="aura-arcas-en">Arcas — deep male</option>
+              <option value="aura-zeus-en">Zeus — strong male</option>
+              <option value="aura-orion-en">Orion — storyteller</option>
+            </select>
+          </div>
+          <label class="row"><span class="row-txt"><strong>Voice-note replies</strong><span>Answer voice notes with voice notes</span></span><span class="switch"><input type="checkbox" id="voice-auto-reply" checked><i></i></span></label>
+          <button type="submit" class="btn-primary btn-block" id="btn-save-voice">Save</button>
+        </form>
+
+        <div class="sect-head">
+          <h2 class="section-title" style="margin:0">Auto-replies</h2>
+          <button class="btn-primary btn-sm" id="btn-open-add-reply-modal">+ Add</button>
+        </div>
+        <div class="group table-group">
+          <table class="tbl"><tbody id="auto-replies-tbody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- MONITOR -->
+      <section class="tab-pane" id="tab-monitor">
+        <div class="sect-head">
+          <h2 class="section-title" style="margin:0">Live Monitor</h2>
+          <div class="btn-row">
+            <select id="monitor-group-filter" style="max-width:200px">
+              <option value="">All groups & chats</option>
+            </select>
+            <button class="icon-btn" id="btn-refresh-monitor" title="Refresh">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="monitor-stats" style="margin-bottom:16px"></div>
+        <div class="group table-group">
+          <div id="monitor-feed" class="monitor-feed">
+            <div class="td-empty" style="padding:24px;text-align:center">Loading live feed…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMMAND BROWSER -->
+      <section class="tab-pane" id="tab-allcmds">
+        <div class="sect-head">
+          <h2 class="section-title" style="margin:0">All Commands <span class="pill" id="allcmds-count">0</span></h2>
+        </div>
+        <div class="group pad row-wrap">
+          <input type="search" id="allcmds-search" class="search" placeholder="Search 605 commands…" style="flex:1;min-width:200px">
+          <select id="allcmds-cat-filter" style="max-width:220px"><option value="">All categories</option></select>
+        </div>
+        <div class="group pad row-wrap">
+          <input type="text" id="allcmds-test-target" placeholder="Test target: 923… or group JID" style="flex:1;min-width:200px">
+          <span class="hint">Pick a command → Test sends it to this chat</span>
+        </div>
+        <div id="allcmds-list"></div>
+      </section>
+
+      <!-- GROUP DETAIL (hash-routed page) -->
+      <section class="tab-pane" id="tab-group-detail">
+        <button class="btn-soft btn-sm" id="btn-back-groups" style="margin-bottom:12px">← Back to Groups</button>
+        <div id="group-detail-content"><div class="td-empty" style="padding:24px;text-align:center">Loading group…</div></div>
+      </section>
+
+      <!-- AUTOMATION -->
+      <section class="tab-pane" id="tab-automation">
+        <div class="sect-head">
+          <h2 class="section-title" style="margin:0">Automation</h2>
+          <button class="btn-primary btn-sm" id="btn-open-auto-builder">+ New Automation</button>
+        </div>
+        <h2 class="section-title">Auto-replies</h2>
+        <div class="group" id="auto-replies-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+
+        <h2 class="section-title">Scheduled messages</h2>
+        <div class="group" id="auto-scheduled-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+
+        <h2 class="section-title">Keyword alerts</h2>
+        <div class="group" id="auto-keywords-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+
+        <h2 class="section-title">ManyChat replies</h2>
+        <div class="group" id="auto-manychat-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+      </section>
+
+      <!-- DOWNLOADER -->
+      <section class="tab-pane" id="tab-downloader">
+        <form id="form-downloader" class="dl-bar">
+          <input type="url" id="dl-input-url" placeholder="Paste a video link…" required>
+          <button type="submit" class="btn-primary" id="btn-dl-submit">Fetch</button>
+        </form>
+        <div class="chips">
+          <span>TikTok</span><span>Reels</span><span>YouTube</span><span>Facebook</span><span>X</span><span>Threads</span><span>Snapchat</span><span>Pinterest</span><span>CapCut</span><span>Vimeo</span>
+        </div>
+        <div class="group pad hidden" id="dl-result-card">
+          <video id="dl-video-element" controls playsinline preload="metadata"></video>
+          <div class="dl-meta">
+            <div class="pill-row"><span class="pill" id="dl-badge-platform">–</span><span class="pill" id="dl-badge-duration">–</span></div>
+            <h3 id="dl-video-title">–</h3>
+            <p class="hint"><span id="dl-video-author"></span> · <span id="dl-video-status"></span></p>
+            <div class="btn-row">
+              <a id="dl-btn-download" href="#" class="btn-primary">Download</a>
+              <button type="button" class="btn-soft" id="dl-btn-toggle-wa">Send to WhatsApp</button>
+            </div>
+            <div class="wa-send hidden" id="dl-wa-box">
+              <input type="text" id="dl-wa-recipient" placeholder="923… or group">
+              <button type="button" class="btn-primary" id="dl-btn-send-now">Send</button>
+            </div>
+          </div>
+        </div>
+        <h2 class="section-title">From WhatsApp</h2>
+        <div class="group">
+          <div class="row static"><span class="row-txt"><strong><code>!dl</code> + link</strong><span>Any link pasted in chat downloads automatically</span></span></div>
+          <div class="row static"><span class="row-txt"><strong><code>!tiktok</code> · <code>!reel</code> · <code>!yt</code></strong><span>Shortcuts per platform</span></span></div>
+        </div>
+      </section>
+
+      <!-- GUIDE -->
+      <section class="tab-pane" id="tab-commands">
+        <input type="search" id="cmd-search" class="search" placeholder="Search commands…">
+        <div class="cmds" id="commands-grid">
+          <button class="cmd"><code>!menu</code><span>Everything the bot can do</span></button>
+          <button class="cmd"><code>!surah Yasin</code><span>Surah info 1–114</span></button>
+          <button class="cmd"><code>!ayah 2:255</code><span>Ayah + translation</span></button>
+          <button class="cmd"><code>!tafseer 1:1</code><span>Urdu tafseer</span></button>
+          <button class="cmd"><code>!tilawat Rahman</code><span>Quran MP3 recitation</span></button>
+          <button class="cmd"><code>!hadith bukhari 1</code><span>Six Sahih books</span></button>
+          <button class="cmd"><code>!namaz Lahore</code><span>Prayer times</span></button>
+          <button class="cmd"><code>!hijri</code><span>Islamic date &amp; events</span></button>
+          <button class="cmd"><code>!dua</code><span>Masnoon duas</span></button>
+          <button class="cmd"><code>!song tum hi ho</code><span>Music as MP3</span></button>
+          <button class="cmd"><code>!photo lahore</code><span>HD pictures</span></button>
+          <button class="cmd"><code>!s</code><span>Photo → sticker (reply)</span></button>
+          <button class="cmd"><code>!audio</code><span>Video → MP3 (reply)</span></button>
+          <button class="cmd"><code>!meme moye</code><span>40+ meme sounds</span></button>
+          <button class="cmd"><code>!dl + link</code><span>TikTok · Reels · YT · FB · X</span></button>
+          <button class="cmd"><code>!ai question</code><span>Ask Gemini anything</span></button>
+          <button class="cmd"><code>!voice text</code><span>Text → voice note</span></button>
+          <button class="cmd"><code>!weather London</code><span>Live weather</span></button>
+          <button class="cmd"><code>!calc (250*4)+15%</code><span>Calculator</span></button>
+          <button class="cmd"><code>!poll Q | A | B</code><span>Native polls</span></button>
+          <button class="cmd"><code>!remind 10m …</code><span>Reminders</span></button>
+          <button class="cmd"><code>!crypto</code><span>BTC · ETH · SOL · BNB</span></button>
+          <button class="cmd"><code>!tagall</code><span>Mention everyone</span></button>
+          <button class="cmd"><code>!mute / !unmute</code><span>Group lock</span></button>
+          <button class="cmd"><code>!warn · !kick</code><span>Moderation</span></button>
+          <button class="cmd"><code>!quote · !joke</code><span>Fun on demand</span></button>
+          <button class="cmd"><code>!ping</code><span>Health check</span></button>
+        </div>
+      </section>
+
+      <!-- MENU CUSTOMISER -->
+      <section class="tab-pane" id="tab-menu">
+        <h2 class="section-title">WhatsApp Menu</h2>
+        <div class="group">
+          <div class="row static"><span class="row-txt"><strong>Button menu</strong><span>Users tap <code>menu</code> → categories → commands. No typing needed.</span></span></div>
+          <div class="row static"><span class="row-txt"><strong>Customise</strong><span>Switch off categories to hide them from the button menu. Features stay installed.</span></span></div>
+        </div>
+        <h2 class="section-title">Categories</h2>
+        <div class="group" id="menu-cat-list">
+          <div class="row static"><span class="row-txt"><span>Loading categories…</span></span></div>
+        </div>
+      </section>
+
+      <!-- FEATURES / SECTION CONTROL CENTER -->
+      <section class="tab-pane" id="tab-features">
+        <h2 class="section-title">Section Control Center</h2>
+        <div class="group">
+          <div class="row static"><span class="row-txt"><strong>All 28 sections</strong><span class="hint">Click a section for per-command toggles, settings, usage stats &amp; testing. Toggle disables the whole category.</span></span></div>
+        </div>
+        <div class="feat-grid" id="features-grid">
+          <div class="group"><div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div></div>
+        </div>
+      </section>
+
+      <!-- TERMINAL LOGS -->
+      <section class="tab-pane" id="tab-logs">
+        <h2 class="section-title">Terminal</h2>
+        <div class="term-bar">
+          <div class="seg" id="term-src-seg">
+            <button class="seg-btn active" data-src="bot">Bot</button>
+            <button class="seg-btn" data-src="errors">Errors</button>
+            <button class="seg-btn" data-src="tunnel">Tunnel</button>
+          </div>
+          <span class="live-dot" id="term-live" title="Live stream"></span>
+          <button class="mini-btn" id="term-pause" title="Pause live stream">⏸</button>
+          <button class="mini-btn" id="term-clear" title="Clear view">🗑</button>
+        </div>
+        <div class="terminal" id="terminal"><div class="term-line dim">Connecting to logs…</div></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Mobile tab bar -->
+  <nav class="tabbar">
+    <button class="nav-item active" data-tab="tab-overview"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/></svg><span>Home</span></button>
+    <button class="nav-item" data-tab="tab-chat"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span>Chat</span></button>
+    <button class="nav-item" data-tab="tab-groups-status"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3 2.9-4.5 5.5-4.5s4.9 1.5 5.5 4.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.6c2.3.2 4.2 1.6 4.9 4.4"/></svg><span>Groups</span></button>
+    <button class="nav-item" data-tab="tab-access"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="M15 5l3 3"/><path d="M18 8l2 2"/></svg><span>Access</span></button>
+    <button class="nav-item" data-tab="tab-automation"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Auto</span></button>
+    <button class="nav-item" data-tab="tab-monitor"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span>Monitor</span></button>
+    <button class="nav-item" data-tab="tab-allcmds"><svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg><span>Cmds</span></button>
+    <button class="nav-item" data-tab="tab-features"><svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.4"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.4"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="2.4"/></svg><span>Features</span></button>
+    <button class="nav-item" data-tab="tab-downloader"><svg viewBox="0 0 24 24"><path d="M12 3.5v11"/><polyline points="7.5 10.5 12 15 16.5 10.5"/><path d="M4.5 16.5v2a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2"/></svg><span>Videos</span></button>
+    <button class="nav-item" data-tab="tab-ai"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg><span>AI</span></button>
+  </nav>
+
+  <!-- Compat (hidden) -->
+  <form id="direct-send-form" style="display:none"><input id="direct-phone"><textarea id="direct-message"></textarea><button id="btn-submit-direct"></button></form>
+
+  <!-- Automation Builder modal -->
+  <div class="sheet-backdrop hidden" id="modal-auto-builder">
+    <div class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h3>New Automation</h3><button class="icon-btn" id="btn-close-auto-builder">✕</button></div>
+      <form id="form-auto-builder" class="stack">
+        <div class="fld"><label for="auto-builder-type">Automation type</label>
+          <select id="auto-builder-type" required><option value="">Choose…</option></select>
+        </div>
+        <div id="auto-builder-fields"></div>
+        <p class="hint" id="auto-builder-desc"></p>
+        <div class="btn-row"><button type="button" class="btn-soft grow" id="btn-cancel-auto-builder">Cancel</button><button type="submit" class="btn-primary grow">Create</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sheet modal -->
+  <div class="sheet-backdrop hidden" id="modal-reply">
+    <div class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-head"><h3 id="modal-reply-title">New reply rule</h3><button class="icon-btn" id="btn-close-modal">✕</button></div>
+      <form id="form-reply-rule" class="stack">
+        <input type="hidden" id="modal-reply-id">
+        <div class="fld"><label for="modal-reply-trigger">Keyword</label><input id="modal-reply-trigger" placeholder="e.g. price, hello" required></div>
+        <div class="fld"><label for="modal-reply-type">Match</label>
+          <select id="modal-reply-type"><option value="contains">Contains</option><option value="exact">Exact</option><option value="regex">Regex</option></select>
+        </div>
+        <div class="fld"><label for="modal-reply-text">Reply</label><textarea id="modal-reply-text" rows="3" required></textarea></div>
+        <div class="btn-row"><button type="button" class="btn-soft grow" id="btn-cancel-modal">Cancel</button><button type="submit" class="btn-primary grow">Save</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toasts" id="toast-container"></div>
+
+  <script>
+    // Dedicated command sections: builds 28 collapsible category sections from
+    // window.COMMAND_SECTIONS and moves every .cmd button into its section.
+    // Runs on DOMContentLoaded so all batch scripts (incl. deferred modules) mounted first.
+    window.addEventListener('DOMContentLoaded', function () {
+      try {
+        var grid = document.getElementById('commands-grid');
+        var sections = window.COMMAND_SECTIONS || [];
+        if (!grid || !sections.length) return;
+        var lookup = {};
+        sections.forEach(function (s) { (s.cmds || []).forEach(function (c) { lookup[c] = s.num; }); });
+        function tokenOf(btn) {
+          var code = btn.querySelector('code');
+          var t = (code ? code.textContent : btn.textContent).trim().replace(/^!/, '');
+          return t.split(/[\s\/·|]/)[0].toLowerCase();
+        }
+        // Collect existing buttons first (batch scripts already appended theirs)
+        var buttons = Array.prototype.slice.call(grid.querySelectorAll('.cmd'));
+        // Build section shells
+        var bodies = {};
+        sections.forEach(function (s) {
+          var sec = document.createElement('div');
+          sec.className = 'cmd-section';
+          sec.setAttribute('data-secnum', s.num);
+          var head = document.createElement('button');
+          head.className = 'cmd-sec-head';
+          var ic = document.createElement('span'); ic.className = 'cmd-sec-icon'; ic.textContent = s.icon || '✨';
+          var tt = document.createElement('span'); tt.textContent = s.num + '. ' + s.title;
+          var ct = document.createElement('span'); ct.className = 'cmd-sec-count'; ct.textContent = '0';
+          var ch = document.createElement('span'); ch.className = 'chev'; ch.textContent = '▼';
+          head.appendChild(ic); head.appendChild(tt); head.appendChild(ct); head.appendChild(ch);
+          head.addEventListener('click', function () { sec.classList.toggle('closed'); });
+          var body = document.createElement('div');
+          body.className = 'cmd-sec-body';
+          var inner = document.createElement('div');
+          inner.className = 'cmds';
+          body.appendChild(inner);
+          sec.appendChild(head); sec.appendChild(body);
+          grid.appendChild(sec);
+          bodies[s.num] = { sec: sec, inner: inner, count: ct, n: 0 };
+        });
+        // Fallback section for anything unmatched (hidden when empty)
+        var fb = document.createElement('div');
+        fb.className = 'cmd-section hidden-sec';
+        var fbHead = document.createElement('button');
+        fbHead.className = 'cmd-sec-head';
+        var fbIc = document.createElement('span'); fbIc.className = 'cmd-sec-icon'; fbIc.textContent = '✨';
+        var fbTt = document.createElement('span'); fbTt.textContent = 'More';
+        var fbCt = document.createElement('span'); fbCt.className = 'cmd-sec-count'; fbCt.textContent = '0';
+        var fbCh = document.createElement('span'); fbCh.className = 'chev'; fbCh.textContent = '▼';
+        fbHead.appendChild(fbIc); fbHead.appendChild(fbTt); fbHead.appendChild(fbCt); fbHead.appendChild(fbCh);
+        fbHead.addEventListener('click', function () { fb.classList.toggle('closed'); });
+        var fbBody = document.createElement('div'); fbBody.className = 'cmd-sec-body';
+        var fbInner = document.createElement('div'); fbInner.className = 'cmds';
+        fbBody.appendChild(fbInner);
+        fb.appendChild(fbHead); fb.appendChild(fbBody);
+        grid.appendChild(fb);
+        var fbN = 0;
+        // Re-parent every button into its section
+        buttons.forEach(function (b) {
+          var tok = tokenOf(b);
+          var num = lookup[tok];
+          if (num && bodies[num]) { bodies[num].inner.appendChild(b); bodies[num].n++; }
+          else { fbInner.appendChild(b); fbN++; }
+        });
+        Object.keys(bodies).forEach(function (k) { bodies[k].count.textContent = bodies[k].n; });
+        fbCt.textContent = fbN;
+        if (!fbN) fb.style.display = 'none';
+        // Search across sections
+        var input = document.getElementById('cmd-search');
+        if (input) input.addEventListener('input', function (e) {
+          var q = e.target.value.toLowerCase();
+          Object.keys(bodies).forEach(function (k) {
+            var bd = bodies[k], vis = 0;
+            Array.prototype.forEach.call(bd.inner.querySelectorAll('.cmd'), function (b) {
+              var show = b.textContent.toLowerCase().indexOf(q) !== -1;
+              b.style.display = show ? '' : 'none';
+              if (show) vis++;
+            });
+            bd.sec.classList.toggle('hidden-sec', vis === 0);
+            if (q) bd.sec.classList.remove('closed');
+          });
+        });
+        // Tap-to-copy (delegated; complements per-batch handlers)
+        grid.addEventListener('click', function (e) {
+          var b = e.target.closest ? e.target.closest('.cmd') : null;
+          if (!b || !grid.contains(b)) return;
+          var code = b.querySelector('code');
+          if (code && navigator.clipboard) {
+            try { navigator.clipboard.writeText(code.textContent.trim().split(' ')[0]); } catch (err) {}
+          }
+        });
+      } catch (err) { console.warn('sections render:', err.message); }
+    });
+    // Mirror connection state into hero card
+    const _sd = document.getElementById('status-dot');
+    if (_sd) new MutationObserver(() => {
+      const hd = document.getElementById('hero-dot');
+      if (hd) hd.className = 'hero-dot ' + _sd.className.replace(/^(conn-dot|dot|connection-status-dot)\s*/, '');
+      const label = document.getElementById('status-label')?.textContent || '';
+      const hs = document.getElementById('hero-status');
+      if (hs && label) hs.textContent = label;
+      const sub = document.getElementById('status-phone')?.textContent || '';
+      const hsub = document.getElementById('hero-sub');
+      if (hsub && sub) hsub.textContent = sub;
+    }).observe(_sd, { attributes: true, attributeFilter: ['class'] });
+    // When WhatsApp links, app.js injects the "WhatsApp Linked" block into the
+    // small QR box — give it room and hide the redundant pill next to it.
+    const _qp = document.getElementById('qr-placeholder');
+    const _qw = document.getElementById('qr-box-wrapper');
+    if (_qp && _qw) {
+      const syncLinked = () => {
+        const linked = !_qp.classList.contains('hidden') && _qp.textContent.includes('WhatsApp Linked');
+        _qw.classList.toggle('is-linked', linked);
+      };
+      new MutationObserver(syncLinked).observe(_qp, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+      syncLinked();
+    }
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+  <!-- Command sections: 28 dedicated categories generated from the real bot menu -->
+  <script src="extra-cmds/sections.js"></script>
+  <!-- 134 new features (batches 1-6): dashboard command data.
+       Batches 1 & 6 self-mount into #commands-grid; the rest are rendered
+       uniformly by the inline renderer below + the batch5 module. -->
+  <script src="extra-cmds/batch1.js"></script>
+  <script src="extra-cmds/batch2.js"></script>
+  <script src="extra-cmds/batch3.js"></script>
+  <script src="extra-cmds/batch6.js"></script>
+  <script src="extra-cmds/batch7.js"></script>
+  <script type="module">
+    import { renderBatch5Commands } from './extra-cmds/batch5.js';
+    import { BATCH4_WEB_COMMANDS } from './extra-cmds/batch4.js';
+    const grid = document.getElementById('commands-grid');
+    if (grid) {
+      renderBatch5Commands('#commands-grid');
+      // Batch 4 data -> uniform buttons (same shape as the classic renderer)
+      (BATCH4_WEB_COMMANDS || []).forEach(function (x) {
+        const code = '!' + (x.example || x.command);
+        if (grid.querySelector('[data-xcmd="' + code.replace(/"/g, '') + '"]')) return;
+        const b = document.createElement('button');
+        b.className = 'cmd';
+        b.setAttribute('data-xcmd', code.replace(/"/g, ''));
+        b.setAttribute('data-batch', '4');
+        const c = document.createElement('code'); c.textContent = code;
+        const s = document.createElement('span'); s.textContent = x.desc || x.title || '';
+        b.appendChild(c); b.appendChild(s);
+        b.addEventListener('click', function () {
+          try { if (navigator.clipboard) navigator.clipboard.writeText(code.split(' ')[0]); } catch (e) {}
+        });
+        grid.appendChild(b);
+      });
+      window.EXTRA_COMMANDS = (window.EXTRA_COMMANDS || []).concat(BATCH4_WEB_COMMANDS);
+    }
+  </script>
+  <script>
+    // Unified renderer: batches 2/3/4 expose data globals; render them as
+    // standard .cmd buttons so search + tap-to-copy keep working.
+    (function () {
+      function addBtn(code, desc, tag) {
+        var grid = document.getElementById('commands-grid');
+        if (!grid) return;
+        code = String(code || '').trim();
+        if (!code || grid.querySelector('[data-xcmd="' + code.replace(/"/g, '') + '"]')) return;
+        var b = document.createElement('button');
+        b.className = 'cmd';
+        b.setAttribute('data-xcmd', code.replace(/"/g, ''));
+        if (tag) b.setAttribute('data-batch', tag);
+        var c = document.createElement('code'); c.textContent = code;
+        var s = document.createElement('span'); s.textContent = desc || '';
+        b.appendChild(c); b.appendChild(s);
+        b.addEventListener('click', function () {
+          try { if (navigator.clipboard) navigator.clipboard.writeText(code.split(' ')[0]); } catch (e) {}
+        });
+        grid.appendChild(b);
+      }
+      try {
+        // Batch 2: window.Batch2Commands.COMMANDS = [{cmd, desc}]
+        var b2 = window.Batch2Commands && window.Batch2Commands.COMMANDS;
+        (b2 || []).forEach(function (x) { addBtn(x.cmd, x.desc, '2'); });
+        // Batch 3: window.AwaxExtraCommands.batch3.commands = [{usage, desc}]
+        var b3 = window.AwaxExtraCommands && window.AwaxExtraCommands.batch3;
+        ((b3 && b3.commands) || []).forEach(function (x) { addBtn('!' + x.usage, x.desc, '3'); });
+        // Batch 4 is module-loaded above (window.EXTRA_COMMANDS merged there).
+        // Batch 7: window.EXTRA_COMMANDS7 = [{cmd, desc}]
+        (window.EXTRA_COMMANDS7 || []).forEach(function (x) { addBtn(x.cmd, x.desc, '7'); });
+      } catch (e) { console.warn('extra commands render:', e.message); }
+    })();
+  </script>
+  <!-- BRANDING (Awais AI — required by license, do not remove) -->
+  <div style="text-align:center;padding:12px;font-size:12px;opacity:.6">🤖 Powered by <b>Awais AI</b> · facebook.com/awaisautomates</div>
+</body>
+</html>

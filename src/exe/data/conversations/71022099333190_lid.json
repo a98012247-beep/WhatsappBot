@@ -1,0 +1,12 @@
+[
+ {
+  "role": "user",
+  "text": "Ha",
+  "at": "2026-10-13T13:43:08.051Z"
+ },
+ {
+  "role": "bot",
+  "text": "*Hi! I'm AwaxBot!*\n\nThis is our first chat — can I ask a few questions to serve you better?\n\n*What is your name?*",
+  "at": "2026-10-13T13:43:08.392Z"
+ }
+]

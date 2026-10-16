@@ -1,0 +1,9 @@
+{
+  "cat-2": {
+    "commands": {
+      "joke": {
+        "enabled": true
+      }
+    }
+  }
+}

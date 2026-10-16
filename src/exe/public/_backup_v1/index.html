@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AwaxBot Dashboard</title>
+  <meta name="description" content="Simple, modern, human-like WhatsApp bot and management dashboard.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h2>AwaxBot</h2>
+          <span class="brand-tag">WhatsApp Studio</span>
+        </div>
+      </div>
+
+      <!-- Live Connection Indicator -->
+      <div class="connection-widget" id="connection-widget">
+        <div class="connection-status-dot pulse-warning" id="status-dot"></div>
+        <div class="connection-info">
+          <span class="status-label" id="status-label">Initializing...</span>
+          <span class="status-sub" id="status-phone">Awaiting Session</span>
+        </div>
+      </div>
+
+      <!-- Simplified Clean Nav Menu -->
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="tab-overview" id="btn-tab-overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" data-tab="tab-chat" id="btn-tab-chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Live Chat & Send</span>
+          <span class="badge-pill" id="badge-messages-count">0</span>
+        </button>
+        <button class="nav-item" data-tab="tab-groups-status" id="btn-tab-groups">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>24h Status & Groups</span>
+        </button>
+        <button class="nav-item" data-tab="tab-downloader" id="btn-tab-downloader">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Video Downloader</span>
+        </button>
+        <button class="nav-item" data-tab="tab-ai" id="btn-tab-ai">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>AI & Auto-Replies</span>
+        </button>
+        <button class="nav-item" data-tab="tab-commands" id="btn-tab-commands">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          <span>Commands</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button class="action-btn-sm" id="btn-restart-bot" title="Restart Bot Engine">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          Restart
+        </button>
+        <button class="action-btn-sm danger" id="btn-logout-bot" title="Disconnect & Re-scan QR">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Reset
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1 id="page-heading">Bot Dashboard & Overview</h1>
+          <p id="page-subheading">Live WhatsApp engine status, real-time metrics, and instant controls</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="live-pill">
+            <span class="live-indicator"></span>
+            ACTIVE
+          </div>
+          <button class="btn btn-outline" id="btn-refresh-stats">Refresh</button>
+        </div>
+      </header>
+
+      <div class="tab-container">
+        <!-- TAB 1: OVERVIEW & QR PAIRING -->
+        <section class="tab-pane active" id="tab-overview">
+          <!-- Metric Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon metric-purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <div class="metric-data">
+                <span class="metric-num" id="stat-received">0</span>
+                <span class="metric-title">Messages In</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </div>
+              <div class="metric-data">
+                <span class="metric-num" id="stat-sent">0</span>
+                <span class="metric-title">Replies Out</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-emerald">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2z"></path><path d="m9 12 2 2 4-4"></path></svg>
+              </div>
+              <div class="metric-data">
+                <span class="metric-num" id="stat-ai">0</span>
+                <span class="metric-title">AI Replies</span>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon metric-amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="metric-data">
+                <span class="metric-num" id="stat-uptime">0m</span>
+                <span class="metric-title">Uptime</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Grid: QR Code & Active Modules -->
+          <div class="hero-split">
+            <!-- Pairing QR Box -->
+            <div class="glass-card qr-card" id="qr-box-wrapper">
+              <div class="card-header">
+                <h3>WhatsApp Connection</h3>
+                <span class="badge" id="qr-badge">Checking...</span>
+              </div>
+              <div class="qr-content-wrapper">
+                <div class="qr-image-container" id="qr-container">
+                  <div class="qr-placeholder" id="qr-placeholder">
+                    <div class="spinner"></div>
+                    <p>Connecting to WhatsApp...</p>
+                  </div>
+                  <img id="qr-image" class="qr-code-img hidden" alt="WhatsApp Pairing QR Code" />
+                </div>
+                <div class="qr-instruction-box">
+                  <h4>How to pair your phone:</h4>
+                  <ol class="step-list">
+                    <li>Open <strong>WhatsApp</strong> on your mobile phone.</li>
+                    <li>Go to <strong>Settings</strong> &gt; <strong>Linked Devices</strong>.</li>
+                    <li>Tap <strong>Link a Device</strong> and point your camera here.</li>
+                    <li>Session automatically stays connected 24/7.</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Modules Toggle Card -->
+            <div class="glass-card features-overview-card">
+              <div class="card-header">
+                <h3>Bot Modules</h3>
+                <span class="badge badge-success">Live Controls</span>
+              </div>
+              <div class="features-list">
+                <div class="feature-item">
+                  <div class="feature-info">
+                    <span class="feature-title">AI Assistant Engine</span>
+                    <span class="feature-desc">Human-like answers via Google Gemini</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="toggle-feat-ai" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="feature-item">
+                  <div class="feature-info">
+                    <span class="feature-title">Keyword Auto-Responder</span>
+                    <span class="feature-desc">Instant responses for pricing, hours, and greetings</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="toggle-feat-auto-reply" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="feature-item">
+                  <div class="feature-info">
+                    <span class="feature-title">Group Status & Tools</span>
+                    <span class="feature-desc">Live audit of participants, mute/unmute, and admin tools</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="toggle-feat-group-status" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="feature-item">
+                  <div class="feature-info">
+                    <span class="feature-title">Group Welcome Greetings</span>
+                    <span class="feature-desc">Warmly greet new members who join the group</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="toggle-feat-groups" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+
+                <div class="feature-item">
+                  <div class="feature-info">
+                    <span class="feature-title">Support Tickets</span>
+                    <span class="feature-desc">Collect inquiries via !support &lt;issue&gt;</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="toggle-feat-tickets" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="card-footer-action">
+                <button class="btn btn-primary btn-block" id="btn-save-feature-toggles">Save Preferences</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: LIVE CHAT & DIRECT SENDER -->
+        <section class="tab-pane" id="tab-chat">
+          <div class="glass-card chat-console-card">
+            <div class="card-header">
+              <div>
+                <h3>WhatsApp Live Console</h3>
+                <p class="subtitle">Real-time incoming messages & automated replies</p>
+              </div>
+              <button class="btn btn-sm btn-outline" id="btn-clear-chat-view">Clear View</button>
+            </div>
+
+            <!-- Message Stream -->
+            <div class="chat-feed-box" id="chat-messages-container">
+              <div class="empty-state" id="chat-empty-state">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <h4>No messages yet</h4>
+                <p>Incoming WhatsApp messages and bot responses appear here in real time.</p>
+              </div>
+            </div>
+
+            <!-- Integrated Quick Message Composer -->
+            <form class="chat-reply-bar" id="quick-reply-form">
+              <input type="text" id="quick-reply-recipient" placeholder="Recipient (e.g. 923241234567)" class="input-phone" required />
+              <input type="text" id="quick-reply-text" placeholder="Type a message to send directly via WhatsApp..." class="input-text" required />
+              <button type="submit" class="btn btn-primary" id="btn-send-quick-reply">
+                <span>Send</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- TAB 3: 24-HOUR STATUS & GROUPS HUB -->
+        <section class="tab-pane" id="tab-groups-status">
+          <!-- 24-Hour Status Hub: Post Status & Active Stories -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3>24-Hour Status Hub (Disappearing Stories)</h3>
+                <p class="subtitle">Post 24-hour status updates to WhatsApp groups or broadcast stories (disappear after 24 hrs)</p>
+              </div>
+              <button class="btn btn-sm btn-outline" id="btn-refresh-statuses">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                Refresh Statuses
+              </button>
+            </div>
+
+            <!-- Composer for 24-hour Status -->
+            <form id="form-post-status" class="config-form" style="margin-bottom: 24px;">
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="status-target-select">Status Destination</label>
+                  <select id="status-target-select" required>
+                    <option value="status@broadcast">📱 WhatsApp Story (Broadcast to All Contacts)</option>
+                    <!-- Groups populated dynamically -->
+                  </select>
+                </div>
+                <div class="form-group flex-2">
+                  <label for="status-text-input">24-Hour Status Text</label>
+                  <input type="text" id="status-text-input" placeholder="Type a status update or group announcement for the next 24 hours..." required />
+                </div>
+              </div>
+              <div class="form-actions" style="margin-top: 0;">
+                <button type="submit" class="btn btn-primary" id="btn-post-status">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span>Post 24-Hour Status</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Active 24-Hour Statuses Table -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Destination</th>
+                    <th>24-Hour Status Message</th>
+                    <th>Author</th>
+                    <th>Time Remaining</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="statuses-tbody">
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Groups Whitelist & Access Control Card -->
+          <div class="glass-card" style="margin-top: 24px;">
+            <div class="card-header">
+              <div>
+                <h3>WhatsApp Groups & Access Control (Strict Whitelist)</h3>
+                <p class="subtitle">Select exactly which groups AwaxBot should work in. The bot remains 100% silent in all unselected groups.</p>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span id="group-whitelist-counter" class="badge badge-success" style="padding: 6px 12px; font-weight: 600;">0 of 0 Groups Active</span>
+                <button class="btn btn-sm btn-outline" id="btn-refresh-groups">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  Refresh Groups
+                </button>
+              </div>
+            </div>
+
+            <!-- Mode & Quick Controls Banner -->
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 13px; font-weight: 600; color: #a5b4fc;">Group Security Mode:</span>
+                <select id="select-group-mode" style="background: #181b2e; color: #e2e8f0; border: 1px solid #3b4261; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer;">
+                  <option value="whitelist">🛡️ Selected Groups Only (Strict Whitelist - Recommended)</option>
+                  <option value="all">🌐 All Joined Groups</option>
+                  <option value="disabled">⛔ Disabled in All Groups (Silent everywhere)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-sm btn-outline" id="btn-select-all-groups" title="Enable bot in all groups">Select All</button>
+                <button class="btn btn-sm btn-outline" id="btn-deselect-all-groups" title="Disable bot in all groups">Deselect All</button>
+              </div>
+            </div>
+
+            <!-- Search Filter Bar -->
+            <div style="margin-bottom: 16px;">
+              <input type="text" id="group-search-input" placeholder="🔍 Filter groups by name..." style="width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px;" />
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Group Name & JID</th>
+                    <th>Members</th>
+                    <th>Bot Role</th>
+                    <th>Bot Active in Group?</th>
+                    <th>Chat Setting</th>
+                  </tr>
+                </thead>
+                <tbody id="groups-tbody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 24px; color: #94a3b8;">
+                      Loading groups... Click "Refresh Groups" if needed.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Support Tickets Ledger -->
+          <div class="glass-card" style="margin-top: 24px;">
+            <div class="card-header">
+              <div>
+                <h3>Customer Support Tickets</h3>
+                <p class="subtitle">Inquiries submitted via <code>!support &lt;issue&gt;</code></p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>Customer</th>
+                    <th>Inquiry Details</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tickets-tbody">
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: AI & AUTO-REPLIES -->
+        <section class="tab-pane" id="tab-ai">
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3>Google Gemini AI Settings</h3>
+                <p class="subtitle">Natural language engine for conversational WhatsApp replies</p>
+              </div>
+            </div>
+
+            <form id="ai-config-form" class="config-form">
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label for="ai-api-key">Gemini API Key</label>
+                  <input type="password" id="ai-api-key" placeholder="AIzaSy... (Get free key from Google AI Studio)" />
+                  <span class="field-hint">Free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Leave empty to use interactive demo mode.</span>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="ai-model-select">AI Model</label>
+                  <select id="ai-model-select">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast & Recommended)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="ai-system-prompt">Bot Persona & Instructions</label>
+                <textarea id="ai-system-prompt" rows="3" placeholder="You are a friendly, helpful friend chatting naturally on WhatsApp..."></textarea>
+                <span class="field-hint">Direct instructions defining how your bot speaks and writes messages.</span>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="switch-container">
+                  <input type="checkbox" id="ai-auto-reply-all">
+                  <span class="slider"></span>
+                  <div class="switch-text">
+                    <strong>Auto-Reply with AI to all 1-on-1 private messages</strong>
+                    <span>When enabled, any direct private message will get a natural human-like answer from AI.</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btn-save-ai">Save AI Settings</button>
+                <button type="button" class="btn btn-outline" id="btn-test-ai">Test Sample Reply</button>
+              </div>
+            </form>
+
+            <div class="ai-test-preview hidden" id="ai-test-result-box">
+              <h4>Sample Response:</h4>
+              <div class="test-response-text" id="ai-test-result-text"></div>
+            </div>
+          </div>
+
+          <!-- Deepgram Voice AI Settings -->
+          <div class="glass-card" style="margin-top: 24px;">
+            <div class="card-header">
+              <div>
+                <h3>Deepgram Voice AI (Speech-to-Text & Text-to-Speech)</h3>
+                <p class="subtitle">Real-time voice note audio transcription (Nova-2) and human-like voice synthesis (Aura)</p>
+              </div>
+              <span class="badge badge-success">Active & Integrated</span>
+            </div>
+
+            <form id="voice-config-form" class="config-form">
+              <div class="form-row">
+                <div class="form-group flex-2">
+                  <label for="voice-api-key">Deepgram API Key</label>
+                  <input type="password" id="voice-api-key" placeholder="3c27bbb8431..." />
+                  <span class="field-hint">Used for fast Nova-2 STT transcription and Aura voice replies.</span>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="voice-model-select">Aura Voice Persona</label>
+                  <select id="voice-model-select">
+                    <option value="aura-asteria-en">Asteria (Female - Natural Warm)</option>
+                    <option value="aura-luna-en">Luna (Female - Energetic)</option>
+                    <option value="aura-stella-en">Stella (Female - Calm)</option>
+                    <option value="aura-athena-en">Athena (Female - Professional)</option>
+                    <option value="aura-helios-en">Helios (Male - Warm Friendly)</option>
+                    <option value="aura-arcas-en">Arcas (Male - Deep Natural)</option>
+                    <option value="aura-zeus-en">Zeus (Male - Strong Voice)</option>
+                    <option value="aura-orion-en">Orion (Male - Storyteller)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group checkbox-group">
+                <label class="switch-container">
+                  <input type="checkbox" id="voice-auto-reply" checked>
+                  <span class="slider"></span>
+                  <div class="switch-text">
+                    <strong>Auto Voice-to-Voice Reply</strong>
+                    <span>When someone sends an audio/voice note on WhatsApp, transcribe it with Nova-2, think via Gemini, and reply back in a WhatsApp Voice Note!</span>
+                  </div>
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btn-save-voice">Save Voice Settings</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Auto-Responder Rules Section -->
+          <div class="glass-card" style="margin-top: 24px;">
+            <div class="card-header">
+              <div>
+                <h3>Auto-Responder Rules</h3>
+                <p class="subtitle">Instant replies triggered whenever a customer messages a keyword</p>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-open-add-reply-modal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Rule
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Match Type</th>
+                    <th>Human-Written Reply</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="auto-replies-tbody">
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB: ALL VIDEO DOWNLOADER -->
+        <section class="tab-pane" id="tab-downloader">
+          <div class="downloader-input-card">
+            <div class="card-header">
+              <div>
+                <h3>⚡ Fast All-in-One Video Downloader</h3>
+                <p class="subtitle">Lightning-fast parallel extraction for TikTok (no watermark), Reels, YouTube, Facebook, Twitter/X, and direct MP4</p>
+              </div>
+              <span class="badge" style="background: var(--wa-green-light); color: var(--wa-green-dark); border-color: var(--wa-green-border);">⚡ Ultra Fast</span>
+            </div>
+
+            <form id="form-downloader" class="downloader-form">
+              <input
+                type="url"
+                id="dl-input-url"
+                class="downloader-input"
+                placeholder="Paste video link here (e.g. TikTok, Instagram Reel, YouTube, Facebook, Twitter/X)..."
+                required
+              />
+              <button type="submit" class="btn btn-primary" id="btn-dl-submit">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Fetch Video</span>
+              </button>
+            </form>
+
+            <div class="platforms-list">
+              <span class="platform-chip active">✨ TikTok (No Watermark)</span>
+              <span class="platform-chip active">📸 Instagram Reels & Posts</span>
+              <span class="platform-chip active">▶️ YouTube Shorts & Videos</span>
+              <span class="platform-chip active">👥 Facebook Reels & Watch</span>
+              <span class="platform-chip active">🐦 Twitter / X</span>
+              <span class="platform-chip active">🧵 Threads</span>
+              <span class="platform-chip active">👻 Snapchat</span>
+              <span class="platform-chip active">📌 Pinterest</span>
+              <span class="platform-chip active">✂️ CapCut</span>
+              <span class="platform-chip active">🎬 Vimeo & Dailymotion</span>
+              <span class="platform-chip active">🎥 Direct MP4 Links</span>
+            </div>
+          </div>
+
+          <!-- Video Result Box (Hidden by default) -->
+          <div class="dl-result-card hidden" id="dl-result-card">
+            <div class="dl-player-wrapper">
+              <video id="dl-video-element" controls playsinline preload="metadata">
+                Your browser does not support HTML5 video preview.
+              </video>
+            </div>
+            <div class="dl-details">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span class="badge" id="dl-badge-platform" style="background: var(--primary-accent-light); color: var(--primary-accent);">Platform</span>
+                <span class="badge" id="dl-badge-duration" style="background: var(--bg-subtle);">HD 1080p</span>
+              </div>
+              <h3 class="dl-title" id="dl-video-title">Video Title</h3>
+              <div class="dl-meta-row">
+                <span id="dl-video-author">👤 Creator: Unknown</span>
+                <span>•</span>
+                <span id="dl-video-status">⚡ Fast Ready</span>
+              </div>
+
+              <div class="dl-actions">
+                <a id="dl-btn-download" href="#" class="btn btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  <span>Download MP4 Video</span>
+                </a>
+                <button type="button" class="btn btn-outline" id="dl-btn-toggle-wa" style="border-color: var(--wa-green); color: var(--wa-green-dark);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  <span>Send to WhatsApp Chat</span>
+                </button>
+              </div>
+
+              <!-- Quick Dispatch to WhatsApp Form -->
+              <div class="dl-wa-send-box hidden" id="dl-wa-box">
+                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">Send this video to a WhatsApp contact or group:</label>
+                <div style="display: flex; gap: 8px;">
+                  <input
+                    type="text"
+                    id="dl-wa-recipient"
+                    class="form-control"
+                    placeholder="Enter phone with country code (e.g. 923243877900) or group JID"
+                    style="flex: 1;"
+                  />
+                  <button type="button" class="btn btn-primary" id="dl-btn-send-now">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructions Card -->
+          <div class="glass-card" style="margin-top: 20px;">
+            <div class="card-header">
+              <h3>How to download videos directly in WhatsApp</h3>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 10px;">
+              <div class="command-box">
+                <div class="command-badge">!dl &lt;link&gt;</div>
+                <h4>Universal Downloader Command</h4>
+                <p>Type <code>!dl https://vm.tiktok.com/...</code> or any Instagram / YouTube / Facebook link in WhatsApp to get the video file sent to your chat.</p>
+              </div>
+              <div class="command-box">
+                <div class="command-badge">Direct Paste</div>
+                <h4>Automatic Detection</h4>
+                <p>Simply paste any TikTok, Instagram Reel, or YouTube Shorts link into a chat with the bot — it detects the link and sends back the video automatically!</p>
+              </div>
+              <div class="command-box">
+                <div class="command-badge">!tiktok / !reel / !yt</div>
+                <h4>Platform Specific Shortcuts</h4>
+                <p>Use <code>!tiktok</code> for watermark-free TikTok clips, <code>!reel</code> for Instagram Reels, and <code>!yt</code> for YouTube videos.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: COMMANDS CHEATSHEET -->
+        <section class="tab-pane" id="tab-commands">
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3>WhatsApp Commands</h3>
+                <p class="subtitle">Quick reference for commands available in WhatsApp chats and groups</p>
+              </div>
+            </div>
+
+            <div class="commands-grid">
+              <div class="command-box">
+                <div class="command-badge">!menu / !help</div>
+                <h4>Main Menu</h4>
+                <p>Lists everything the bot can help with directly in WhatsApp.</p>
+              </div>
+
+              <!-- Islamic Suite -->
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!surah &lt;name/number&gt;</div>
+                <h4>Quran Surah Info</h4>
+                <p>Complete information of any Surah (1-114) with Arabic title, Urdu meaning, Makki/Madani, and total ayahs. E.g.: <code>!surah Yasin</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!ayah &lt;surah:ayah&gt;</div>
+                <h4>Quran Ayah & Translation</h4>
+                <p>Arabic text with authentic Urdu (Jalandhry) and English translation. E.g.: <code>!ayah 2:255</code> (Ayat-ul-Kursi) or <code>!ayah 36:1</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!tafseer &lt;surah:ayah&gt;</div>
+                <h4>Quran Tafseer (Tafheem-ul-Quran)</h4>
+                <p>Detailed Urdu Tafseer by Maulana Maududi for any Ayah. E.g.: <code>!tafseer 1:1</code> or <code>!tafseer 112:1</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!tilawat &lt;surah&gt; [qari]</div>
+                <h4>Quran Audio MP3 Recitation</h4>
+                <p>Sends full audio MP3 file directly to WhatsApp. Reciters: Mishary Alafasy, Sudais, Abdul Basit, Ghamdi. E.g.: <code>!tilawat Rahman</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!hadith &lt;book&gt; &lt;number&gt;</div>
+                <h4>Hadith Finder (All 6 Sahih Books)</h4>
+                <p>Arabic, Urdu & English text from Bukhari (1-7563), Muslim (1-7563), Tirmidhi, Abu Dawud, Nasai, Ibn Majah. E.g.: <code>!hadith bukhari 1</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!namaz &lt;city&gt;</div>
+                <h4>Namaz Timings & Hijri Date</h4>
+                <p>Accurate Fajr, Sunrise, Dhuhr, Asr, Maghrib, and Isha prayer times for any city worldwide. E.g.: <code>!namaz Lahore</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!date / !hijri</div>
+                <h4>Islamic Date &amp; Holy Events</h4>
+                <p>Live accurate Hijri date, Islamic month fazeelat, and major Islamic festivals (Ramadan, Eid, Ashura, Shab-e-Qadr). E.g.: <code>!hijri</code> or <code>!events</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">!allahnames &amp; !dua</div>
+                <h4>99 Names &amp; Masnoon Duas</h4>
+                <p>Browse 99 Asma-ul-Husna with Urdu meanings or fetch daily Masnoon Duas with Arabic, pronunciation & translation.</p>
+              </div>
+
+              <!-- Media & Downloader -->
+              <div class="command-box" style="border-left: 3px solid #10b981;">
+                <div class="command-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">!song &lt;name&gt;</div>
+                <h4>Songs & Music MP3</h4>
+                <p>Search & play any song, music or naat in crystal clear MP3 format. E.g.: <code>!song tum hi ho</code> or natural: <code>song tajdar e haram</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #38bdf8;">
+                <div class="command-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">!photo &lt;name&gt;</div>
+                <h4>Photos & Wallpapers</h4>
+                <p>Search HD pictures and wallpapers. E.g.: <code>!photo lahore</code> or natural: <code>cute cat pic</code>, <code>wallpaper nature</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #6366f1;">
+                <div class="command-badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">!s / !sticker</div>
+                <h4>Photo to Sticker Converter</h4>
+                <p>Reply to any photo with <code>!s</code> or send an image with caption <code>!s</code> to generate an instant transparent WhatsApp sticker.</p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #6366f1;">
+                <div class="command-badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">!audio / !v2a</div>
+                <h4>Video to Audio (MP3)</h4>
+                <p>Reply to any video with <code>!audio</code> or provide a video link to extract and send clean audio. E.g.: <code>!audio</code> or <code>!audio https://...</code></p>
+              </div>
+
+              <div class="command-box" style="border-left: 3px solid #ec4899;">
+                <div class="command-badge" style="background: rgba(236, 72, 153, 0.15); color: #f472b6;">!meme / !soundboard</div>
+                <h4>Viral Meme Soundboard</h4>
+                <p>Play 40+ viral meme voice notes (Moye Moye, Maro Mujhe, Shabash Beta, Bhupendra Jogi, Khatam Tata, Emotional Damage, Bruh, Siu, etc.). E.g.: <code>!meme moye</code>, <code>!meme shabash</code> or <code>!soundboard</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!dl &lt;link&gt;</div>
+                <h4>All Video Downloader</h4>
+                <p>Downloads video from TikTok, Instagram Reels, YouTube, Facebook, Twitter, and sends it directly. E.g.: <code>!dl https://...</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!tiktok &lt;link&gt;</div>
+                <h4>TikTok (No Watermark)</h4>
+                <p>Downloads clean TikTok videos without watermark in full HD quality.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!reel &lt;link&gt;</div>
+                <h4>Instagram Reels</h4>
+                <p>Downloads public Instagram Reels and video posts.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!yt &lt;link&gt;</div>
+                <h4>YouTube Shorts & Videos</h4>
+                <p>Extracts and sends YouTube Shorts or standard MP4 video streams.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!ai &lt;question&gt;</div>
+                <h4>Ask AI Assistant</h4>
+                <p>Natural conversation with Google Gemini. E.g.: <code>!ai what are easy dinner ideas?</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!status &lt;message&gt;</div>
+                <h4>Post 24h Group Status</h4>
+                <p>Posts a 24-hour status for the group that automatically disappears after 24 hours. E.g.: <code>!status Meeting today at 5 PM!</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!status</div>
+                <h4>View 24h Group Status</h4>
+                <p>Displays the current active status of this group along with a countdown of how much time is left.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!poststatus &lt;text&gt;</div>
+                <h4>WhatsApp Story Broadcast</h4>
+                <p>Publishes a status update directly to your WhatsApp Status story for all contacts to see for 24 hours.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!weather &lt;city&gt;</div>
+                <h4>Live Weather</h4>
+                <p>Real-time temperature and sky condition. E.g.: <code>!weather London</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!calc &lt;math&gt;</div>
+                <h4>Calculator</h4>
+                <p>Solves arithmetic and percentages. E.g.: <code>!calc (250 * 4) + 15%</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!poll &lt;Q&gt; | &lt;A&gt; | &lt;B&gt;</div>
+                <h4>WhatsApp Native Poll</h4>
+                <p>Creates an interactive poll. E.g.: <code>!poll Lunch? | Pizza | Burgers</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!remind &lt;time&gt; &lt;task&gt;</div>
+                <h4>Reminders</h4>
+                <p>Pings you when time is up. E.g.: <code>!remind 10m Call mom</code></p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!crypto</div>
+                <h4>Crypto Prices</h4>
+                <p>Live prices for Bitcoin (BTC), Ethereum (ETH), Solana, and BNB.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!tagall [message]</div>
+                <h4>Mention Everyone</h4>
+                <p>Alerts all group participants with a quick heads-up.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!mute / !unmute</div>
+                <h4>Mute / Open Group</h4>
+                <p>Locks group to admins only (<code>!mute</code>) or opens to everyone (<code>!unmute</code>).</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!warn @user / !kick @user</div>
+                <h4>Group Moderation</h4>
+                <p>Issues warning strikes (1 to 3) or removes offending users from the group.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!support &lt;issue&gt;</div>
+                <h4>Customer Support</h4>
+                <p>Logs a support ticket directly to the central dashboard ledger.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!quote / !joke / !fact</div>
+                <h4>Fun & Games</h4>
+                <p>Random inspirational quotes, funny jokes, or trivia facts.</p>
+              </div>
+
+              <div class="command-box">
+                <div class="command-badge">!ping / !status</div>
+                <h4>Bot Status</h4>
+                <p>Checks bot uptime, response latency, and system health.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Fallback direct-send-form (for JS compatibility) -->
+  <form id="direct-send-form" style="display: none;">
+    <input type="text" id="direct-phone" />
+    <textarea id="direct-message"></textarea>
+    <button type="submit" id="btn-submit-direct"></button>
+  </form>
+
+  <!-- Modal: Add Auto-Reply -->
+  <div class="modal-overlay hidden" id="modal-reply">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-reply-title">Add Auto-Reply Rule</h3>
+        <button class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <form id="form-reply-rule">
+        <input type="hidden" id="modal-reply-id">
+        <div class="form-group">
+          <label for="modal-reply-trigger">Trigger Keyword</label>
+          <input type="text" id="modal-reply-trigger" placeholder="e.g. price, hello, shipping" required />
+        </div>
+        <div class="form-group">
+          <label for="modal-reply-type">Match Type</label>
+          <select id="modal-reply-type">
+            <option value="contains">Contains (matches if word appears in text)</option>
+            <option value="exact">Exact (matches entire message)</option>
+            <option value="regex">Regex (Regular Expression)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal-reply-text">Human-Written Response</label>
+          <textarea id="modal-reply-text" rows="4" placeholder="Hey! Here is the info you requested..." required></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Rule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

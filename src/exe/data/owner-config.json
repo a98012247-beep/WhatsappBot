@@ -1,0 +1,8 @@
+{
+  "owner": "923243877900",
+  "admins": [],
+  "silentDefault": false,
+  "features": {
+    "fuzzy-commands": true
+  }
+}

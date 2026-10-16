@@ -1,0 +1,4202 @@
+{
+  "1917": {
+    "category": "Smart AI Dost",
+    "desc": "1917 text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bol": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "say": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Bol kar sunayein",
+    "duplicateOf": "tts",
+    "notes": "",
+    "status": "alias"
+  },
+  "speak": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tovn": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Audio to voice note (reply)",
+    "duplicateOf": "voice",
+    "notes": "",
+    "status": "alias"
+  },
+  "tovoice": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Convert to voice note",
+    "duplicateOf": "voice",
+    "notes": "",
+    "status": "alias"
+  },
+  "tts": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vn": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Text to voice note",
+    "duplicateOf": "voice",
+    "notes": "",
+    "status": "alias"
+  },
+  "vo": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Voice message",
+    "duplicateOf": "voice",
+    "notes": "",
+    "status": "alias"
+  },
+  "voice": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Text → voice note",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vtts": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Voice TTS",
+    "duplicateOf": "tts",
+    "notes": "",
+    "status": "alias"
+  },
+  "vttsg": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Voice TTS (group)",
+    "duplicateOf": "tts",
+    "notes": "",
+    "status": "alias"
+  },
+  "vttslist": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "TTS voices",
+    "duplicateOf": "tts",
+    "notes": "",
+    "status": "alias"
+  },
+  "vttsv": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Voice TTS variant",
+    "duplicateOf": "tts",
+    "notes": "",
+    "status": "alias"
+  },
+  "vv": {
+    "category": "Voice AI & Bolne Wala Bot",
+    "desc": "Voice note",
+    "duplicateOf": "voice",
+    "notes": "",
+    "status": "alias"
+  },
+  "chutkula": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "compliment": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Tareef bhejein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dare": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Dare game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "eightball": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "8-ball jawab",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "flirt": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Flirt line",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "inspire": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Inspirational quote",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "j": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Quick joke",
+    "duplicateOf": "joke",
+    "notes": "",
+    "status": "alias"
+  },
+  "joke": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "latifa": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "meme": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "40+ meme sounds",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "memeimage": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "memepic": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pickup": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Pickup line",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pickupline": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Pickup line",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "picmeme": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "praise": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Tareef karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "q": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Quick quote",
+    "duplicateOf": "quote",
+    "notes": "",
+    "status": "alias"
+  },
+  "randmeme": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Random meme",
+    "duplicateOf": "meme",
+    "notes": "",
+    "status": "alias"
+  },
+  "randomfact": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Random fact",
+    "duplicateOf": "fact",
+    "notes": "",
+    "status": "alias"
+  },
+  "roast": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shayri": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Shayari",
+    "duplicateOf": "shayari",
+    "notes": "",
+    "status": "alias"
+  },
+  "soundboard": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "truth": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Truth game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ttc": {
+    "category": "Viral Memes, Roasts & Desi Jokes",
+    "desc": "Tic-tac-toe",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gana": {
+    "category": "Songs & Music",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mp3": {
+    "category": "Songs & Music",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "music": {
+    "category": "Songs & Music",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "play": {
+    "category": "Songs & Music",
+    "desc": "Play song",
+    "duplicateOf": "song",
+    "notes": "",
+    "status": "alias"
+  },
+  "song": {
+    "category": "Songs & Music",
+    "desc": "Music as MP3",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sp": {
+    "category": "Songs & Music",
+    "desc": "Spotify song",
+    "duplicateOf": "song",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "alldl": {
+    "category": "Video Downloader",
+    "desc": "All-in-one downloader",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "capcutdl": {
+    "category": "Video Downloader",
+    "desc": "CapCut template download",
+    "duplicateOf": "capcut",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "cc": {
+    "category": "Video Downloader",
+    "desc": "Quick download",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "dl": {
+    "category": "Video Downloader",
+    "desc": "TikTok · Reels · YT · FB · X",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "extractaudio": {
+    "category": "Video Downloader",
+    "desc": "Video se audio nikalein (reply)",
+    "duplicateOf": "audio",
+    "notes": "",
+    "status": "alias"
+  },
+  "fb": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "BLOCKED: dead external API",
+    "status": "working"
+  },
+  "fbdl": {
+    "category": "Video Downloader",
+    "desc": "Facebook video download",
+    "duplicateOf": "fb",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "imgdl": {
+    "category": "Video Downloader",
+    "desc": "Image download",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "insta": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "BLOCKED: dead external API",
+    "status": "working"
+  },
+  "instagram": {
+    "category": "Video Downloader",
+    "desc": "Instagram download",
+    "duplicateOf": "insta",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "reel": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "BLOCKED: dead external API",
+    "status": "working"
+  },
+  "repost": {
+    "category": "Video Downloader",
+    "desc": "Repost media (reply)",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "reposts": {
+    "category": "Video Downloader",
+    "desc": "Repost status",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "tik": {
+    "category": "Video Downloader",
+    "desc": "TikTok download",
+    "duplicateOf": "tiktok",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "tiktok": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "BLOCKED: dead external API",
+    "status": "working"
+  },
+  "tomp3": {
+    "category": "Video Downloader",
+    "desc": "Video to MP3 (reply)",
+    "duplicateOf": "audio",
+    "notes": "",
+    "status": "alias"
+  },
+  "ttrepost": {
+    "category": "Video Downloader",
+    "desc": "TikTok repost",
+    "duplicateOf": "dl",
+    "notes": "",
+    "status": "alias"
+  },
+  "twit": {
+    "category": "Video Downloader",
+    "desc": "Twitter download",
+    "duplicateOf": "twitter",
+    "notes": "",
+    "status": "alias"
+  },
+  "v2mp3": {
+    "category": "Video Downloader",
+    "desc": "Video to MP3",
+    "duplicateOf": "audio",
+    "notes": "",
+    "status": "alias"
+  },
+  "xdl": {
+    "category": "Video Downloader",
+    "desc": "X (Twitter) download",
+    "duplicateOf": "twitter",
+    "notes": "",
+    "status": "alias"
+  },
+  "yt": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ytdl": {
+    "category": "Video Downloader",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ytmp3": {
+    "category": "Video Downloader",
+    "desc": "YouTube to MP3",
+    "duplicateOf": "yt",
+    "notes": "",
+    "status": "alias"
+  },
+  "ytmp4": {
+    "category": "Video Downloader",
+    "desc": "YouTube to MP4",
+    "duplicateOf": "ytdl",
+    "notes": "",
+    "status": "alias"
+  },
+  "yts": {
+    "category": "Video Downloader",
+    "desc": "YouTube search",
+    "duplicateOf": "yt",
+    "notes": "",
+    "status": "alias"
+  },
+  "ytsearch": {
+    "category": "Video Downloader",
+    "desc": "YouTube search",
+    "duplicateOf": "yt",
+    "notes": "",
+    "status": "alias"
+  },
+  "album": {
+    "category": "Photos & Stickers",
+    "desc": "Photo album",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antisticker": {
+    "category": "Photos & Stickers",
+    "desc": "Sticker block (group)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "audio": {
+    "category": "Photos & Stickers",
+    "desc": "Video → MP3 (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "autosticker": {
+    "category": "Photos & Stickers",
+    "desc": "Auto sticker mode",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "carousel": {
+    "category": "Photos & Stickers",
+    "desc": "Photo carousel",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "collage": {
+    "category": "Photos & Stickers",
+    "desc": "Photo collage banayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "emix": {
+    "category": "Photos & Stickers",
+    "desc": "Emoji mix shortcut",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "emojimix": {
+    "category": "Photos & Stickers",
+    "desc": "Do emoji mix karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "getdp": {
+    "category": "Photos & Stickers",
+    "desc": "Profile picture dekhein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "getdpall": {
+    "category": "Photos & Stickers",
+    "desc": "All member DPs (group)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "grid": {
+    "category": "Photos & Stickers",
+    "desc": "Photo grid",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hm": {
+    "category": "Photos & Stickers",
+    "desc": "Hmm sticker",
+    "duplicateOf": "attp",
+    "notes": "",
+    "status": "alias"
+  },
+  "hmm": {
+    "category": "Photos & Stickers",
+    "desc": "Hmm sticker",
+    "duplicateOf": "attp",
+    "notes": "",
+    "status": "alias"
+  },
+  "ok": {
+    "category": "Photos & Stickers",
+    "desc": "OK sticker",
+    "duplicateOf": "attp",
+    "notes": "",
+    "status": "alias"
+  },
+  "okay": {
+    "category": "Photos & Stickers",
+    "desc": "OK sticker",
+    "duplicateOf": "attp",
+    "notes": "",
+    "status": "alias"
+  },
+  "okey": {
+    "category": "Photos & Stickers",
+    "desc": "OK sticker",
+    "duplicateOf": "attp",
+    "notes": "",
+    "status": "alias"
+  },
+  "once": {
+    "category": "Photos & Stickers",
+    "desc": "View-once dobara dekhein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "photo": {
+    "category": "Photos & Stickers",
+    "desc": "HD pictures",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qrcode": {
+    "category": "Photos & Stickers",
+    "desc": "QR code banayein",
+    "duplicateOf": "qr",
+    "notes": "",
+    "status": "alias"
+  },
+  "remini": {
+    "category": "Photos & Stickers",
+    "desc": "Photo enhance",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "reveal": {
+    "category": "Photos & Stickers",
+    "desc": "Hidden message reveal",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "s": {
+    "category": "Photos & Stickers",
+    "desc": "Photo → sticker (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "s2img": {
+    "category": "Photos & Stickers",
+    "desc": "Sticker to photo",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "save": {
+    "category": "Photos & Stickers",
+    "desc": "Media save karein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "saveonce": {
+    "category": "Photos & Stickers",
+    "desc": "View-once save karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "see": {
+    "category": "Photos & Stickers",
+    "desc": "View-once message dekhein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "setdp": {
+    "category": "Photos & Stickers",
+    "desc": "Bot ki DP badlein (photo reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "setfullpp": {
+    "category": "Photos & Stickers",
+    "desc": "Full profile picture",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "setpp": {
+    "category": "Photos & Stickers",
+    "desc": "Profile picture set",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stick": {
+    "category": "Photos & Stickers",
+    "desc": "Quick sticker (reply)",
+    "duplicateOf": "sticker",
+    "notes": "",
+    "status": "alias"
+  },
+  "sticker": {
+    "category": "Photos & Stickers",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sv": {
+    "category": "Photos & Stickers",
+    "desc": "Save media",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "toimage": {
+    "category": "Photos & Stickers",
+    "desc": "Convert to image",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "toimg": {
+    "category": "Photos & Stickers",
+    "desc": "Sticker to image (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tourl": {
+    "category": "Photos & Stickers",
+    "desc": "Upload aur link hasil karein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vault": {
+    "category": "Photos & Stickers",
+    "desc": "Private notes",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "webptoimg": {
+    "category": "Photos & Stickers",
+    "desc": "WebP to image",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ayah": {
+    "category": "Islamic Suite",
+    "desc": "Ayah + translation",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ayat": {
+    "category": "Islamic Suite",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dua": {
+    "category": "Islamic Suite",
+    "desc": "Masnoon duas",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hadith": {
+    "category": "Islamic Suite",
+    "desc": "Six Sahih books",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hijri": {
+    "category": "Islamic Suite",
+    "desc": "Islamic date &amp; events",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "namaz": {
+    "category": "Islamic Suite",
+    "desc": "Prayer times",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "prayertime": {
+    "category": "Islamic Suite",
+    "desc": "Namaz timings",
+    "duplicateOf": "prayer",
+    "notes": "",
+    "status": "alias"
+  },
+  "qibla": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qiblah": {
+    "category": "Islamic Suite",
+    "desc": "Qibla direction",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "surah": {
+    "category": "Islamic Suite",
+    "desc": "Surah info 1–114",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tafseer": {
+    "category": "Islamic Suite",
+    "desc": "Urdu tafseer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tilawat": {
+    "category": "Islamic Suite",
+    "desc": "Quran MP3 recitation",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "verse": {
+    "category": "Islamic Suite",
+    "desc": "Quran verse",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "waqt": {
+    "category": "Islamic Suite",
+    "desc": "Namaz waqt",
+    "duplicateOf": "prayer",
+    "notes": "",
+    "status": "alias"
+  },
+  "alive": {
+    "category": "Daily Tools",
+    "desc": "Bot zinda hai?",
+    "duplicateOf": "ping",
+    "notes": "",
+    "status": "alias"
+  },
+  "calc": {
+    "category": "Daily Tools",
+    "desc": "Calculator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "checknum": {
+    "category": "Daily Tools",
+    "desc": "Number WhatsApp par hai?",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "clock": {
+    "category": "Daily Tools",
+    "desc": "Time dekhein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cricket": {
+    "category": "News & Info",
+    "desc": "Cricket updates",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "crypto": {
+    "category": "Daily Tools",
+    "desc": "BTC · ETH · SOL · BNB",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "currency": {
+    "category": "Daily Utilities",
+    "desc": "Live currency converter",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fstatus": {
+    "category": "Daily Tools",
+    "desc": "Status",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hisaab": {
+    "category": "Daily Tools",
+    "desc": "",
+    "duplicateOf": "calc",
+    "notes": "",
+    "status": "alias"
+  },
+  "khabrain": {
+    "category": "Daily Tools",
+    "desc": "",
+    "duplicateOf": "news",
+    "notes": "",
+    "status": "alias"
+  },
+  "menuweb": {
+    "category": "Daily Tools",
+    "desc": "Web menu",
+    "duplicateOf": "menu",
+    "notes": "",
+    "status": "alias"
+  },
+  "mosam": {
+    "category": "Daily Tools",
+    "desc": "",
+    "duplicateOf": "weather",
+    "notes": "",
+    "status": "alias"
+  },
+  "nettest": {
+    "category": "Daily Tools",
+    "desc": "Network test",
+    "duplicateOf": "ping",
+    "notes": "",
+    "status": "alias"
+  },
+  "news": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ping": {
+    "category": "Daily Tools",
+    "desc": "Health check",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pinimage": {
+    "category": "Daily Tools",
+    "desc": "Pinterest image",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pinimg": {
+    "category": "Daily Tools",
+    "desc": "Pinterest photo",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pinsrc": {
+    "category": "Daily Tools",
+    "desc": "Pinterest search",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pmenu": {
+    "category": "Daily Tools",
+    "desc": "Menu shortcut",
+    "duplicateOf": "menu",
+    "notes": "",
+    "status": "alias"
+  },
+  "qr": {
+    "category": "Daily Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "remind": {
+    "category": "Daily Tools",
+    "desc": "Reminders",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "remindcustom": {
+    "category": "Daily Tools",
+    "desc": "Custom reminder",
+    "duplicateOf": "remind",
+    "notes": "",
+    "status": "alias"
+  },
+  "runtime": {
+    "category": "Daily Tools",
+    "desc": "Bot uptime",
+    "duplicateOf": "uptime",
+    "notes": "",
+    "status": "alias"
+  },
+  "screenshot": {
+    "category": "Daily Tools",
+    "desc": "Screenshot lein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "short": {
+    "category": "Daily Tools",
+    "desc": "Link chota karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "speed": {
+    "category": "Daily Tools",
+    "desc": "Speed test",
+    "duplicateOf": "ping",
+    "notes": "",
+    "status": "alias"
+  },
+  "ss": {
+    "category": "Daily Tools",
+    "desc": "Website screenshot",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ssweb": {
+    "category": "Daily Tools",
+    "desc": "Website screenshot",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stats": {
+    "category": "Daily Tools",
+    "desc": "Statistics",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sysinfo": {
+    "category": "Daily Tools",
+    "desc": "System info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "systeminfo": {
+    "category": "Daily Tools",
+    "desc": "System info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "table": {
+    "category": "Daily Tools",
+    "desc": "Timetable",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tc": {
+    "category": "Daily Tools",
+    "desc": "Time table",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "trivia": {
+    "category": "Daily Tools",
+    "desc": "Trivia game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "umar": {
+    "category": "Daily Tools",
+    "desc": "Age calculator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unit": {
+    "category": "Daily Tools",
+    "desc": "Unit converter",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "units": {
+    "category": "Daily Tools",
+    "desc": "Units convert",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "userinfo": {
+    "category": "Daily Tools",
+    "desc": "Apki info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "w": {
+    "category": "Daily Tools",
+    "desc": "Weather shortcut",
+    "duplicateOf": "weather",
+    "notes": "",
+    "status": "alias"
+  },
+  "weather": {
+    "category": "Daily Tools",
+    "desc": "Live weather",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "who": {
+    "category": "Daily Tools",
+    "desc": "Kaun hai?",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wspeed": {
+    "category": "Daily Tools",
+    "desc": "Speed check",
+    "duplicateOf": "ping",
+    "notes": "",
+    "status": "alias"
+  },
+  "abot": {
+    "category": "Group Tools",
+    "desc": "AI assistant",
+    "duplicateOf": "ai",
+    "notes": "",
+    "status": "alias"
+  },
+  "add": {
+    "category": "Group Tools",
+    "desc": "Member add karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "admins": {
+    "category": "Group Tools",
+    "desc": "Group admins",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "alink": {
+    "category": "Group Tools",
+    "desc": "Group invite link",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antibadword": {
+    "category": "Group Tools",
+    "desc": "Bad word filter",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ban": {
+    "category": "Group Tools",
+    "desc": "User ban karein",
+    "duplicateOf": "kick",
+    "notes": "",
+    "status": "alias"
+  },
+  "block": {
+    "category": "Group Tools",
+    "desc": "User block karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "blocklist": {
+    "category": "Group Tools",
+    "desc": "Blocked users",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "chatbot": {
+    "category": "Group Tools",
+    "desc": "Chat with AI",
+    "duplicateOf": "ai",
+    "notes": "",
+    "status": "alias"
+  },
+  "del": {
+    "category": "Group Tools",
+    "desc": "Message delete (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "disappear": {
+    "category": "Group Tools",
+    "desc": "Disappearing messages",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "disappearing": {
+    "category": "Group Tools",
+    "desc": "Disappearing off",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gcinfo": {
+    "category": "Group Tools",
+    "desc": "Group info",
+    "duplicateOf": "groupinfo",
+    "notes": "",
+    "status": "alias"
+  },
+  "ginfo": {
+    "category": "Group Tools",
+    "desc": "Group details",
+    "duplicateOf": "groupinfo",
+    "notes": "",
+    "status": "alias"
+  },
+  "groupstatinfo": {
+    "category": "Group Tools",
+    "desc": "Group statistics",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gs": {
+    "category": "Group Tools",
+    "desc": "Group stats",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gsinfo": {
+    "category": "Group Tools",
+    "desc": "Group info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "htag": {
+    "category": "Group Tools",
+    "desc": "Hidden tag",
+    "duplicateOf": "hidetag",
+    "notes": "",
+    "status": "alias"
+  },
+  "htagall": {
+    "category": "Group Tools",
+    "desc": "Tag all (hidden)",
+    "duplicateOf": "tagall",
+    "notes": "",
+    "status": "alias"
+  },
+  "invitelink": {
+    "category": "Group Tools",
+    "desc": "Invite link",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "kick": {
+    "category": "Group Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "link": {
+    "category": "Group Tools",
+    "desc": "Group link",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "lock": {
+    "category": "Group Tools",
+    "desc": "Group lock (admin only)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mute": {
+    "category": "Group Tools",
+    "desc": "Group lock",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pin": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "poll": {
+    "category": "Group Tools",
+    "desc": "Native polls",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "resetwarn": {
+    "category": "Group Tools",
+    "desc": "Warnings reset",
+    "duplicateOf": "warn",
+    "notes": "",
+    "status": "alias"
+  },
+  "rwarn": {
+    "category": "Group Tools",
+    "desc": "Warn karein",
+    "duplicateOf": "warn",
+    "notes": "",
+    "status": "alias"
+  },
+  "setdesc": {
+    "category": "Group Tools",
+    "desc": "Group description",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "silenttag": {
+    "category": "Group Tools",
+    "desc": "Silent tag all",
+    "duplicateOf": "hidetag",
+    "notes": "",
+    "status": "alias"
+  },
+  "tagall": {
+    "category": "Group Tools",
+    "desc": "Mention everyone",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unban": {
+    "category": "Group Tools",
+    "desc": "Ban khatam karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unblock": {
+    "category": "Group Tools",
+    "desc": "Unblock karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unlock": {
+    "category": "Group Tools",
+    "desc": "Group unlock",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unmute": {
+    "category": "Group Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unpinmsg": {
+    "category": "Group Tools",
+    "desc": "Unpin message",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "warn": {
+    "category": "Group Tools",
+    "desc": "Moderation",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "warnings": {
+    "category": "Group Tools",
+    "desc": "Warnings dekhein",
+    "duplicateOf": "warn",
+    "notes": "",
+    "status": "alias"
+  },
+  "ai": {
+    "category": "Smart AI Dost",
+    "desc": "Ask Gemini anything",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "arena": {
+    "category": "Smart AI Dost",
+    "desc": "Arena text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "blackpink": {
+    "category": "Smart AI Dost",
+    "desc": "BlackPink text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "devil": {
+    "category": "Smart AI Dost",
+    "desc": "Devil text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "diesel": {
+    "category": "Smart AI Dost",
+    "desc": "Diesel text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fire": {
+    "category": "Smart AI Dost",
+    "desc": "Fire text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fuel": {
+    "category": "Smart AI Dost",
+    "desc": "Fuel text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gen": {
+    "category": "Smart AI Dost",
+    "desc": "AI image generate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "glitch": {
+    "category": "Smart AI Dost",
+    "desc": "Glitch text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hacker": {
+    "category": "Smart AI Dost",
+    "desc": "Hacker text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "help": {
+    "category": "Smart AI Dost",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ice": {
+    "category": "Smart AI Dost",
+    "desc": "Ice text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "imagine": {
+    "category": "Smart AI Dost",
+    "desc": "Imagine image",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "img2": {
+    "category": "Smart AI Dost",
+    "desc": "Image generate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "impressive": {
+    "category": "Smart AI Dost",
+    "desc": "Impressive text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "info": {
+    "category": "Smart AI Dost",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "leaves": {
+    "category": "Smart AI Dost",
+    "desc": "Leaves text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "light": {
+    "category": "Smart AI Dost",
+    "desc": "Light text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "matrix": {
+    "category": "Smart AI Dost",
+    "desc": "Matrix text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "menu": {
+    "category": "Smart AI Dost",
+    "desc": "Everything the bot can do",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "metallic": {
+    "category": "Smart AI Dost",
+    "desc": "Metallic text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "neon": {
+    "category": "Smart AI Dost",
+    "desc": "Neon text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "petrol": {
+    "category": "Smart AI Dost",
+    "desc": "Petrol text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "purple": {
+    "category": "Smart AI Dost",
+    "desc": "Purple text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quote": {
+    "category": "Smart AI Dost",
+    "desc": "Fun on demand",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sand": {
+    "category": "Smart AI Dost",
+    "desc": "Sand text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "scantext": {
+    "category": "Smart AI Dost",
+    "desc": "Photo text scan (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "snow": {
+    "category": "Smart AI Dost",
+    "desc": "Snow text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "start": {
+    "category": "Smart AI Dost",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "textmaker": {
+    "category": "Smart AI Dost",
+    "desc": "Fancy text effects",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "thunder": {
+    "category": "Smart AI Dost",
+    "desc": "Thunder text effect",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wiki": {
+    "category": "Smart AI Dost",
+    "desc": "Wiki search",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wikipedia": {
+    "category": "Smart AI Dost",
+    "desc": "Wikipedia search",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "aiedit": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "aiphoto": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "application": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "askdoc": {
+    "category": "AI Smart Tools",
+    "desc": "Reply kiye message se sawal",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "brandname": {
+    "category": "AI Smart Tools",
+    "desc": "Business names + slogans",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "code": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "codehelp": {
+    "category": "AI Smart Tools",
+    "desc": "Code explainer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cv": {
+    "category": "AI Smart Tools",
+    "desc": "CV builder",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "darkhwast": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dream": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "editphoto": {
+    "category": "AI Smart Tools",
+    "desc": "AI photo editor (photo pe reply karein)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fixgrammar": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gettxt": {
+    "category": "AI Smart Tools",
+    "desc": "Photo se text (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "grammar": {
+    "category": "AI Smart Tools",
+    "desc": "Grammar fixer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "horoscope": {
+    "category": "AI Smart Tools",
+    "desc": "Daily sitara (fun)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "imagegen": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "imggen": {
+    "category": "AI Smart Tools",
+    "desc": "AI image generator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "kahani": {
+    "category": "AI Smart Tools",
+    "desc": "Bachon ki kahani",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "khulasa": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "khwab": {
+    "category": "AI Smart Tools",
+    "desc": "Khwab ki tabeer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "letter": {
+    "category": "AI Smart Tools",
+    "desc": "Application/letter writer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pdfask": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "personality": {
+    "category": "AI Smart Tools",
+    "desc": "Personality quiz",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "personalityquiz": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quizme": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "resume": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sitara": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "slogan": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sum": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "summarize": {
+    "category": "AI Smart Tools",
+    "desc": "Text ka khulasa",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tarjuma": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tr": {
+    "category": "AI Smart Tools",
+    "desc": "Translator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "translate": {
+    "category": "AI Smart Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "8ball": {
+    "category": "Games",
+    "desc": "Magic 8-ball jawab",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "captioncontest": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "emojimovie": {
+    "category": "Games",
+    "desc": "Emoji se movie guess",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gameboard": {
+    "category": "Games",
+    "desc": "Top gamers leaderboard",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "guess": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "guessnum": {
+    "category": "Games",
+    "desc": "Number guess (1-100)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hangman": {
+    "category": "Games",
+    "desc": "Hangman word game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "magic8": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mathduel": {
+    "category": "Games",
+    "desc": "Speed maths challenge",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mathfight": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "memecaption": {
+    "category": "Games",
+    "desc": "Caption ka funny score",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mora": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "movieemoji": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "phansi": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quiz": {
+    "category": "Games",
+    "desc": "GK quiz + scoreboard",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quizgame": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rps": {
+    "category": "Games",
+    "desc": "Pathar kaichi kagaz",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "scramble": {
+    "category": "Games",
+    "desc": "Ulte lafz seedhe karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "td": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tictactoe": {
+    "category": "Games",
+    "desc": "Tic-tac-toe vs bot",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "topgamers": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "truthdare": {
+    "category": "Games",
+    "desc": "Truth ya dare",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ttt": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ultapulta": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wordchain": {
+    "category": "Games",
+    "desc": "Word chain game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wordlink": {
+    "category": "Games",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "compress": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cutaudio": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dmd": {
+    "category": "Downloader Pro",
+    "desc": "Dailymotion video downloader",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "enhance": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fx": {
+    "category": "Downloader Pro",
+    "desc": "Forex rate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gif": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hdphoto": {
+    "category": "Downloader Pro",
+    "desc": "Photo enhance — 2x quality (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "photofx": {
+    "category": "Downloader Pro",
+    "desc": "Photo filters: grey, sepia, blur, bright, invert (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pindl": {
+    "category": "Downloader Pro",
+    "desc": "Pinterest video/photo downloader",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "redditdl": {
+    "category": "Downloader Pro",
+    "desc": "Reddit video/photo downloader",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ring": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ringtone": {
+    "category": "Downloader Pro",
+    "desc": "Audio se ringtone banayein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shrinkphoto": {
+    "category": "Downloader Pro",
+    "desc": "Photo compress — size kam (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shrinkvideo": {
+    "category": "Downloader Pro",
+    "desc": "Video compress — size kam (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "speedaudio": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "spotidl": {
+    "category": "Downloader Pro",
+    "desc": "Spotify track se MP3",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "spotify": {
+    "category": "Downloader Pro",
+    "desc": "Spotify download",
+    "duplicateOf": "song",
+    "notes": "BLOCKED: dead external API",
+    "status": "alias"
+  },
+  "tez": {
+    "category": "Downloader Pro",
+    "desc": "Audio ki speed change karein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "togif": {
+    "category": "Downloader Pro",
+    "desc": "Video se GIF banayein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "trim": {
+    "category": "Downloader Pro",
+    "desc": "Audio ka hissa kaat lein, misal 0:10-0:30 (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vidcompress": {
+    "category": "Downloader Pro",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vimeodl": {
+    "category": "Downloader Pro",
+    "desc": "Vimeo video downloader",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ytpl": {
+    "category": "Downloader Pro",
+    "desc": "YouTube playlist ke pehle 3 songs",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "age": {
+    "category": "Daily Utilities",
+    "desc": "Umar calculator + agli birthday",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "agecalc": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "barcode": {
+    "category": "Daily Utilities",
+    "desc": "Text se barcode image banayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bcast": {
+    "category": "Daily Utilities",
+    "desc": "Broadcast (owner)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bmi": {
+    "category": "Daily Utilities",
+    "desc": "BMI calculator (wazan kg, qad cm)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "broadcast": {
+    "category": "Daily Utilities",
+    "desc": "Sab ko bhejein (owner)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "convert": {
+    "category": "Daily Utilities",
+    "desc": "Unit convert",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "convertfile": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "emi": {
+    "category": "Daily Utilities",
+    "desc": "Loan EMI calculator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "emicalc": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fakemail": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fileconv": {
+    "category": "Daily Utilities",
+    "desc": "txt/json/csv file convert (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "film": {
+    "category": "Daily Utilities",
+    "desc": "Film info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "github": {
+    "category": "Daily Utilities",
+    "desc": "GitHub profile",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "isdown": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mkbarcode": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "movie": {
+    "category": "Daily Utilities",
+    "desc": "Movie info",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mv": {
+    "category": "Daily Utilities",
+    "desc": "Movie search",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "newpass": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "numinfo": {
+    "category": "Daily Utilities",
+    "desc": "Pakistani SIM ka carrier maloom karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pair": {
+    "category": "Daily Utilities",
+    "desc": "Pairing code",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "passgen": {
+    "category": "Daily Utilities",
+    "desc": "Mazboot random password (default 16)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pkrate": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qrscan": {
+    "category": "Daily Utilities",
+    "desc": "QR code wali photo scan karein (reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "scanqr": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shorturl": {
+    "category": "Daily Utilities",
+    "desc": "Lamba link chhota karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "siminfo": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sitedown": {
+    "category": "Daily Utilities",
+    "desc": "Website up hai ya down?",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sitepic": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tempemail": {
+    "category": "Daily Utilities",
+    "desc": "Free temporary email + inbox check",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "timeconv": {
+    "category": "Daily Utilities",
+    "desc": "Time zone converter",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "timezone": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tinyurl": {
+    "category": "Daily Utilities",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unitconv": {
+    "category": "Daily Utilities",
+    "desc": "Unit converter — lambai, wazan, garmi, raqba",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "websnap": {
+    "category": "Daily Utilities",
+    "desc": "Kisi website ka screenshot",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dailyhadith": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dateconvert": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dhikr": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ghusl": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hadithday": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hajj": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hifz": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hijrical": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "memorize": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qibladir": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ramadan": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ramzan": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "seerah": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "seerahquiz": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "umrah": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wudu": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "zakaat": {
+    "category": "Islamic Plus",
+    "desc": "Zakaat calculator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "zakat": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "zakatcalc": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "zikr": {
+    "category": "Islamic Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dailyword": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "define": {
+    "category": "Education",
+    "desc": "Word meaning",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dict": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dictionary": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "exam": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "examcount": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "flash": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "flashcards": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ganit": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "history": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "lughat": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mathquiz": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "onthisday": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "science": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sciencefact": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "spelling": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "spellquiz": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "timetable": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ttable": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wordday": {
+    "category": "Education",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "afk": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antilink": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antispam": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "autoreact": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bday": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "birthday": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "byemsg": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "goodbye": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "groupstats": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gstats": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "inactive": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "night": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "nightmode": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "nolink": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "nospam": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pinmsg": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pollsched": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "reactall": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "schedpoll": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sleepers": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "slow": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "slowmode": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "unpin": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "welcome": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "welcomecard": {
+    "category": "Group Control",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "apiinfo": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "autoforward": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "autoreply": {
+    "category": "Automation",
+    "desc": "Keyword auto-reply",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bizwelcome": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "botapi": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "botstyle": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "chatbackup": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "exportchat": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fwd": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "keyword": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "keywordalert": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mystats": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "myusage": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "persona": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "recurringmsg": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "restart": {
+    "category": "Automation",
+    "desc": "Bot restart (owner)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rmsgs": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rss": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rsswatch": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "setowner": {
+    "category": "Automation",
+    "desc": "Set bot owner",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "welcomebiz": {
+    "category": "Automation",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "attend": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "attendance": {
+    "category": "Business",
+    "desc": "Hazri lagayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bill": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bizcard": {
+    "category": "Business",
+    "desc": "Digital visiting card",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "csvlog": {
+    "category": "Business",
+    "desc": "CSV download",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "email": {
+    "category": "Business",
+    "desc": "Email draft link",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "expense": {
+    "category": "Business",
+    "desc": "Kharcha hisab",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "hazri": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "invoice": {
+    "category": "Business",
+    "desc": "Invoice banayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "kharcha": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "later": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mail": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "meet": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "meeting": {
+    "category": "Business",
+    "desc": "Meeting reminder",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "note": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "notes": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "order": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "orderbook": {
+    "category": "Business",
+    "desc": "Order book",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "orders": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pricelist": {
+    "category": "Business",
+    "desc": "Price list",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qreply": {
+    "category": "Business",
+    "desc": "Quick replies",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quickreply": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rating": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "review": {
+    "category": "Business",
+    "desc": "Feedback jama karein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sendlater": {
+    "category": "Business",
+    "desc": "Scheduled message",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sheetlog": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "task": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "todo": {
+    "category": "Business",
+    "desc": "To-do list",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vcard": {
+    "category": "Business",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "alertcrypto": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "billsplit": {
+    "category": "Money & Finance",
+    "desc": "Bill split",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "budget": {
+    "category": "Money & Finance",
+    "desc": "Monthly budget",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "crm": {
+    "category": "Money & Finance",
+    "desc": "Currency rate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cryptoalert": {
+    "category": "Money & Finance",
+    "desc": "Crypto price alerts",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "forex": {
+    "category": "Money & Finance",
+    "desc": "USD/PKR & more",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "goal": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gold": {
+    "category": "Money & Finance",
+    "desc": "Gold rate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "goldrate": {
+    "category": "Money & Finance",
+    "desc": "Sona rate (andaza)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "horo": {
+    "category": "Money & Finance",
+    "desc": "Horoscope",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "incometax": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "salarytax": {
+    "category": "Money & Finance",
+    "desc": "Income tax andaza",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "savegoal": {
+    "category": "Money & Finance",
+    "desc": "Savings goal",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shareprice": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sona": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "splitbill": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "starsign": {
+    "category": "Money & Finance",
+    "desc": "Star sign",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stocks": {
+    "category": "Money & Finance",
+    "desc": "Stock prices",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "usdpkr": {
+    "category": "Money & Finance",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cal": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "calories": {
+    "category": "Health",
+    "desc": "Calories andaza",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cook": {
+    "category": "Health",
+    "desc": "Recipe",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dawai": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "exercise": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "kasrat": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "khana": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "med": {
+    "category": "Health",
+    "desc": "Dawai reminders",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "medicine": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "neend": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pani": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "recipe": {
+    "category": "Health",
+    "desc": "Recipe banayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "recipeur": {
+    "category": "Health",
+    "desc": "Urdu recipe",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sleep": {
+    "category": "Health",
+    "desc": "Neend tracker",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "sleeplog": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stepchallenge": {
+    "category": "Health",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "steps": {
+    "category": "Health",
+    "desc": "Step challenge",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "water": {
+    "category": "Health",
+    "desc": "Pani reminders (hourly 9am-10pm)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "workout": {
+    "category": "Health",
+    "desc": "7-din workout plan",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "barish": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "bijli": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fbscore": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "football": {
+    "category": "News & Info",
+    "desc": "Football scores (Bundesliga)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "headlines": {
+    "category": "News & Info",
+    "desc": "News headlines",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "jobs": {
+    "category": "News & Info",
+    "desc": "Job alerts (Pakistan)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "khabrein": {
+    "category": "News & Info",
+    "desc": "Khabrein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "league": {
+    "category": "News & Info",
+    "desc": "Football league",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "livescore": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "loadshed": {
+    "category": "News & Info",
+    "desc": "Bijli schedule",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "namazalert": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "naukri": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "paknews": {
+    "category": "News & Info",
+    "desc": "Pakistan headlines",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "prayeralert": {
+    "category": "News & Info",
+    "desc": "Namaz alerts (5 min pehle)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "railway": {
+    "category": "News & Info",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "rainalert": {
+    "category": "News & Info",
+    "desc": "Barish alert (24h)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "score": {
+    "category": "News & Info",
+    "desc": "Live score",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "standings": {
+    "category": "News & Info",
+    "desc": "League standings",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "train": {
+    "category": "News & Info",
+    "desc": "Railway timings",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "aiavatar": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "avatar": {
+    "category": "AI & Media Plus",
+    "desc": "AI avatar generator",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "cartoon": {
+    "category": "AI & Media Plus",
+    "desc": "Photo to cartoon style",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "geetlyrics": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "imagetranslate": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "imgtr": {
+    "category": "AI & Media Plus",
+    "desc": "Photo text translate",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "lyrics": {
+    "category": "AI & Media Plus",
+    "desc": "Song lyrics finder",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "memegen": {
+    "category": "AI & Media Plus",
+    "desc": "Custom meme maker (photo reply)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mememaker": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ocr": {
+    "category": "AI & Media Plus",
+    "desc": "Photo se text nikalein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "readtext": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "shortsdl": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "spack": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stickerpack": {
+    "category": "AI & Media Plus",
+    "desc": "Sticker pack banayein",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "tocartoon": {
+    "category": "AI & Media Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ytshorts": {
+    "category": "AI & Media Plus",
+    "desc": "YouTube Shorts downloader",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "namazmonth": {
+    "category": "Deen Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "prayermonth": {
+    "category": "Deen Plus",
+    "desc": "Monthly namaz timetable",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qsearch": {
+    "category": "Deen Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quransearch": {
+    "category": "Deen Plus",
+    "desc": "Quran mein lafz search",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "activeboard": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gdesc": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "gicon": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "glink": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "groupdesc": {
+    "category": "Group Admin Plus",
+    "desc": "Group description (admin)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "groupicon": {
+    "category": "Group Admin Plus",
+    "desc": "Group icon badlein (admin)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "grouplink": {
+    "category": "Group Admin Plus",
+    "desc": "Invite link (admin)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "revoke": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "revokelink": {
+    "category": "Group Admin Plus",
+    "desc": "Reset invite link (admin)",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "topactive": {
+    "category": "Group Admin Plus",
+    "desc": "Active members ranking",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "vkick": {
+    "category": "Group Admin Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "votekick": {
+    "category": "Group Admin Plus",
+    "desc": "Vote to remove member",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "chand": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "choose": {
+    "category": "More Tools",
+    "desc": "Random choice",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "countdown": {
+    "category": "More Tools",
+    "desc": "Date countdown",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "countto": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dns": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dnslookup": {
+    "category": "More Tools",
+    "desc": "DNS records check",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "fancy": {
+    "category": "More Tools",
+    "desc": "Stylish fancy text",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "iploc": {
+    "category": "More Tools",
+    "desc": "IP address location",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "iplookup": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "moon": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "morse": {
+    "category": "More Tools",
+    "desc": "Text to morse code",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "pickone": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "randnum": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "random": {
+    "category": "More Tools",
+    "desc": "Random number picker",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stylish": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "whois": {
+    "category": "More Tools",
+    "desc": "Domain info lookup",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wifiqr": {
+    "category": "More Tools",
+    "desc": "WiFi QR code",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wifishare": {
+    "category": "More Tools",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "diet": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "dietplan": {
+    "category": "Business Plus",
+    "desc": "AI diet plan",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "essay": {
+    "category": "Business Plus",
+    "desc": "Essay writer",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "folio": {
+    "category": "Business Plus",
+    "desc": "Crypto portfolio tracker",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "khata": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ledger": {
+    "category": "Business Plus",
+    "desc": "Udhaar khata book",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "mazmoon": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "portfolio": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "ppt": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "presentation": {
+    "category": "Business Plus",
+    "desc": "Slides outline maker",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "qt": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "quotation": {
+    "category": "Business Plus",
+    "desc": "Quotation maker",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "raseed": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "receipt": {
+    "category": "Business Plus",
+    "desc": "Payment receipt",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stock": {
+    "category": "Business Plus",
+    "desc": "Inventory manager",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "stockmgr": {
+    "category": "Business Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antak": {
+    "category": "Fun Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "antakshari": {
+    "category": "Fun Plus",
+    "desc": "Desi song game",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "neverhave": {
+    "category": "Fun Plus",
+    "desc": "Never have I ever",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "nhie": {
+    "category": "Fun Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wouldyourather": {
+    "category": "Fun Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "wyr": {
+    "category": "Fun Plus",
+    "desc": "Would you rather",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "airquality": {
+    "category": "Info Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "aqi": {
+    "category": "Info Plus",
+    "desc": "Air quality index",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "uv": {
+    "category": "Info Plus",
+    "desc": "UV index",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  },
+  "uvindex": {
+    "category": "Info Plus",
+    "desc": "",
+    "duplicateOf": null,
+    "notes": "",
+    "status": "working"
+  }
+}
