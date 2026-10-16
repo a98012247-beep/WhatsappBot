@@ -1277,7 +1277,7 @@ app.post('/api/command/exec', async (req, res) => {
     if (!command || !target) {
       return res.status(400).json({ error: 'command and target required' });
     }
-    const bot = getBot();
+    const bot = botInstance;
     if (!bot) return res.status(503).json({ error: 'Bot not initialized' });
     // Sender defaults to owner for dashboard commands
     const { getOwnerConfig } = await import('./lib/access.js');
