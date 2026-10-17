@@ -2776,6 +2776,9 @@ function previewMediaFile(input) {
   if (input.files && input.files[0] && nameEl) {
     const f = input.files[0];
     nameEl.textContent = `📎 ${f.name} (${(f.size/1024/1024).toFixed(1)}MB)`;
+    // Clear URL field when file is chosen (blob: URLs don't work server-side)
+    const urlInput = document.getElementById('media-url');
+    if (urlInput) urlInput.value = '';
     // Auto-select media type based on file
     const type = f.type.startsWith('image/') ? 'image' :
                  f.type.startsWith('video/') ? 'video' :

@@ -23,7 +23,7 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '60mb' })); // 60MB for direct media uploads (2026-10-17 per Hudson)
 
 // HOSTING PATCH (dashboard auth): HTTP basic auth on every dashboard route
 // when DASH_USER/DASH_PASS are set. Unset = current localhost behavior,

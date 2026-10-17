@@ -3283,12 +3283,17 @@ class WhatsAppBot extends EventEmitter {
     const mediaType = options.mediaType || 'text';
     const mediaUrl = options.mediaUrl || '';
     const mediaData = options.mediaData || null; // base64 from direct upload
+    // Reject blob: URLs — they only work in the browser that created them
+    if (mediaUrl.startsWith('blob:')) {
+      console.warn('Status media: blob: URL rejected, use direct file upload instead');
+    }
+    const validUrl = mediaUrl && !mediaUrl.startsWith('blob:') ? mediaUrl : '';
     // Convert base64 to buffer if uploaded directly
     let mediaBuffer = null;
     if (mediaData) {
       try { mediaBuffer = Buffer.from(mediaData, 'base64'); } catch (e) {}
     }
-    const mediaSource = mediaBuffer || (mediaUrl ? { url: mediaUrl } : null);
+    const mediaSource = mediaBuffer || (validUrl ? { url: validUrl } : null);
     try {
       const statusMsg = {
         backgroundColor: bgHex,
