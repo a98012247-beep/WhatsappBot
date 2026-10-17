@@ -351,8 +351,18 @@
       <section class="tab-pane" id="tab-automation">
         <div class="sect-head">
           <h2 class="section-title" style="margin:0">Automation</h2>
-          <button class="btn-primary btn-sm" id="btn-open-auto-builder">+ New Automation</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-primary btn-sm" id="btn-open-auto-templates">📋 Templates</button>
+            <button class="btn-primary btn-sm" id="btn-open-auto-builder">+ New Automation</button>
+          </div>
         </div>
+        
+        <!-- Unified All Automations (2026-10-17 per Hudson) -->
+        <h2 class="section-title">All Automations <span class="alias-count" id="auto-all-count"></span></h2>
+        <div class="group" id="auto-all-list">
+          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        </div>
+
         <h2 class="section-title">Auto-replies</h2>
         <div class="group" id="auto-replies-list">
           <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>

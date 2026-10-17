@@ -1222,6 +1222,62 @@ app.post('/api/automation/create', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Update an automation (2026-10-17 per Hudson) ───
+// Generic PUT for editing any automation type
+app.put('/api/automation/:type/:id', async (req, res) => {
+  try {
+    const { readData, writeData } = await import('./lib/batch-helpers.js');
+    const { type, id } = req.params;
+    const updates = req.body || {};
+    let found = false;
+
+    if (type === 'autoreply') {
+      const data = readData('batch8-autoreply.json', {});
+      for (const key of Object.keys(data)) {
+        const arr = data[key] || [];
+        for (const r of arr) {
+          if (String(r.id) === String(id)) {
+            Object.assign(r, updates);
+            found = true;
+          }
+        }
+      }
+      if (found) writeData('batch8-autoreply.json', data);
+    } else if (type === 'scheduled') {
+      const list = readData('scheduled-tasks.json', []);
+      for (const t of list) {
+        if (String(t.id) === String(id)) { Object.assign(t, updates); found = true; }
+      }
+      if (found) writeData('scheduled-tasks.json', list);
+    } else if (type === 'keyword' || type === 'manychat') {
+      // Keyword/manychat stored in batch4-auto.json
+      const data = readData('batch4-auto.json', {});
+      for (const key of Object.keys(data)) {
+        const g = data[key];
+        if (Array.isArray(g.keyword)) {
+          // Keywords are simple strings; replace if matched
+          const idx = g.keyword.indexOf(id);
+          if (idx >= 0 && updates.keyword) { g.keyword[idx] = updates.keyword; found = true; }
+        }
+      }
+      if (found) writeData('batch4-auto.json', data);
+      // ManyChat in batch8
+      if (type === 'manychat') {
+        const mc = readData('batch8-autoreply.json', {});
+        for (const key of Object.keys(mc)) {
+          for (const r of (mc[key] || [])) {
+            if (String(r.id) === String(id)) { Object.assign(r, updates); found = true; }
+          }
+        }
+        if (found) writeData('batch8-autoreply.json', mc);
+      }
+    }
+
+    if (!found) return res.status(404).json({ error: 'Automation not found' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Delete an automation
 app.delete('/api/automation/:type/:id', async (req, res) => {
   try {

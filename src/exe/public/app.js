@@ -1714,13 +1714,37 @@ async function loadAutomation() {
     if (!res.ok) throw new Error('load failed');
     const data = await res.json();
 
+    // ─── Unified All Automations (2026-10-17 per Hudson) ───
+    // Every automation from every type, with Edit + Delete
+    const allList = document.getElementById('auto-all-list');
+    const allItems = [];
+    const typeLabels = {
+      autoreply: 'Auto-reply', scheduled: 'Scheduled', keyword: 'Keyword',
+      manychat: 'ManyChat', welcome: 'Welcome', goodbye: 'Goodbye',
+      autostatus: 'Auto-status', autopost: 'Auto-post', bulkmessage: 'Bulk msg',
+    };
+    
+    function addAllRow(type, item, title, preview) {
+      allItems.push({ type, item, title, preview });
+    }
+    
+    (data.autoreplies || []).forEach(item => {
+      addAllRow('autoreply', item, item.trigger || '(untitled)',
+        item.reply ? String(item.reply).slice(0, 80) : '');
+      // Also render in type section
+      const ar = document.getElementById('auto-replies-list');
+    });
+
     const ar = document.getElementById('auto-replies-list');
     if (ar) {
       ar.innerHTML = '';
       (data.autoreplies || []).forEach(item => {
         const preview = item.reply ? String(item.reply).slice(0, 120) : '';
-        ar.appendChild(makeSwitchRow(item.trigger, preview, item.enabled,
-          (v, inp) => toggleAutomationItem('autoreply', item.id, v, inp)));
+        const row = makeSwitchRow(item.trigger, preview, item.enabled,
+          (v, inp) => toggleAutomationItem('autoreply', item.id, v, inp));
+        // Edit/Delete for auto-replies (2026-10-17 per Hudson)
+        row.appendChild(makeAutoActions('autoreply', item));
+        ar.appendChild(row);
       });
       if (!(data.autoreplies || []).length) ar.appendChild(emptyRowText('No auto-replies configured.'));
     }
@@ -1729,23 +1753,12 @@ async function loadAutomation() {
     if (sc) {
       sc.innerHTML = '';
       (data.scheduled || []).forEach(item => {
+        addAllRow('scheduled', item, (item.message || '').slice(0, 40),
+          [item.target, item.schedule].filter(Boolean).join(' · '));
         const preview = [item.target, item.schedule].filter(Boolean).join(' · ');
         const row = makeSwitchRow(item.message, preview, item.enabled,
           (v, inp) => toggleAutomationItem('scheduled', item.id, v, inp));
-        // Add edit/delete buttons (2026-10-17 per Hudson)
-        const actions = document.createElement('span');
-        actions.className = 'row-actions';
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn-small';
-        editBtn.textContent = 'Edit';
-        editBtn.onclick = () => editScheduledItem(item);
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-small danger';
-        delBtn.textContent = 'Delete';
-        delBtn.onclick = () => deleteScheduledItem(item.id);
-        actions.appendChild(editBtn);
-        actions.appendChild(delBtn);
-        row.appendChild(actions);
+        row.appendChild(makeAutoActions('scheduled', item));
         sc.appendChild(row);
       });
       if (!(data.scheduled || []).length) sc.appendChild(emptyRowText('No scheduled messages.'));
@@ -1755,7 +1768,11 @@ async function loadAutomation() {
     if (kw) {
       kw.innerHTML = '';
       (data.keywords || []).forEach(item => {
-        kw.appendChild(makeSwitchRow(item.keyword, item.enabled ? 'Alerts on' : 'Alerts off', false, null, true));
+        addAllRow('keyword', item, item.keyword || '(untitled)', 'Alerts on');
+        const row = makeSwitchRow(item.keyword, 'Alerts on', item.enabled,
+          (v, inp) => toggleAutomationItem('keyword', item.id || item.keyword, v, inp));
+        row.appendChild(makeAutoActions('keyword', item));
+        kw.appendChild(row);
       });
       if (!(data.keywords || []).length) kw.appendChild(emptyRowText('No keyword alerts.'));
     }
@@ -1766,13 +1783,128 @@ async function loadAutomation() {
       (data.manychat || []).forEach(item => {
         const title = [item.chat, item.keyword].filter(Boolean).join(' · ');
         const preview = item.reply ? String(item.reply).slice(0, 120) : '';
-        mc.appendChild(makeSwitchRow(title, preview, false, null, true));
+        addAllRow('manychat', item, title, preview);
+        const row = makeSwitchRow(title, preview, item.enabled !== false,
+          (v, inp) => toggleAutomationItem('manychat', item.id, v, inp));
+        row.appendChild(makeAutoActions('manychat', item));
+        mc.appendChild(row);
       });
       if (!(data.manychat || []).length) mc.appendChild(emptyRowText('No ManyChat replies.'));
+    }
+
+    // Render unified All list
+    if (allList) {
+      allList.innerHTML = '';
+      const countEl = document.getElementById('auto-all-count');
+      if (countEl) countEl.textContent = allItems.length + ' total';
+      allItems.forEach(({ type, item, title, preview }) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const badge = document.createElement('span');
+        badge.className = 'scope-badge scope-both';
+        badge.textContent = typeLabels[type] || type;
+        badge.style.marginLeft = '0';
+        badge.style.marginRight = '8px';
+        const txt = document.createElement('span');
+        txt.className = 'row-txt';
+        const strong = document.createElement('strong');
+        strong.textContent = title;
+        txt.appendChild(strong);
+        if (preview) {
+          const sub = document.createElement('span');
+          sub.textContent = preview;
+          sub.style.display = 'block';
+          sub.style.fontSize = '12px';
+          sub.style.color = '#888';
+          txt.appendChild(sub);
+        }
+        row.appendChild(badge);
+        row.appendChild(txt);
+        row.appendChild(makeAutoActions(type, item));
+        allList.appendChild(row);
+      });
+      if (!allItems.length) allList.appendChild(emptyRowText('No automations yet. Click "+ New Automation" or pick a template.'));
     }
   } catch (e) {
     showToast('Could not load automation', 'error');
   }
+}
+
+// Shared Edit/Delete buttons for automation rows (2026-10-17 per Hudson)
+function makeAutoActions(type, item) {
+  const actions = document.createElement('span');
+  actions.className = 'row-actions';
+  actions.style.display = 'flex';
+  actions.style.gap = '6px';
+  
+  const editBtn = document.createElement('button');
+  editBtn.className = 'btn-small';
+  editBtn.textContent = '✏️ Edit';
+  editBtn.onclick = (e) => { e.stopPropagation(); editAutomationItem(type, item); };
+  
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn-small danger';
+  delBtn.textContent = '🗑️';
+  delBtn.onclick = (e) => { e.stopPropagation(); deleteAutomationItem(type, item.id || item.keyword); };
+  
+  actions.appendChild(editBtn);
+  actions.appendChild(delBtn);
+  return actions;
+}
+
+// Generic edit for any automation type
+async function editAutomationItem(type, item) {
+  if (type === 'scheduled') {
+    return editScheduledItem(item);
+  }
+  // For other types, open rich edit modal
+  const fields = {
+    autoreply: [
+      { name: 'trigger', label: 'Trigger keyword', value: item.trigger || item.keyword || '' },
+      { name: 'reply', label: 'Reply text', value: item.reply || '', textarea: true },
+    ],
+    keyword: [
+      { name: 'keyword', label: 'Keyword', value: item.keyword || '' },
+    ],
+    manychat: [
+      { name: 'keyword', label: 'Keyword', value: item.keyword || '' },
+      { name: 'reply', label: 'Reply text', value: item.reply || '', textarea: true },
+    ],
+  }[type] || [{ name: 'message', label: 'Message', value: item.message || '', textarea: true }];
+  
+  const bodyHTML = fields.map(f => `
+    <label style="font-weight:600;display:block;margin-bottom:6px;">${escapeHtml(f.label)}</label>
+    ${f.textarea
+      ? `<textarea id="edit-${f.name}" class="wa-editor" style="margin-bottom:12px;">${escapeHtml(f.value)}</textarea>`
+      : `<input type="text" id="edit-${f.name}" class="media-url-input" value="${escapeHtml(f.value)}" style="margin-bottom:12px;">`
+    }
+  `).join('');
+  
+  openModal('Edit ' + type, bodyHTML, async () => {
+    const updates = {};
+    fields.forEach(f => {
+      updates[f.name] = document.getElementById('edit-' + f.name).value;
+    });
+    try {
+      const res = await fetch(`/api/automation/${type}/${encodeURIComponent(item.id || item.keyword)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('failed');
+      showToast('Automation updated', 'success');
+      loadAutomation();
+    } catch (e) { showToast('Update failed', 'error'); }
+  }, 'Save');
+}
+
+async function deleteAutomationItem(type, id) {
+  if (!confirm('Delete this automation?')) return;
+  try {
+    const res = await fetch(`/api/automation/${type}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('failed');
+    showToast('Automation deleted', 'success');
+    loadAutomation();
+  } catch (e) { showToast('Delete failed', 'error'); }
 }
 
 // --- Features tab ---
