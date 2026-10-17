@@ -1,7 +1,33 @@
 import { ttdl, igdl, fbdown, twitter, youtube, pinterest, capcut, yts } from 'btch-downloader';
 import rahadPkg from 'rahad-all-downloader-v2';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 
+const execFileAsync = promisify(execFile);
 const alldl = rahadPkg.alldl || rahadPkg.default?.alldl;
+
+// yt-dlp direct engine (2026-10-17): local fallback when external APIs fail
+async function ytdlpDirect(url) {
+  const ytdlpPath = '/home/hatch/.local/bin/yt-dlp';
+  const { stdout } = await execFileAsync(ytdlpPath, [
+    '--no-warnings', '--no-playlist', '--no-check-certificate',
+    '--print', '%(title)s|%(uploader)s|%(thumbnail)s',
+    '--get-url', '-f', 'bv*[height<=720]+ba/b[height<=720]/b',
+    url
+  ], { timeout: 30000 });
+  const lines = stdout.trim().split('\n');
+  const [title, uploader, thumbnail] = (lines[0] || '').split('|');
+  const videoUrl = lines[1] || lines[0];
+  if (!videoUrl || !videoUrl.startsWith('http')) throw new Error('ytdlp no URL');
+  return {
+    success: true,
+    source: 'YouTube (yt-dlp)',
+    title: title || 'Video',
+    videoUrl,
+    thumbnail: thumbnail || null,
+    author: uploader || 'YouTube'
+  };
+}
 
 // In-Memory Ultra-Fast Video Cache (30 min TTL)
 const videoCache = new Map();
@@ -535,6 +561,14 @@ async function raceTwitter(url) {
 
 async function raceYouTube(url) {
   const tasks = [];
+
+  // Engine 0: yt-dlp direct (2026-10-17, local fallback — most reliable)
+  tasks.push(
+    Promise.race([
+      ytdlpDirect(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000))
+    ])
+  );
 
   // Engine 1: Cobalt Parallel (Fastest for YouTube Shorts & Videos)
   tasks.push(queryCobalt(url, 'YouTube'));
