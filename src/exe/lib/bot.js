@@ -696,6 +696,13 @@ class WhatsAppBot extends EventEmitter {
    * Handle incoming WhatsApp Voice Notes & Audio Messages (Deepgram STT -> Gemini AI -> Deepgram TTS)
    */
   async handleVoiceMessage({ msg, from, sender, senderName, isGroup }) {
+    // Owner-only check (2026-10-17): bot is private
+    try {
+      const { isOwner } = await import('./access.js');
+      if (!isOwner(sender)) return;
+    } catch (e) {}
+    if (isGroup) return; // No voice in groups
+
     let audioBuffer = null;
     const audioMsg = msg.message?.audioMessage;
     const mimeType = audioMsg?.mimetype || 'audio/ogg; codecs=opus';
@@ -1025,7 +1032,7 @@ class WhatsAppBot extends EventEmitter {
     if (isGroup) {
       // Group management commands allowed for owner in groups
       const groupMgmtCmds = new Set(['groups','add','kick','warn','block','unblock','blocklist','unban','grouplink','revokelink','antilink','antispam','antibadword','lock','unlock','tagall','del','disappear','pin','unpin','poll','schedpoll','groupinfo','groupstats','setdesc','groupicon','admins','topactive','inactive','sleepers','votekick','welcome','goodbye','bday','afk','autoreact','reactall']);
-      const firstWord = (cmdText || '').replace(/^\.\s*/, '').split(/\s+/)[0]?.toLowerCase();
+      const firstWord = (trimmed || '').replace(/^\.\s*/, '').split(/\s+/)[0]?.toLowerCase();
       if (!groupMgmtCmds.has(firstWord)) {
         return; // Silence for non-group-mgmt in groups
       }
