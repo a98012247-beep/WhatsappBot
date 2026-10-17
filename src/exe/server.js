@@ -1338,6 +1338,9 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
     const groupId = req.params.id;
     const { action, text, options } = req.body || {};
     if (!action) return res.status(400).json({ error: 'action is required' });
+    // Silent mode (2026-10-17 per Hudson): dashboard actions happen anonymously,
+    // no extra headers/confirmations in chat. Default ON for dashboard.
+    const silent = (options && (options.silent === true || options.silent === 'yes')) || true;
 
     if (action === 'send') {
       if (!text) return res.status(400).json({ error: 'text is required' });
@@ -1365,7 +1368,9 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
       const meta = await botInstance.sock.groupMetadata(groupId);
       const participants = (meta.participants || []).map(p => p.id);
       const mentions = participants.map(jid => '@' + jid.split('@')[0]).join(' ');
-      await botInstance.sock.sendMessage(groupId, { text: `📢 *Tag All*\n\n${mentions}`, mentions: participants });
+      // Silent: just the mentions, no "Tag All" header (2026-10-17 per Hudson)
+      const msgText = silent ? mentions : `📢 *Tag All*\n\n${mentions}`;
+      await botInstance.sock.sendMessage(groupId, { text: msgText, mentions: participants });
       res.json({ ok: true, action });
     } else if (action === 'invite') {
       const code = await botInstance.sock.groupInviteCode(groupId);
@@ -1379,9 +1384,10 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
       await botInstance.sock.groupUpdateDescription(groupId, text);
       res.json({ ok: true, action });
     } else if (action === 'pin') {
-      // Pin: needs a message to pin — for now, send and pin a message
+      // Pin: needs a message to pin — silent: just the text, no "Pinned:" header
       if (!text) return res.status(400).json({ error: 'text is required' });
-      const sent = await botInstance.sock.sendMessage(groupId, { text: `📌 *Pinned:*\n${text}` });
+      const msgText = silent ? text : `📌 *Pinned:*\n${text}`;
+      const sent = await botInstance.sock.sendMessage(groupId, { text: msgText });
       // Note: Baileys pin requires message key; we store it for reference
       res.json({ ok: true, action, messageId: sent.key?.id });
     } else if (action === 'promote' || action === 'demote' || action === 'remove') {
