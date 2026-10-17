@@ -1020,10 +1020,16 @@ class WhatsAppBot extends EventEmitter {
       return; // Fully private — no response for anyone except owner
     }
 
-    // Bot does NOTHING in groups — only works in direct messages (2026-10-17 per Hudson)
-    // No commands, no link downloads, no auto-replies in groups
+    // Bot does NOTHING in groups EXCEPT group management commands by owner (2026-10-17 per Hudson)
+    // No regular commands, no link downloads, no auto-replies in groups
     if (isGroup) {
-      return; // Complete silence in all groups
+      // Group management commands allowed for owner in groups
+      const groupMgmtCmds = new Set(['groups','add','kick','warn','block','unblock','blocklist','unban','grouplink','revokelink','antilink','antispam','antibadword','lock','unlock','tagall','del','disappear','pin','unpin','poll','schedpoll','groupinfo','groupstats','setdesc','groupicon','admins','topactive','inactive','sleepers','votekick','welcome','goodbye','bday','afk','autoreact','reactall']);
+      const firstWord = (cmdText || '').replace(/^\.\s*/, '').split(/\s+/)[0]?.toLowerCase();
+      if (!groupMgmtCmds.has(firstWord)) {
+        return; // Silence for non-group-mgmt in groups
+      }
+      // Owner-only already enforced above, so group mgmt commands proceed
     }
 
     // Interactive menu taps (buttons/lists) — route before command detection
