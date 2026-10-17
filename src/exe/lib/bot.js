@@ -308,7 +308,7 @@ class WhatsAppBot extends EventEmitter {
     cats.forEach(([icon, title, desc], i) => {
       out += `${icon} *${i + 1}. ${title}*\n_${desc}_\n\n`;
     });
-    out += `👉 _Kisi category ka number bhejein (masalan *3*)_`;
+    out += `👉 _Kisi category ka number bhejein (masalan *.3*)_\n💡 _Har command . se shuru hota hai (masalan *.menu*)_`;
     // BRANDING (Awais AI — required by license, do not remove)
     out += `\n\n🤖 *Powered by Awais AI*`;
     return out;
@@ -338,11 +338,11 @@ class WhatsAppBot extends EventEmitter {
       for (const c of cat.cmds) {
         if (!c || !c.primary || seen.has(c.name)) continue;
         seen.add(c.name);
-        out += `• *${c.name}*${c.desc ? ` — ${c.desc}` : ''}\n`;
+        out += `• *.${c.name}*${c.desc ? ` — ${c.desc}` : ''}\n`;
       }
     }
     const titles = { 1: 'Voice AI', 2: 'Fun & Memes', 3: 'Music', 4: 'Downloaders', 5: 'Photos & Stickers', 6: 'Islamic', 7: 'Daily Tools', 8: 'Groups', 9: 'AI Tools', 10: 'Money', 11: 'Health', 12: 'Education', 13: 'Automation', 14: 'Business', 15: 'More' };
-    return `*${titles[n]}*\n${out}\n👉 _Wapas jane ke liye *menu* likhein_`;
+    return `*${titles[n]}*\n${out}\n👉 _Wapas jane ke liye *.menu* likhein_`;
   }
 
   getMobileFriendlyMenu(prefix = '!') {
@@ -1028,34 +1028,23 @@ class WhatsAppBot extends EventEmitter {
       console.error('[newfeatures] hook error:', e.message);
     }
 
-    // Command detection — no prefix needed. A message is treated as a command
-    // when it starts with the configured prefix (if one is set) OR when its
-    // first word is a known command name (e.g. "ping", "menu", "soundboard").
-    // Leading "!" or "." are accepted as prefixes (2026-10-17 per Hudson:
-    // ".command" must work like "command", never fall through to AI).
+    // Command detection — DOT PREFIX ONLY (2026-10-17 per Hudson).
+    // Only ".command" works. Plain "command" and "!command" are removed.
+    // ".invalidcommand" stays silent (never falls through to AI).
     let cmdText = null;
-    let usedDotPrefix = false;
-    if (prefix && trimmed.startsWith(prefix)) {
-      cmdText = trimmed.slice(prefix.length).trim();
-    } else {
-      // Strip leading . or ! (with optional space after)
-      const stripped = trimmed.replace(/^[.!]+\s*/, '');
-      if (stripped !== trimmed) usedDotPrefix = true;
+    // Strip leading . (with optional space after): ".menu" or ". menu"
+    const stripped = trimmed.replace(/^\.\s*/, '');
+    if (stripped !== trimmed) {
+      // Has dot prefix — must be a valid command
       const firstWord = stripped.split(/\s+/)[0].toLowerCase();
       if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
         cmdText = stripped;
-      } else if (usedDotPrefix) {
+      } else {
         // Dot-prefixed but not a valid command → stay silent, never AI reply
         return;
       }
     }
-    // Also handle plain firstWord without prefix (backward compat)
-    if (!cmdText && !usedDotPrefix) {
-      const firstWord = trimmed.split(/\s+/)[0].toLowerCase().replace(/^!+/, '');
-      if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
-        cmdText = trimmed.replace(/^!+/, '');
-      }
-    }
+    // No dot prefix → not a command, falls through to AI/natural handling
     if (cmdText) {
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
