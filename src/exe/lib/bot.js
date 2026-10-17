@@ -1003,7 +1003,7 @@ class WhatsAppBot extends EventEmitter {
       const { isOwner, isAdmin } = await import('./access.js');
       senderIsOwner = isOwner(sender);
       senderIsAdmin = isAdmin(sender);
-      if (!senderIsOwner && !senderIsAdmin) {
+      if (!senderIsOwner) {
         console.log(`[access] BLOCKED sender=${sender} text="${trimmed.slice(0, 30)}"`);
       }
     } catch (e) {
@@ -1015,15 +1015,14 @@ class WhatsAppBot extends EventEmitter {
       }
     }
 
-    // Bot is private: non-owner/non-admin get silence
-    // Per Hudson: only owner and admin can use the bot
-    if (!senderIsOwner && !senderIsAdmin) {
-      return; // Fully private — no response
+    // Bot is fully private: ONLY owner can use it (2026-10-17 per Hudson)
+    if (!senderIsOwner) {
+      return; // Fully private — no response for anyone except owner
     }
 
     // Strict Group Whitelist Enforcement:
-    // If the message is from a WhatsApp group, the bot ONLY works in groups explicitly enabled
-    // EXCEPT: owner/admin can use the bot in any group (2026-10-17 per Hudson)
+    // Owner can use the bot in any group (2026-10-17 per Hudson)
+    // (Non-owners are already blocked above, so this is just for owner)
     if (isGroup) {
       if (!senderIsOwner && !senderIsAdmin && !Store.isGroupAllowed(from)) {
         return; // 100% strict silence in unselected groups (for non-owner/admin)
