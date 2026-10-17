@@ -21,6 +21,15 @@ const PERSONA_FILE = 'batch-persona.json';  // { chatId: styleKey }
 
 const LINK_RE = /(chat\.whatsapp\.com|wa\.me\/|t\.me\/|https?:\/\/)/i;
 
+// Promotion detection patterns (2026-10-17 per Hudson)
+const PROMO_RE = /(dm\s*(me|for|now)|buy\s*(now|from|me)|order\s*now|limited\s*(offer|deal|time)|discount|promo\s*code|click\s*(here|link|below)|whatsapp\s*me|contact\s*me|sale\s*(now|!)|offer\s*(ends|valid)|free\s*(delivery|shipping)|cash\s*on\s*delivery|\bcod\b.*available|price.*(only|just)|inbox\s*me|message\s*me)/i;
+
+// Extract domains from text for whitelist/blacklist checking
+function extractDomains(text) {
+  const matches = text.match(/https?:\/\/([^\/\s]+)/gi) || [];
+  return matches.map(m => m.replace(/https?:\/\//i, '').split('/')[0].toLowerCase());
+}
+
 // ---- in-memory state ----
 let liveSock = null;                 // latest sock seen (for intervals)
 const spamMap = new Map();           // `${chat}|${user}` -> [ts,...]
@@ -136,11 +145,59 @@ const HANDLERS = {
   antilink: safe(async (ctx, query) => {
     if (!await needGroupAdmin(ctx)) return;
     const v = parseOnOff(query);
-    if (v === null) return await say(ctx, '🔗 *Anti-Link*\n\nIstamal: *antilink on* ya *antilink off*\nOn hone par group mein links auto-delete hon ge (admin ke ilawa).');
+    if (v === null) return await say(ctx, '🔗 *Anti-Link*\n\nUsage: *.antilink on* or *.antilink off*\nWhen ON, links auto-delete (except admins).');
     const g = getG(ctx.from); g.antilink = v; saveG();
-    await say(ctx, v ? '✅ Anti-Link *ON* — ab links auto-delete hon ge.' : '❎ Anti-Link *OFF* kar diya.');
+    await say(ctx, v ? '✅ Anti-Link *ON* — links will auto-delete.' : '❎ Anti-Link *OFF*.');
   }),
   nolink: 'antilink',
+
+  // ---- Link whitelist/blacklist (2026-10-17 per Hudson) ----
+  linkallow: safe(async (ctx, query) => {
+    if (!await needGroupAdmin(ctx)) return;
+    const g = getG(ctx.from);
+    if (!g.linkWhitelist) g.linkWhitelist = [];
+    const domain = (query || '').trim().toLowerCase().replace(/https?:\/\//, '').split('/')[0];
+    if (!domain) {
+      const list = g.linkWhitelist.length ? g.linkWhitelist.join(', ') : 'none';
+      return await say(ctx, `✅ *Allowed Links*\n\nCurrent whitelist: ${list}\n\nUsage: *.linkallow <domain>* to allow\n*.linkallow clear* to reset\n\nWhen whitelist is set, ONLY these domains are allowed.`);
+    }
+    if (domain === 'clear') {
+      g.linkWhitelist = []; saveG();
+      return await say(ctx, '✅ Link whitelist cleared — all links will be blocked (if antilink is ON).');
+    }
+    if (!g.linkWhitelist.includes(domain)) {
+      g.linkWhitelist.push(domain); saveG();
+    }
+    await say(ctx, `✅ *${domain}* added to allowed list.\n\nWhitelist: ${g.linkWhitelist.join(', ')}`);
+  }),
+
+  linkblock: safe(async (ctx, query) => {
+    if (!await needGroupAdmin(ctx)) return;
+    const g = getG(ctx.from);
+    if (!g.linkBlacklist) g.linkBlacklist = [];
+    const domain = (query || '').trim().toLowerCase().replace(/https?:\/\//, '').split('/')[0];
+    if (!domain) {
+      const list = g.linkBlacklist.length ? g.linkBlacklist.join(', ') : 'none';
+      return await say(ctx, `🚫 *Blocked Links*\n\nCurrent blacklist: ${list}\n\nUsage: *.linkblock <domain>* to block\n*.linkblock clear* to reset`);
+    }
+    if (domain === 'clear') {
+      g.linkBlacklist = []; saveG();
+      return await say(ctx, '✅ Link blacklist cleared.');
+    }
+    if (!g.linkBlacklist.includes(domain)) {
+      g.linkBlacklist.push(domain); saveG();
+    }
+    await say(ctx, `🚫 *${domain}* added to block list.\n\nBlacklist: ${g.linkBlacklist.join(', ')}`);
+  }),
+
+  // ---- Anti-promotion (2026-10-17 per Hudson) ----
+  antipromo: safe(async (ctx, query) => {
+    if (!await needGroupAdmin(ctx)) return;
+    const v = parseOnOff(query);
+    if (v === null) return await say(ctx, '📢 *Anti-Promotion*\n\nUsage: *.antipromo on* or *.antipromo off*\nWhen ON, promotional messages ("DM me", "buy now", etc.) auto-delete.');
+    const g = getG(ctx.from); g.antipromo = v; saveG();
+    await say(ctx, v ? '✅ Anti-Promotion *ON* — promo messages will auto-delete.' : '❎ Anti-Promotion *OFF*.');
+  }),
 
   // ---- 2. antispam ----
   antispam: safe(async (ctx, query) => {
@@ -605,13 +662,53 @@ export async function onMessage(ctx) {
         g.stats.msgs++; g.lastseen[sender] = Date.now(); groupsDirty = true;
       } catch { /* ignore */ }
 
-      // --- antilink ---
+      // --- antilink (with whitelist/blacklist + promotion detection) ---
       try {
-        if (groupFeatureOn(from, 'antilink', g.antilink) && text && LINK_RE.test(text)) {
-          const admin = await isGroupAdmin(ctx.bot.sock, from, sender).catch(() => false);
-          if (!admin && msg?.key) {
-            await ctx.bot.sock.sendMessage(from, { delete: msg.key }).catch(() => {});
-            await ctx.bot.sock.sendMessage(from, { react: { text: '⚠️', key: msg.key } }).catch(() => {});
+        if (groupFeatureOn(from, 'antilink', g.antilink) && text) {
+          const hasLink = LINK_RE.test(text);
+          const isPromo = PROMO_RE.test(text);
+          
+          let shouldDelete = false;
+          let reason = '';
+          
+          if (hasLink) {
+            const domains = extractDomains(text);
+            const whitelist = g.linkWhitelist || [];
+            const blacklist = g.linkBlacklist || [];
+            
+            // Check blacklist first
+            const blacklisted = domains.some(d => blacklist.some(b => d.includes(b.toLowerCase())));
+            // Check whitelist
+            const whitelisted = whitelist.length > 0 && domains.every(d => whitelist.some(w => d.includes(w.toLowerCase())));
+            
+            if (blacklisted) {
+              shouldDelete = true;
+              reason = 'blacklisted domain';
+            } else if (whitelist.length > 0 && !whitelisted) {
+              shouldDelete = true;
+              reason = 'not in whitelist';
+            } else if (whitelist.length === 0) {
+              // No whitelist = block all links (default behavior)
+              shouldDelete = true;
+              reason = 'link detected';
+            }
+          }
+          
+          // Promotion detection (even without links)
+          if (!shouldDelete && isPromo && groupFeatureOn(from, 'antipromo', g.antipromo)) {
+            shouldDelete = true;
+            reason = 'promotional content';
+          }
+          
+          if (shouldDelete) {
+            const admin = await isGroupAdmin(ctx.bot.sock, from, sender).catch(() => false);
+            // Don't delete owner's or admins' messages
+            const { isOwner } = await import('./access.js').catch(() => ({ isOwner: () => false }));
+            if (!admin && !isOwner(sender) && msg?.key) {
+              await ctx.bot.sock.sendMessage(from, { delete: msg.key }).catch(() => {});
+              await ctx.bot.sock.sendMessage(from, { react: { text: '⚠️', key: msg.key } }).catch(() => {});
+              console.log(`[antilink] Deleted ${reason}: ${text.slice(0, 50)}`);
+            }
           }
         }
       } catch { /* ignore */ }

@@ -25,6 +25,7 @@ export const GROUP_FEATURES = [
   'welcome',      // welcome new members
   'goodbye',      // goodbye on leave
   'antilink',     // auto-delete links
+  'antipromo',    // auto-delete promotional messages
   'antispam',     // anti-spam / slowdown
   'autoreply',    // keyword auto-replies (batch8)
   'chatbot',      // AI chatbot responses in group
@@ -39,6 +40,7 @@ const DEFAULTS = {
   welcome: true,
   goodbye: true,
   antilink: true,
+  antipromo: true,
   antispam: true,
   autoreply: true,
   chatbot: true,
