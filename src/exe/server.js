@@ -157,7 +157,8 @@ app.post('/api/statuses', async (req, res) => {
       }
     } else if (groupId && groupId.endsWith('@g.us')) {
       try {
-        await botInstance.postGroupStatus(groupId, text);
+        // Silent by default (2026-10-17 per Hudson): story goes to Status tab only, no chat message
+        await botInstance.postGroupStatus(groupId, text, { silent: true });
       } catch (e) {
         console.warn('WhatsApp group status post notice:', e.message);
       }
@@ -1344,7 +1345,9 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
       res.json({ ok: true, action: 'send' });
     } else if (action === 'status') {
       if (!text) return res.status(400).json({ error: 'text is required' });
-      await botInstance.postGroupStatus(groupId, text, options || {});
+      // Silent by default (2026-10-17 per Hudson): no message in group chat
+      const opts = { ...(options || {}), silent: true };
+      await botInstance.postGroupStatus(groupId, text, opts);
       res.json({ ok: true, action: 'status' });
     } else if (action === 'poll') {
       const { question, choices } = req.body;
