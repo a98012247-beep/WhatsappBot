@@ -3278,9 +3278,11 @@ class WhatsAppBot extends EventEmitter {
     // 1. Dispatch Group Status via Baileys isGroupStatus context flag
     // (SKIP in silent mode — no message in group chat)
     if (!silent) {
+    // Media attachment (2026-10-17 per Hudson): image/video/audio from dashboard
+    const mediaType = options.mediaType || 'text';
+    const mediaUrl = options.mediaUrl || '';
     try {
-      await this.sock.sendMessage(groupId, {
-        text,
+      const statusMsg = {
         backgroundColor: bgHex,
         font: 3,
         contextInfo: {
@@ -3293,7 +3295,24 @@ class WhatsAppBot extends EventEmitter {
             }
           ]
         }
-      });
+      };
+      if (mediaType === 'image' && mediaUrl) {
+        statusMsg.image = { url: mediaUrl };
+        statusMsg.caption = text;
+      } else if (mediaType === 'video' && mediaUrl) {
+        statusMsg.video = { url: mediaUrl };
+        statusMsg.caption = text;
+      } else if (mediaType === 'audio' && mediaUrl) {
+        statusMsg.audio = { url: mediaUrl };
+        statusMsg.mimetype = 'audio/mpeg';
+        // Audio status: send text separately as caption isn't supported
+        await this.sock.sendMessage(groupId, { ...statusMsg, text: undefined });
+        await this.sock.sendMessage(groupId, { text, ...statusMsg.contextInfo ? { contextInfo: statusMsg.contextInfo } : {} });
+        return;
+      } else {
+        statusMsg.text = text;
+      }
+      await this.sock.sendMessage(groupId, statusMsg);
     } catch (err) {
       console.warn('Group message status dispatch warning:', err.message);
     }

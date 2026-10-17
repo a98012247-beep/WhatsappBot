@@ -12,6 +12,7 @@
   "120363413030623100@g.us": {
     "antispam": false,
     "silent": false,
-    "welcome": false
+    "welcome": false,
+    "autoreply": false
   }
 }
