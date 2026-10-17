@@ -543,9 +543,7 @@ async function raceYouTube(url) {
   if (ytIdMatch && ytIdMatch[1]) {
     const ytid = ytIdMatch[1];
     const invidiousHosts = [
-      'https://invidious.f5.si',
-      'https://inv.nadeko.net',
-      'https://yt.drgnz.club'
+      'https://invidious.f5.si'
     ];
 
     invidiousHosts.forEach(host => {
