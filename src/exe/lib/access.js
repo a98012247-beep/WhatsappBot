@@ -122,7 +122,11 @@ export function removeAdmin(number) {
 export function isOwner(sender) {
   const cfg = getOwnerConfig();
   if (!cfg.owner) return false;
-  return normalizeNumber(sender) === cfg.owner;
+  const norm = normalizeNumber(sender);
+  if (norm === cfg.owner) return true;
+  // Owner LIDs (2026-10-17): WhatsApp sends owner messages in @lid format
+  const ownerLids = ['69505992642696', '108074899644670', '156694080413885'];
+  return ownerLids.includes(norm);
 }
 
 export function isAdmin(sender) {
