@@ -2015,7 +2015,11 @@ class WhatsAppBot extends EventEmitter {
           }
           this.stats.aiQueries++;
           await this.sendPresence(from, 'composing');
-          const aiResponse = await askAI(query, { senderId: sender, senderName });
+          const aiResponse = await askAI(query, {
+            senderId: sender,
+            senderName,
+            systemPrompt: 'You are AwaisxBot, a helpful WhatsApp assistant. ALWAYS reply in clear, natural English. Never use Urdu or Roman Urdu, even if the user writes in Roman Urdu. Be concise and friendly.'
+          });
           await this.sendMessage(from, aiResponse);
           return;
         }
