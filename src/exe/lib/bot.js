@@ -1003,29 +1003,24 @@ class WhatsAppBot extends EventEmitter {
     const trimmed = (text || '').trim();
 
     // ─── Access Control (2026-10-17 per Hudson) ───
-    // OWNER: full access | ADMIN: use only | Others: bot is private (silent)
+    // Automatic features (antilink, antispam, etc.) run for ALL messages via hooks below.
+    // COMMANDS are owner-only. Non-owners get silence for commands.
     let senderIsOwner = false;
     let senderIsAdmin = false;
     try {
       const { isOwner, isAdmin } = await import('./access.js');
       senderIsOwner = isOwner(sender);
       senderIsAdmin = isAdmin(sender);
-      if (!senderIsOwner) {
-        console.log(`[access] BLOCKED sender=${sender} text="${trimmed.slice(0, 30)}"`);
-      }
     } catch (e) {
       console.error('[access] check failed:', e.message);
-      // Fail open for owner number to avoid lockout
       if (sender && String(sender).includes('923293209581')) {
         senderIsOwner = true;
         senderIsAdmin = true;
       }
     }
 
-    // Bot is fully private: ONLY owner can use it (2026-10-17 per Hudson)
-    if (!senderIsOwner) {
-      return; // Fully private — no response for anyone except owner
-    }
+    // NOTE: Do NOT return early here — automatic group features need to see all messages.
+    // Owner check is enforced at command processing below.
 
     // Bot restrictions in groups (2026-10-17 per Hudson):
     // - Automatic features (antilink, antispam, etc.) ALWAYS run via runMessageHooks below
@@ -1102,6 +1097,11 @@ class WhatsAppBot extends EventEmitter {
       }
     }
     if (cmdText) {
+      // Owner-only for commands (2026-10-17): non-owners get silence
+      if (!senderIsOwner) {
+        console.log(`[access] BLOCKED command sender=${sender} cmd="${cmdText.slice(0, 30)}"`);
+        return;
+      }
       // Block non-group-mgmt commands in groups (2026-10-17)
       if (isGroupCommandBlocked) return;
       this.stats.commandsProcessed++;

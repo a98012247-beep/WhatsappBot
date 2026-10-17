@@ -2,14 +2,14 @@
   "120363410975468944@g.us": {
     "antilink": true,
     "antispam": true,
-    "slowmode": false,
+    "slowmode": true,
     "antidelete": true,
-    "silent": false,
-    "welcome": false,
-    "goodbye": false,
-    "chatbot": false,
-    "keywordalerts": false,
-    "autoreply": false
+    "silent": true,
+    "welcome": true,
+    "goodbye": true,
+    "chatbot": true,
+    "keywordalerts": true,
+    "autoreply": true
   },
   "120363413100580818@g.us": {
     "antilink": false
