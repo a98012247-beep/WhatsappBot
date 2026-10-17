@@ -115,7 +115,7 @@ export const HANDLERS = {
   setdp: safe(async (ctx, q) => {
     const media = await getMediaBuffer(ctx.msg, 'image');
     if (!media) return say(ctx,
-      '🖼️ Istemal: apni photo bhejein aur us par reply kar ke *setdp* likhein,\n' +
+      '🖼️ Usage: apni photo bhejein aur us par reply kar ke *setdp* likhein,\n' +
       'ya photo ke saath caption mein *setdp* likhein.\n' +
       '⚠️ Ye bot ki profile picture badal dega.');
     await say(ctx, '⏳ Bot ki profile picture update ho rahi hai...');
@@ -135,7 +135,7 @@ export const HANDLERS = {
     if (!sharp) return say(ctx, '⚠️ Sticker convert is waqt available nahi.');
     const media = await getMediaBuffer(ctx.msg, 'sticker');
     if (!media) return say(ctx,
-      '🖼️ Istemal: kisi sticker par reply kar ke *toimg* likhein.\n' +
+      '🖼️ Usage: kisi sticker par reply kar ke *toimg* likhein.\n' +
       'Sticker PNG image mein convert ho jayega.');
     try {
       const buf = await sharp(media.buffer).png().toBuffer();
@@ -153,7 +153,7 @@ export const HANDLERS = {
     const media = await getMediaBuffer(ctx.msg, 'image')
       || await getMediaBuffer(ctx.msg, 'video');
     if (!media) return say(ctx,
-      '🔗 Istemal: kisi photo ya video par reply kar ke *tourl* likhein.\n' +
+      '🔗 Usage: kisi photo ya video par reply kar ke *tourl* likhein.\n' +
       'Shareable link mil jayega.');
     if (media.buffer.length > 200 * 1024 * 1024)
       return say(ctx, '⚠️ File bohat bari hai (200MB limit).');
@@ -181,7 +181,7 @@ export const HANDLERS = {
     if (!sharp) return say(ctx, '⚠️ Collage feature is waqt available nahi.');
     const media = await getMediaBuffer(ctx.msg, 'image');
     if (!media) return say(ctx,
-      '🖼️ Istemal: kisi photo par reply kar ke *collage* likhein.\n' +
+      '🖼️ Usage: kisi photo par reply kar ke *collage* likhein.\n' +
       '2x2 grid banega — normal, grey, sepia, bright.');
     await say(ctx, '⏳ Collage ban raha hai...');
     try {
@@ -213,7 +213,7 @@ export const HANDLERS = {
   autosticker: safe(async (ctx, q) => {
     const arg = (q.split(/\s+/)[0] || '').toLowerCase();
     if (arg !== 'on' && arg !== 'off') return say(ctx,
-      '✨ Istemal: *autosticker on* ya *autosticker off*\n' +
+      '✨ Usage: *autosticker on* ya *autosticker off*\n' +
       'ON hone par is chat mein bheji gayi har photo khud sticker ban jayegi.');
     const st = readData(AUTO_FILE, {});
     if (arg === 'on') st[ctx.from] = true; else delete st[ctx.from];
@@ -232,7 +232,7 @@ export const HANDLERS = {
     if (!admin) return say(ctx, '⚠️ Sirf group admin ye command chala sakta hai.');
     const arg = (q.split(/\s+/)[0] || '').toLowerCase();
     if (arg !== 'on' && arg !== 'off') return say(ctx,
-      '🚫 Istemal: *antisticker on* ya *antisticker off*');
+      '🚫 Usage: *antisticker on* ya *antisticker off*');
     const st = readData(ANTI_FILE, {});
     if (arg === 'on') st[ctx.from] = true; else delete st[ctx.from];
     writeData(ANTI_FILE, st);
@@ -245,7 +245,7 @@ export const HANDLERS = {
   once: safe(async (ctx, q) => {
     const quoted = quotedMessageOf(ctx.msg);
     if (!quoted) return say(ctx,
-      '👁️ Istemal: kisi *view-once* photo/video par reply kar ke *once* likhein.\n' +
+      '👁️ Usage: kisi *view-once* photo/video par reply kar ke *once* likhein.\n' +
       'Wo media normal message ki tarah dobara bhej diya jayega.');
     const inner = unwrapQuoted(quoted);
     const key = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage', 'stickerMessage']
@@ -279,7 +279,7 @@ export const HANDLERS = {
     const media = await getMediaBuffer(ctx.msg, 'image')
       || await getMediaBuffer(ctx.msg, 'video');
     if (!media) return say(ctx,
-      '💾 Istemal: kisi photo ya video par reply kar ke *save* likhein.\n' +
+      '💾 Usage: kisi photo ya video par reply kar ke *save* likhein.\n' +
       'File bot mein save ho jayegi aur info mil jayegi.');
     try {
       fs.mkdirSync(SAVE_DIR, { recursive: true });
@@ -298,7 +298,7 @@ export const HANDLERS = {
 
   // ---- 10. vault — private notes ----
   vault: safe(async (ctx, q) => {
-    const usage = '🗝️ Istemal:\n' +
+    const usage = '🗝️ Usage:\n' +
       '• *vault add <text>* — note save karein\n' +
       '• *vault list* — saare notes dekhein\n' +
       '• *vault get <n>* — note #n parhein\n' +
@@ -311,7 +311,7 @@ export const HANDLERS = {
     const persist = () => { store[ctx.sender] = mine; writeData(VAULT_FILE, store); };
     if (sub === 'add') {
       const text = parts.slice(1).join(' ').trim();
-      if (!text) return say(ctx, '⚠️ Note ka text likhein.\nMisaal: *vault add kal 5 baje meeting hai*');
+      if (!text) return say(ctx, '⚠️ Note ka text likhein.\nExample: *vault add kal 5 baje meeting hai*');
       if (text.length > 2000) return say(ctx, '⚠️ Note 2000 harf se chhota hona chahiye.');
       mine.push({ text, ts: Date.now() });
       persist();

@@ -229,11 +229,11 @@ function convertFile(text, src, tgt) {
 export const HANDLERS = {
   // ---- 1-6. Downloaders ----
   pindl: safe((ctx, q) => genericDl(ctx, q,
-    '📌 Istemal: !pindl <pinterest link>', 'Pinterest',
+    '📌 Usage: .pindl <pinterest link>', 'Pinterest',
     async (url) => pickDirectUrl(await jget('https://api.siputzx.my.id/api/d/pinterest?url=' + encodeURIComponent(url))))),
 
   redditdl: safe((ctx, q) => genericDl(ctx, q,
-    '📌 Istemal: !redditdl <reddit post link>', 'Reddit',
+    '📌 Usage: .redditdl <reddit post link>', 'Reddit',
     async (url) => {
       const api = url.split('?')[0].replace(/\/+$/, '') + '.json';
       const j = await jget(api);
@@ -246,7 +246,7 @@ export const HANDLERS = {
     })),
 
   dmd: safe((ctx, q) => genericDl(ctx, q,
-    '📌 Istemal: !dmd <dailymotion link>', 'Dailymotion',
+    '📌 Usage: .dmd <dailymotion link>', 'Dailymotion',
     async (url) => {
       const m = url.match(/(?:dailymotion\.com\/(?:video|embed\/video)\/|dai\.ly\/)([a-zA-Z0-9]+)/);
       if (!m) throw new Error('bad url');
@@ -257,7 +257,7 @@ export const HANDLERS = {
     })),
 
   vimeodl: safe((ctx, q) => genericDl(ctx, q,
-    '📌 Istemal: !vimeodl <vimeo link>', 'Vimeo',
+    '📌 Usage: .vimeodl <vimeo link>', 'Vimeo',
     async (url) => {
       const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
       if (!m) throw new Error('bad url');
@@ -271,7 +271,7 @@ export const HANDLERS = {
     })),
 
   spotidl: safe(async (ctx, q) => {
-    if (!q || !/spotify\.com/i.test(q)) return say(ctx, '🎵 Istemal: !spotidl <spotify track link>');
+    if (!q || !/spotify\.com/i.test(q)) return say(ctx, '🎵 Usage: .spotidl <spotify track link>');
     const url = q.split(/\s+/)[0];
     await say(ctx, '⏳ Spotify MP3 download ho raha hai...');
     try {
@@ -288,9 +288,9 @@ export const HANDLERS = {
   spotify: 'spotidl',
 
   ytpl: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '🎶 Istemal: !ytpl <youtube playlist link>');
+    if (!q) return say(ctx, '🎶 Usage: .ytpl <youtube playlist link>');
     const url = q.split(/\s+/)[0];
-    if (!/^https?:\/\//i.test(url)) return say(ctx, '⚠️ Sahi playlist link bhejein.\n🎶 Istemal: !ytpl <youtube playlist link>');
+    if (!/^https?:\/\//i.test(url)) return say(ctx, '⚠️ Sahi playlist link bhejein.\n🎶 Usage: .ytpl <youtube playlist link>');
     await say(ctx, '⏳ Playlist parh raha hoon...');
     let html = '';
     try {
@@ -339,7 +339,7 @@ export const HANDLERS = {
     const m = await getMediaBuffer(ctx.msg, 'image');
     if (!m) return say(ctx, '🖼 Kisi photo par reply kar ke !photofx <filter> likhein.\nFilters: grey, sepia, blur, bright, invert');
     if (!['grey', 'sepia', 'blur', 'bright', 'invert'].includes(fx))
-      return say(ctx, '🎨 Filter chunein: grey, sepia, blur, bright, invert\nMisaal: !photofx sepia');
+      return say(ctx, '🎨 Filter chunein: grey, sepia, blur, bright, invert\nExample: .photofx sepia');
     const sharp = await getSharp();
     if (!sharp) return say(ctx, '⚠️ Photo feature is waqt available nahi.');
     await say(ctx, '⏳ Filter lag raha hai...');
@@ -406,7 +406,7 @@ export const HANDLERS = {
   trim: safe(async (ctx, q) => {
     if (!HAS_FFMPEG) return say(ctx, '⚠️ Audio trim is waqt available nahi.');
     const m = await getMediaBuffer(ctx.msg, 'audio');
-    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !trim <start-end> likhein.\nMisaal: !trim 0:10-0:30');
+    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !trim <start-end> likhein.\nExample: .trim 0:10-0:30');
     const mm = q.match(/(\S+)\s*-\s*(\S+)/) || [];
     const s = parseTs(mm[1] || ''), e = parseTs(mm[2] || '');
     if (s == null || e == null || e <= s) return say(ctx, '⚠️ Format: !trim 0:10-0:30');
@@ -426,9 +426,9 @@ export const HANDLERS = {
   tez: safe(async (ctx, q) => {
     if (!HAS_FFMPEG) return say(ctx, '⚠️ Speed feature is waqt available nahi.');
     const m = await getMediaBuffer(ctx.msg, 'audio');
-    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !tez <0.5-2> likhein.\nMisaal: !tez 1.5');
+    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !tez <0.5-2> likhein.\nExample: .tez 1.5');
     const r = parseFloat(q.split(/\s+/)[0] || '');
-    if (!isFinite(r) || r < 0.5 || r > 2) return say(ctx, '⚠️ Speed 0.5 se 2 ke darmiyan likhein.\nMisaal: !tez 1.5');
+    if (!isFinite(r) || r < 0.5 || r > 2) return say(ctx, '⚠️ Speed 0.5 se 2 ke darmiyan likhein.\nExample: .tez 1.5');
     await say(ctx, '⏳ Speed change ho rahi hai...');
     const d = tmpdir();
     try {
@@ -445,7 +445,7 @@ export const HANDLERS = {
   ringtone: safe(async (ctx, q) => {
     if (!HAS_FFMPEG) return say(ctx, '⚠️ Ringtone feature is waqt available nahi.');
     const m = await getMediaBuffer(ctx.msg, 'audio');
-    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !ringtone <seconds> likhein.\nMisaal: !ringtone 30');
+    if (!m) return say(ctx, '🎵 Kisi audio par reply kar ke !ringtone <seconds> likhein.\nExample: .ringtone 30');
     let n = parseInt(q.split(/\s+/)[0] || '', 10);
     if (!isFinite(n) || n <= 0) n = 30;
     n = Math.min(n, 60);
@@ -482,7 +482,7 @@ export const HANDLERS = {
   scanqr: 'qrscan',
 
   barcode: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '📊 Istemal: !barcode <text>\nMisaal: !barcode 03001234567');
+    if (!q) return say(ctx, '📊 Usage: .barcode <text>\nExample: .barcode 03001234567');
     try {
       const { buf } = await fetchBin('https://barcode.tec-it.com/barcode.ashx?data=' + encodeURIComponent(q.slice(0, 60)) + '&code=Code128');
       await ctx.bot.sock.sendMessage(ctx.from, { image: buf, caption: `📊 Barcode: ${q.slice(0, 60)}` }, { quoted: ctx.msg });
@@ -502,7 +502,7 @@ export const HANDLERS = {
   newpass: 'passgen',
 
   shorturl: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '🔗 Istemal: !shorturl <link>\nMisaal: !shorturl https://youtube.com/...');
+    if (!q) return say(ctx, '🔗 Usage: .shorturl <link>\nExample: .shorturl https://youtube.com/...');
     const url = q.split(/\s+/)[0];
     try {
       const r = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url), { signal: T(), headers: UA });
@@ -544,9 +544,9 @@ export const HANDLERS = {
   fakemail: 'tempemail',
 
   numinfo: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '📱 Istemal: !numinfo <number>\nMisaal: !numinfo 03001234567');
+    if (!q) return say(ctx, '📱 Usage: .numinfo <number>\nExample: .numinfo 03001234567');
     const d = q.replace(/\D/g, '');
-    if (d.length < 10) return say(ctx, '⚠️ Sahi number likhein. Misaal: !numinfo 03001234567');
+    if (d.length < 10) return say(ctx, '⚠️ Sahi number likhein. Example: .numinfo 03001234567');
     let local = d;
     if (d.startsWith('92') && d.length >= 12) local = '0' + d.slice(2);
     const car = pkCarrier(local);
@@ -555,7 +555,7 @@ export const HANDLERS = {
   siminfo: 'numinfo',
 
   websnap: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '📸 Istemal: !websnap <website>\nMisaal: !websnap google.com');
+    if (!q) return say(ctx, '📸 Usage: .websnap <website>\nExample: .websnap google.com');
     let u = q.split(/\s+/)[0];
     if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
     await say(ctx, '⏳ Screenshot le raha hoon...');
@@ -567,7 +567,7 @@ export const HANDLERS = {
   sitepic: 'websnap',
 
   sitedown: safe(async (ctx, q) => {
-    if (!q) return say(ctx, '🌐 Istemal: !sitedown <website>\nMisaal: !sitedown google.com');
+    if (!q) return say(ctx, '🌐 Usage: .sitedown <website>\nExample: .sitedown google.com');
     let u = q.split(/\s+/)[0];
     if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
     const t0 = Date.now();
@@ -585,7 +585,7 @@ export const HANDLERS = {
 
   unitconv: safe(async (ctx, q) => {
     const m = q.match(/^([\d.]+)\s+([a-zA-Z]+)\s+([a-zA-Z]+)$/);
-    if (!m) return say(ctx, '📏 Istemal: !unitconv <number> <from> <to>\nMisaal: !unitconv 5 km miles\nUnits: km, miles, m, cm, inch, ft | kg, g, lbs | c, f, k | liter, gallon, ml | marla, kanal, acre');
+    if (!m) return say(ctx, '📏 Usage: .unitconv <number> <from> <to>\nExample: .unitconv 5 km miles\nUnits: km, miles, m, cm, inch, ft | kg, g, lbs | c, f, k | liter, gallon, ml | marla, kanal, acre');
     const val = parseFloat(m[1]), f = m[2].toLowerCase(), t = m[3].toLowerCase();
     const uf = UNITS[f], ut = UNITS[t];
     if (!uf || !ut || uf[0] !== ut[0]) return say(ctx, '⚠️ Ye units convert nahi ho saktin. List upar dekhein.');
@@ -600,9 +600,9 @@ export const HANDLERS = {
 
   currency: safe(async (ctx, q) => {
     const a = q.split(/\s+/).filter(Boolean);
-    if (!a.length) return say(ctx, '💱 Istemal: !currency <amount> <from> <to>\nMisaal: !currency 100 usd pkr');
+    if (!a.length) return say(ctx, '💱 Usage: .currency <amount> <from> <to>\nExample: .currency 100 usd pkr');
     const amt = parseFloat(a[0]);
-    if (!isFinite(amt)) return say(ctx, '⚠️ Pehle raqam likhein. Misaal: !currency 100 usd pkr');
+    if (!isFinite(amt)) return say(ctx, '⚠️ Enter the amount first. Example: .currency 100 usd pkr');
     const from = (a[1] || 'USD').toUpperCase(), to = (a[2] || 'PKR').toUpperCase();
     try {
       const j = await jget('https://open.er-api.com/v6/latest/' + from);
@@ -615,11 +615,11 @@ export const HANDLERS = {
 
   timeconv: safe(async (ctx, q) => {
     const a = q.split(/\s+/).filter(Boolean);
-    if (a.length < 3) return say(ctx, '🕐 Istemal: !timeconv <time> <from> <to>\nMisaal: !timeconv 15:00 karachi london\nMisaal: !timeconv 3pm Asia/Karachi Europe/London');
+    if (a.length < 3) return say(ctx, '🕐 Usage: .timeconv <time> <from> <to>\nExample: .timeconv 15:00 karachi london\nExample: .timeconv 3pm Asia/Karachi Europe/London');
     const tm = parseTimeToken(a[0]);
-    if (!tm) return say(ctx, '⚠️ Time samajh nahi aaya. Misaal: 15:00 ya 3pm');
+    if (!tm) return say(ctx, '⚠️ Time samajh nahi aaya. Example: 15:00 ya 3pm');
     const fz = resolveTz(a[1]), tz = resolveTz(a[2]);
-    if (!fz || !tz) return say(ctx, '⚠️ Timezone samajh nahi aaya. Misaal: karachi, london, dubai ya Asia/Karachi');
+    if (!fz || !tz) return say(ctx, '⚠️ Timezone samajh nahi aaya. Example: karachi, london, dubai ya Asia/Karachi');
     try {
       const ymd = new Intl.DateTimeFormat('en-CA', { timeZone: fz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
       const [y, mo, d] = ymd.split('-').map(Number);
@@ -633,18 +633,18 @@ export const HANDLERS = {
   bmi: safe(async (ctx, q) => {
     const a = q.split(/\s+/).map(Number);
     if (a.length < 2 || !isFinite(a[0]) || !isFinite(a[1]) || a[0] <= 0 || a[1] <= 0)
-      return say(ctx, '⚖️ Istemal: !bmi <wazan kg> <qad cm>\nMisaal: !bmi 70 175');
+      return say(ctx, '⚖️ Usage: .bmi <weight kg> <height cm>\nExample: .bmi 70 175');
     const bmi = a[0] / Math.pow(a[1] / 100, 2);
-    const cat = bmi < 18.5 ? '📉 Kamzor (underweight)' : bmi < 25 ? '✅ Bilkul fit (normal)' : bmi < 30 ? '⚠️ Wazan zyada (overweight)' : '🔴 Motapa (obese)';
+    const cat = bmi < 18.5 ? '📉 Underweight' : bmi < 25 ? '✅ Normal (fit)' : bmi < 30 ? '⚠️ Overweight' : '🔴 Obese';
     await say(ctx, `⚖️ BMI: ${bmi.toFixed(1)}\n${cat}`);
   }),
 
   age: safe(async (ctx, q) => {
     const m = q.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return say(ctx, '🎂 Istemal: !age <YYYY-MM-DD>\nMisaal: !age 2000-05-12');
+    if (!m) return say(ctx, '🎂 Usage: .age <YYYY-MM-DD>\nExample: .age 2000-05-12');
     const bd = new Date(+m[1], +m[2] - 1, +m[3]);
     if (isNaN(bd) || bd.getFullYear() !== +m[1] || bd.getMonth() !== +m[2] - 1 || bd.getDate() !== +m[3])
-      return say(ctx, '⚠️ Sahi tareekh likhein. Misaal: !age 2000-05-12');
+      return say(ctx, '⚠️ Sahi tareekh likhein. Example: .age 2000-05-12');
     const now = new Date();
     if (bd > now) return say(ctx, '⚠️ Ye tareekh to mustaqbil ki hai! 😄');
     let y = now.getFullYear() - bd.getFullYear(), mo = now.getMonth() - bd.getMonth(), d = now.getDate() - bd.getDate();
@@ -653,18 +653,18 @@ export const HANDLERS = {
     let nb = new Date(now.getFullYear(), bd.getMonth(), bd.getDate());
     if (nb <= now) nb = new Date(now.getFullYear() + 1, bd.getMonth(), bd.getDate());
     const daysTo = Math.ceil((nb - now) / 86400000);
-    await say(ctx, `🎂 Umar: ${y} saal, ${mo} mahine, ${d} din\n🎉 Agli birthday mein ${daysTo} din baqi!`);
+    await say(ctx, `🎂 Age: ${y} years, ${mo} months, ${d} din\n🎉 Agli birthday mein ${daysTo} days baqi!`);
   }),
   agecalc: 'age',
 
   emi: safe(async (ctx, q) => {
     const a = q.split(/\s+/).map(Number);
     if (a.length < 3 || a.some((x) => !isFinite(x)) || a[0] <= 0 || a[2] <= 0)
-      return say(ctx, '🏦 Istemal: !emi <raqam> <salanah %> <mahine>\nMisaal: !emi 500000 18 24');
+      return say(ctx, '🏦 Usage: .emi <amount> <annual %> <months>\nExample: .emi 500000 18 24');
     const [P, annual, n] = a, r = annual / 1200;
     const emi = r === 0 ? P / n : P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
     const total = emi * n, interest = total - P;
-    await say(ctx, `🏦 Mahana qist (EMI): ${fmtNum(Math.round(emi))}\n💰 Kul wapas: ${fmtNum(Math.round(total))}\n📈 Kul sood: ${fmtNum(Math.round(interest))}\n(${n} mahine, ${annual}% salana)`);
+    await say(ctx, `🏦 Monthly payment (EMI): ${fmtNum(Math.round(emi))}\n💰 Total payable: ${fmtNum(Math.round(total))}\n📈 Total interest: ${fmtNum(Math.round(interest))}\n(${n} months, ${annual}% annual)`);
   }),
   emicalc: 'emi',
 

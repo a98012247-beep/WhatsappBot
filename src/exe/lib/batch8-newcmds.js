@@ -190,7 +190,8 @@ const HANDLERS = {
       emojis = query.match(/\p{Extended_Pictographic}(\uFE0F|\u200D\p{Extended_Pictographic})*/gu) || [];
     }
     if (emojis.length < 2) {
-      await say(ctx, '😀➕😎 *EmojiMix*\n\nDo emoji bhejein, mix karke dunga!\nMisaal: *emojimix 😀 😎*');
+      ctx.bot.setPending(ctx.from, 'emojimix');
+      await say(ctx, '😀➕😎 *EmojiMix*\n\nSend two emojis and I\'ll mix them!\nExample: *.emojimix 😀 😎*\n\n_Or just reply with the two emojis now._');
       return;
     }
     try {
@@ -210,7 +211,7 @@ const HANDLERS = {
       } catch {}
       await ctx.bot.sock.sendMessage(ctx.from, { sticker: stickerBuf }, { quoted: ctx.msg });
     } catch (e) {
-      await say(ctx, '😅 Emoji mix nahi ho saka. Do valid emoji bhejein.\nMisaal: *emojimix 😀 😎*');
+      await say(ctx, '😅 Could not mix emojis. Send two valid emojis.\nExample: *.emojimix 😀 😎*');
     }
   }),
   emix: 'emojimix',

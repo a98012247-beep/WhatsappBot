@@ -1082,6 +1082,15 @@ class WhatsAppBot extends EventEmitter {
       }
     }
     // No dot prefix → not a command, no reply (AI disabled per Hudson)
+    // EXCEPT: if there's a pending follow-up question, route the text to it (2026-10-17)
+    if (!cmdText && trimmed && !trimmed.includes('Powered by Awais AI')) {
+      if (!this._pending) this._pending = new Map();
+      const pending = this._pending.get(from);
+      if (pending && (Date.now() - pending.ts < 120000)) { // 2 min expiry
+        this._pending.delete(from);
+        cmdText = pending.command + ' ' + trimmed;
+      }
+    }
     if (cmdText) {
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
@@ -3200,6 +3209,12 @@ class WhatsAppBot extends EventEmitter {
   // the dashboard without any output appearing in WhatsApp chat. All
   // sendMessage calls are captured and returned to the dashboard.
   // Returns { success, output: [{to, text}], error }
+  // Set a pending follow-up: next plain-text message in this chat routes to the command (2026-10-17)
+  setPending(chatId, command) {
+    if (!this._pending) this._pending = new Map();
+    this._pending.set(chatId, { command, ts: Date.now() });
+  }
+
   async executeSilent(commandText, targetJid, senderJid) {
     this._silentMode = true;
     this._silentOutput = [];
