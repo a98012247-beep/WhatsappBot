@@ -40,5 +40,13 @@
     "schedule": "3:31 pm",
     "enabled": true,
     "createdAt": "2026-10-17T10:30:47.466Z"
+  },
+  {
+    "id": "auto-mvc9m9cc",
+    "automationType": "autopost",
+    "message": "go by by",
+    "schedule": "3:41 pm",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:40:11.724Z"
   }
 ]

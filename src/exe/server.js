@@ -88,6 +88,18 @@ setInterval(() => {
   io.emit('stats', botInstance.getStatus().stats);
 }, 5000);
 
+// Automation scheduler — runs due tasks every minute (2026-10-17 fix: was never wired up)
+setInterval(async () => {
+  try {
+    if (botInstance?.sock) {
+      const { runDueTasks } = await import('./lib/automation.js');
+      await runDueTasks(botInstance);
+    }
+  } catch (e) {
+    console.error('[automation] scheduler tick failed:', e.message);
+  }
+}, 60000);
+
 // --- REST API ENDPOINTS ---
 
 // Bot status

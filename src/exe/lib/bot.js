@@ -2430,6 +2430,23 @@ class WhatsAppBot extends EventEmitter {
     // Check Auto-Responder Rules
     if (config.features?.autoResponder) {
       const lower = trimmed.toLowerCase();
+      // Also check dashboard-created autoreplies (batch8-autoreply.json, 2026-10-17 fix)
+      try {
+        const { readData } = await import('./batch-helpers.js');
+        const dashReplies = readData('batch8-autoreply.json', {});
+        const checkList = [
+          ...(dashReplies['__global__'] || []),
+          ...(dashReplies[from] || []),
+        ];
+        for (const r of checkList) {
+          if (r.enabled === false) continue;
+          const kw = (r.keyword || '').toLowerCase();
+          if (kw && lower.includes(kw)) {
+            await this.sendMessage(from, r.reply);
+            return;
+          }
+        }
+      } catch (e) {}
       const autoReplies = Store.getAutoReplies();
       for (const rule of autoReplies) {
         if (!rule.enabled) continue;

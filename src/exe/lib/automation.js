@@ -223,6 +223,62 @@ export async function runDueTasks(bot) {
 }
 
 async function sendTaskMessage(bot, task) {
+  const type = task.automationType || 'scheduled';
+  
+  // Auto-status: post as status (2026-10-17)
+  if (type === 'autostatus') {
+    const target = task.target;
+    if (!target) { console.warn('[automation] autostatus missing target:', task.id); return; }
+    try {
+      await bot.postGroupStatus(target, task.message, { silent: task.silent });
+    } catch (e) {
+      console.error('[automation] autostatus failed:', e.message);
+    }
+    return;
+  }
+  
+  // Auto-post: send to multiple groups (2026-10-17)
+  if (type === 'autopost') {
+    const groups = task.targets || (task.target ? [task.target] : []);
+    for (const g of groups) {
+      if (!g) continue;
+      try {
+        const jid = g.includes('@') ? g : `${g}@g.us`;
+        if (task.silent) {
+          await bot.executeSilent(task.message, jid, 'automation@scheduler');
+        } else {
+          await bot.sendMessage(jid, task.message);
+        }
+      } catch (e) {
+        console.error('[automation] autopost failed for', g, e.message);
+      }
+      await new Promise(r => setTimeout(r, 10000)); // anti-ban delay
+    }
+    return;
+  }
+  
+  // Bulk message: send to multiple contacts with delay (2026-10-17)
+  if (type === 'bulkmessage') {
+    const contacts = task.contacts || [];
+    const delaySec = parseInt(task.delay) || 5;
+    for (const c of contacts) {
+      if (!c) continue;
+      try {
+        const jid = c.includes('@') ? c : `${c}@s.whatsapp.net`;
+        if (task.silent) {
+          await bot.executeSilent(task.message, jid, 'automation@scheduler');
+        } else {
+          await bot.sendMessage(jid, task.message);
+        }
+      } catch (e) {
+        console.error('[automation] bulkmessage failed for', c, e.message);
+      }
+      await new Promise(r => setTimeout(r, delaySec * 1000));
+    }
+    return;
+  }
+  
+  // Default: scheduled message to single target
   const targets = Array.isArray(task.target) ? task.target : [task.target];
   for (let i = 0; i < targets.length; i++) {
     const target = targets[i];
