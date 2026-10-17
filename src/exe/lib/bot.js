@@ -1031,11 +1031,26 @@ class WhatsAppBot extends EventEmitter {
     // Command detection — no prefix needed. A message is treated as a command
     // when it starts with the configured prefix (if one is set) OR when its
     // first word is a known command name (e.g. "ping", "menu", "soundboard").
-    // A leading "!" is still accepted for backward compatibility.
+    // Leading "!" or "." are accepted as prefixes (2026-10-17 per Hudson:
+    // ".command" must work like "command", never fall through to AI).
     let cmdText = null;
+    let usedDotPrefix = false;
     if (prefix && trimmed.startsWith(prefix)) {
       cmdText = trimmed.slice(prefix.length).trim();
     } else {
+      // Strip leading . or ! (with optional space after)
+      const stripped = trimmed.replace(/^[.!]+\s*/, '');
+      if (stripped !== trimmed) usedDotPrefix = true;
+      const firstWord = stripped.split(/\s+/)[0].toLowerCase();
+      if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
+        cmdText = stripped;
+      } else if (usedDotPrefix) {
+        // Dot-prefixed but not a valid command → stay silent, never AI reply
+        return;
+      }
+    }
+    // Also handle plain firstWord without prefix (backward compat)
+    if (!cmdText && !usedDotPrefix) {
       const firstWord = trimmed.split(/\s+/)[0].toLowerCase().replace(/^!+/, '');
       if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
         cmdText = trimmed.replace(/^!+/, '');
