@@ -284,10 +284,36 @@ function renderGroupDetail(d, activity) {
 }
 
 window.groupQuickAction = async function(groupId, action) {
-  if (action === 'send' || action === 'status' || action === 'setname' || action === 'setdesc') {
+  if (action === 'send') {
+    // Rich message composer with WhatsApp formatting (2026-10-17 per Hudson)
+    openMessageComposer('Send Message to Group', async ({ text }) => {
+      try {
+        const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'send', text }),
+        });
+        if (!res.ok) throw new Error('failed');
+        showToast('Message sent');
+      } catch (e) { showToast('Action failed', 'error'); }
+    });
+    return;
+  }
+  if (action === 'status') {
+    // Rich status composer with media options (2026-10-17 per Hudson)
+    openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl }) => {
+      try {
+        const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'status', text, options: { mediaType, mediaUrl } }),
+        });
+        if (!res.ok) throw new Error('failed');
+        showToast('Status posted');
+      } catch (e) { showToast('Action failed', 'error'); }
+    }, true); // showMedia = true
+    return;
+  }
+  if (action === 'setname' || action === 'setdesc') {
     const prompts = {
-      send: 'Message to send:',
-      status: 'Status text:',
       setname: 'New group name:',
       setdesc: 'New group description:',
     };
@@ -312,20 +338,17 @@ window.groupQuickAction = async function(groupId, action) {
       prompt('Group invite link (copy it):', data.inviteLink);
     } catch (e) { showToast('Action failed', 'error'); }
   } else if (action === 'poll') {
-    const question = prompt('Poll question:');
-    if (!question) return;
-    const choicesStr = prompt('Choices (comma-separated):');
-    if (!choicesStr) return;
-    const choices = choicesStr.split(',').map(c => c.trim()).filter(Boolean);
-    if (!choices.length) return;
-    try {
-      const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'poll', question, choices }),
-      });
-      if (!res.ok) throw new Error('failed');
-      showToast('Poll created');
-    } catch (e) { showToast('Action failed', 'error'); }
+    // Rich poll creator modal (2026-10-17 per Hudson)
+    openPollCreator(async ({ question, choices }) => {
+      try {
+        const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'poll', question, choices }),
+        });
+        if (!res.ok) throw new Error('failed');
+        showToast('Poll created');
+      } catch (e) { showToast('Action failed', 'error'); }
+    });
   } else {
     try {
       const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
@@ -2504,4 +2527,162 @@ if (btnRefreshStats) {
     showToast('Refreshing...');
     location.reload();
   });
+}
+
+// ─── Rich Modal System (2026-10-17 per Hudson) ───
+// Proper popup modals with WhatsApp formatting and media options
+
+function openModal(title, bodyHTML, onSubmit, submitLabel = 'Send') {
+  // Remove existing modal
+  closeModal();
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'rich-modal';
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>${escapeHtml(title)}</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">${bodyHTML}</div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modal-submit">${escapeHtml(submitLabel)}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  // Close on overlay click (outside modal)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+  
+  // Submit handler
+  document.getElementById('modal-submit').addEventListener('click', () => {
+    const result = onSubmit();
+    if (result !== false) closeModal();
+  });
+  
+  return overlay;
+}
+
+function closeModal() {
+  const m = document.getElementById('rich-modal');
+  if (m) m.remove();
+}
+
+// WhatsApp formatting helpers
+function waFormatToolbar(textareaId, previewId) {
+  return `
+    <div class="wa-toolbar">
+      <button type="button" onclick="waWrap('${textareaId}','${previewId}','*','*')" title="Bold"><b>B</b></button>
+      <button type="button" onclick="waWrap('${textareaId}','${previewId}','_','_')" title="Italic"><i>I</i></button>
+      <button type="button" onclick="waWrap('${textareaId}','${previewId}','~','~')" title="Strikethrough"><s>S</s></button>
+      <button type="button" onclick="waWrap('${textareaId}','${previewId}','\`\`\`','\`\`\`')" title="Monospace">Mono</button>
+    </div>
+  `;
+}
+
+function waWrap(textareaId, previewId, before, after) {
+  const ta = document.getElementById(textareaId);
+  if (!ta) return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  const replacement = before + selected + after;
+  ta.value = ta.value.substring(0, start) + replacement + ta.value.substring(end);
+  ta.focus();
+  ta.setSelectionRange(start + before.length, start + before.length + selected.length);
+  waUpdatePreview(textareaId, previewId);
+}
+
+function waUpdatePreview(textareaId, previewId) {
+  const ta = document.getElementById(textareaId);
+  const pv = document.getElementById(previewId);
+  if (!ta || !pv) return;
+  let html = escapeHtml(ta.value);
+  // WhatsApp formatting: *bold*, _italic_, ~strike~, ```mono```
+  html = html.replace(/\*([^*]+)\*/g, '<b>$1</b>');
+  html = html.replace(/_([^_]+)_/g, '<i>$1</i>');
+  html = html.replace(/~([^~]+)~/g, '<s>$1</s>');
+  html = html.replace(/```([^`]+)```/g, '<code style="background:#eee;padding:2px 4px;border-radius:4px;">$1</code>');
+  html = html.replace(/\n/g, '<br>');
+  pv.innerHTML = html || '<span class="hint">Preview will appear here...</span>';
+}
+
+// Media attachment options for status
+function mediaOptionsHTML(selectedType = 'text') {
+  const opts = [
+    { type: 'text', icon: '📝', label: 'Text' },
+    { type: 'image', icon: '🖼️', label: 'Image' },
+    { type: 'video', icon: '🎬', label: 'Video' },
+    { type: 'audio', icon: '🎵', label: 'Audio' },
+    { type: 'link', icon: '🔗', label: 'Link' },
+  ];
+  return `
+    <div class="media-options" id="media-opts">
+      ${opts.map(o => `
+        <div class="media-opt ${o.type === selectedType ? 'selected' : ''}" 
+             data-type="${o.type}" onclick="selectMediaType('${o.type}')">
+          <span class="icon">${o.icon}</span>${o.label}
+        </div>
+      `).join('')}
+    </div>
+    <div id="media-url-wrap" style="display:${selectedType === 'text' ? 'none' : 'block'}">
+      <input type="text" class="media-url-input" id="media-url" 
+             placeholder="Paste media URL here...">
+    </div>
+  `;
+}
+
+function selectMediaType(type) {
+  document.querySelectorAll('#media-opts .media-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === type);
+  });
+  const wrap = document.getElementById('media-url-wrap');
+  if (wrap) wrap.style.display = type === 'text' ? 'none' : 'block';
+  window._selectedMediaType = type;
+}
+window._selectedMediaType = 'text';
+
+// Rich message composer modal
+function openMessageComposer(title, onSend, showMedia = false) {
+  const bodyHTML = `
+    ${waFormatToolbar('wa-text', 'wa-preview')}
+    <textarea class="wa-editor" id="wa-text" 
+              placeholder="Type your message... Use *bold*, _italic_, ~strike~"
+              oninput="waUpdatePreview('wa-text','wa-preview')"></textarea>
+    <div class="wa-preview" id="wa-preview">
+      <span class="hint">Preview will appear here...</span>
+    </div>
+    ${showMedia ? mediaOptionsHTML() : ''}
+  `;
+  
+  openModal(title, bodyHTML, () => {
+    const text = document.getElementById('wa-text').value.trim();
+    if (!text) { showToast('Please enter a message', 'error'); return false; }
+    const mediaType = window._selectedMediaType || 'text';
+    const mediaUrl = document.getElementById('media-url')?.value.trim() || '';
+    onSend({ text, mediaType, mediaUrl });
+  });
+}
+
+// Rich poll creator modal
+function openPollCreator(onCreate) {
+  const bodyHTML = `
+    <label style="font-weight:600;display:block;margin-bottom:6px;">Poll Question</label>
+    <input type="text" id="poll-q" class="media-url-input" placeholder="What's your question?" style="margin-bottom:12px;">
+    <label style="font-weight:600;display:block;margin-bottom:6px;">Choices (one per line)</label>
+    <textarea class="wa-editor" id="poll-choices" placeholder="Option 1&#10;Option 2&#10;Option 3" style="min-height:80px;"></textarea>
+  `;
+  
+  openModal('Create Poll', bodyHTML, () => {
+    const question = document.getElementById('poll-q').value.trim();
+    const choices = document.getElementById('poll-choices').value
+      .split('\n').map(c => c.trim()).filter(Boolean);
+    if (!question) { showToast('Enter a question', 'error'); return false; }
+    if (choices.length < 2) { showToast('Enter at least 2 choices', 'error'); return false; }
+    onCreate({ question, choices });
+  }, 'Create Poll');
 }
