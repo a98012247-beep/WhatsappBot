@@ -1027,16 +1027,17 @@ class WhatsAppBot extends EventEmitter {
       return; // Fully private — no response for anyone except owner
     }
 
-    // Bot does NOTHING in groups EXCEPT group management commands by owner (2026-10-17 per Hudson)
-    // No regular commands, no link downloads, no auto-replies in groups
+    // Bot restrictions in groups (2026-10-17 per Hudson):
+    // - Automatic features (antilink, antispam, etc.) ALWAYS run via runMessageHooks below
+    // - User COMMANDS: only group-mgmt commands work for owner in groups
+    let isGroupCommandBlocked = false;
     if (isGroup) {
-      // Group management commands allowed for owner in groups
       const groupMgmtCmds = new Set(['groups','add','kick','warn','block','unblock','blocklist','unban','grouplink','revokelink','antilink','antispam','antibadword','lock','unlock','tagall','del','disappear','pin','unpin','poll','schedpoll','groupinfo','groupstats','setdesc','groupicon','admins','topactive','inactive','sleepers','votekick','welcome','goodbye','bday','afk','autoreact','reactall']);
       const firstWord = (trimmed || '').replace(/^\.\s*/, '').split(/\s+/)[0]?.toLowerCase();
-      if (!groupMgmtCmds.has(firstWord)) {
-        return; // Silence for non-group-mgmt in groups
+      const isCommand = (trimmed || '').trim().startsWith('.');
+      if (isCommand && !groupMgmtCmds.has(firstWord)) {
+        isGroupCommandBlocked = true;
       }
-      // Owner-only already enforced above, so group mgmt commands proceed
     }
 
     // Interactive menu taps (buttons/lists) — route before command detection
@@ -1101,6 +1102,8 @@ class WhatsAppBot extends EventEmitter {
       }
     }
     if (cmdText) {
+      // Block non-group-mgmt commands in groups (2026-10-17)
+      if (isGroupCommandBlocked) return;
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
       const command = cmd.toLowerCase();

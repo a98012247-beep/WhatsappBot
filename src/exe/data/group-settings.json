@@ -4,7 +4,12 @@
     "antispam": true,
     "slowmode": false,
     "antidelete": true,
-    "silent": true
+    "silent": false,
+    "welcome": false,
+    "goodbye": false,
+    "chatbot": false,
+    "keywordalerts": false,
+    "autoreply": false
   },
   "120363413100580818@g.us": {
     "antilink": false
