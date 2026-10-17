@@ -3272,7 +3272,8 @@ class WhatsAppBot extends EventEmitter {
     const groupName = meta.subject || 'This Group';
     const bgHex = options.backgroundColor || '#14213d'; // Elegant Dark Navy Blue
     // Silent mode (2026-10-17 per Hudson): post ONLY to Status tab, no message in group chat
-    const silent = options.silent === true || options.silent === 'yes';
+    // NOTE: Temporarily disabled — status@broadcast alone not delivering. Reverted to group post.
+    const silent = false; // options.silent === true || options.silent === 'yes';
 
     // 1. Dispatch Group Status via Baileys isGroupStatus context flag
     // (SKIP in silent mode — no message in group chat)
