@@ -3283,13 +3283,18 @@ class WhatsAppBot extends EventEmitter {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-      const videoPromise = fetch(videoUrl, {
+      const fetchVideo = () => fetch(videoUrl, {
         signal: controller.signal,
         headers: cdnHeaders
       }).then(async res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch video stream`);
         const arrayBuf = await res.arrayBuffer();
         return Buffer.from(arrayBuf);
+      });
+      // Retry once on failure (2026-10-17: transient CDN issues)
+      const videoPromise = fetchVideo().catch(() => {
+        console.log('[DOWNLOAD] Buffer fetch failed, retrying once...');
+        return fetchVideo();
       });
 
       // Quick opportunistic thumbnail (max 1000ms, never delays video delivery)
