@@ -206,6 +206,14 @@ export async function downloadVideo(url) {
 async function raceTikTok(url) {
   const tasks = [];
 
+  // Engine 0: yt-dlp direct (2026-10-17, local fallback)
+  tasks.push(
+    Promise.race([
+      ytdlpDirect(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000))
+    ])
+  );
+
   // Engine 1: TikWM (Ultra-fast direct API, ~250ms)
   tasks.push(
     fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(3000) })
@@ -315,6 +323,14 @@ async function raceTikTok(url) {
 
 async function raceInstagram(url) {
   const tasks = [];
+
+  // Engine 0: yt-dlp direct (2026-10-17, local fallback)
+  tasks.push(
+    Promise.race([
+      ytdlpDirect(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000))
+    ])
+  );
 
   // Engine 1: Direct Embed Meta CDN Extraction (Ultra-fast, ~300ms)
   const shortcodeMatch = url.match(/\/(reel|p|tv|reels)\/([A-Za-z0-9_-]+)/i);
@@ -444,6 +460,14 @@ async function raceInstagram(url) {
 
 async function raceTwitter(url) {
   const tasks = [];
+
+  // Engine 0: yt-dlp direct (2026-10-17, local fallback)
+  tasks.push(
+    Promise.race([
+      ytdlpDirect(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 25000))
+    ])
+  );
 
   const tweetIdMatch = url.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/i);
   const tid = tweetIdMatch ? tweetIdMatch[1] : null;
