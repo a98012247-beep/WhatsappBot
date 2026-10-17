@@ -2818,3 +2818,74 @@ function openPollCreator(onCreate) {
     onCreate({ question, choices });
   }, 'Create Poll');
 }
+
+// ─── Automation Templates Modal (2026-10-17 per Hudson) ───
+async function openAutomationTemplates() {
+  try {
+    const res = await fetch('/api/automation/templates');
+    const data = await res.json();
+    const templates = data.templates || [];
+    
+    const bodyHTML = `
+      <div style="display:grid;gap:10px;">
+        ${templates.map(t => `
+          <div class="row" style="cursor:pointer;" onclick="useTemplate('${t.id}')">
+            <span class="row-txt">
+              <strong>${escapeHtml(t.name)}</strong>
+              <span style="display:block;font-size:12px;color:#888;">${escapeHtml(t.desc)}</span>
+              <span class="scope-badge scope-both" style="margin:4px 0 0 0;">${escapeHtml(t.type)}</span>
+            </span>
+            <span style="font-size:20px;">→</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    
+    openModal('Choose a Template', bodyHTML, () => false, 'Close');
+    // Hide submit button for template picker
+    document.getElementById('modal-submit').style.display = 'none';
+  } catch (e) { showToast('Could not load templates', 'error'); }
+}
+
+async function useTemplate(tplId) {
+  try {
+    const res = await fetch('/api/automation/templates');
+    const data = await res.json();
+    const tpl = (data.templates || []).find(t => t.id === tplId);
+    if (!tpl) return;
+    
+    closeModal();
+    // Open the automation builder pre-filled with template defaults
+    // For now, show an info modal with the template details
+    const fields = Object.entries(tpl.defaults || {}).map(([k, v]) => `
+      <label style="font-weight:600;display:block;margin-bottom:6px;">${escapeHtml(k)}</label>
+      <textarea id="tpl-${k}" class="wa-editor" style="min-height:60px;margin-bottom:12px;">${escapeHtml(String(v))}</textarea>
+    `).join('');
+    
+    openModal('Edit: ' + tpl.name, `
+      <p style="color:#666;font-size:13px;margin-bottom:12px;">${escapeHtml(tpl.desc)}</p>
+      ${fields}
+    `, async () => {
+      // Collect edited values and create the automation
+      const params = { type: tpl.type };
+      Object.keys(tpl.defaults || {}).forEach(k => {
+        params[k] = document.getElementById('tpl-' + k).value;
+      });
+      try {
+        const cr = await fetch('/api/automation/create', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params),
+        });
+        if (!cr.ok) throw new Error('failed');
+        showToast('Automation created from template', 'success');
+        loadAutomation();
+      } catch (e) { showToast('Failed to create', 'error'); }
+    }, 'Create Automation');
+  } catch (e) { showToast('Error', 'error'); }
+}
+
+// Wire up templates button
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btn-open-auto-templates');
+  if (btn) btn.addEventListener('click', openAutomationTemplates);
+});
