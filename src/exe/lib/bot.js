@@ -1138,6 +1138,106 @@ class WhatsAppBot extends EventEmitter {
           return;
         }
 
+        // Dashboard link (2026-10-17 audit fix: was dead menu entry)
+        case 'dashboard':
+        case 'dash':
+        case 'panel': {
+          // Read live tunnel URL
+          let tunnelUrl = 'http://localhost:3000';
+          try {
+            const fs = await import('fs');
+            const urlFile = process.env.HOME + '/workspace/whatsapp-bot/tunnel/current_url.txt';
+            if (fs.existsSync(urlFile)) {
+              tunnelUrl = fs.readFileSync(urlFile, 'utf8').trim() || tunnelUrl;
+            }
+          } catch (e) {}
+          await this.sendMessage(from,
+            `🖥️ *AwaisxBot Dashboard*\n\n` +
+            `🔗 ${tunnelUrl}\n\n` +
+            `👤 Username: awax\n` +
+            `_Use the dashboard for automation, group management, and settings._\n\n` +
+            `Powered by Awais AI`
+          );
+          return;
+        }
+
+        // List groups (2026-10-17 audit fix: was dead menu entry)
+        case 'groups':
+        case 'grouplist':
+        case 'mygroups': {
+          try {
+            const groups = await this.getAllGroups();
+            if (!groups || !groups.length) {
+              await this.sendMessage(from, '📋 *My Groups*\n\nNo groups found.');
+              return;
+            }
+            let out = `📋 *My Groups* (${groups.length})\n\n`;
+            groups.slice(0, 20).forEach((g, i) => {
+              out += `${i + 1}. *${g.subject || 'Unnamed'}*\n   👥 ${g.participants?.length || '?'} members\n`;
+            });
+            if (groups.length > 20) out += `\n_...and ${groups.length - 20} more_`;
+            out += `\n\nPowered by Awais AI`;
+            await this.sendMessage(from, out);
+          } catch (e) {
+            await this.sendMessage(from, `❌ Could not fetch groups: ${e.message}`);
+          }
+          return;
+        }
+
+        // WhatsApp-side settings (2026-10-17 audit fix: was dead menu entry)
+        case 'settings':
+        case 'setting':
+        case 'config': {
+          const { isOwner } = await import('./access.js');
+          if (!isOwner(sender)) {
+            await this.sendMessage(from, '🔒 *Settings*\n\nOnly the owner can change settings.');
+            return;
+          }
+          if (!query) {
+            const cfg = Store.getConfig();
+            await this.sendMessage(from,
+              `⚙️ *Bot Settings*\n\n` +
+              `🤖 Bot name: ${cfg.botName || 'AwaisxBot'}\n` +
+              `🤖 AI replies: ${cfg.features?.aiReplies ? 'ON' : 'OFF'}\n` +
+              `👋 Welcome msg: ${cfg.features?.welcome ? 'ON' : 'OFF'}\n` +
+              `🔁 Auto-reply: ${cfg.features?.autoResponder ? 'ON' : 'OFF'}\n\n` +
+              `*Usage:*\n` +
+              `• *settings botname <name>* — change bot name\n` +
+              `• *settings ai on/off* — toggle AI replies\n` +
+              `• *settings welcome on/off* — toggle welcome messages\n` +
+              `• *settings autoreply on/off* — toggle auto-replies\n\n` +
+              `Powered by Awais AI`
+            );
+            return;
+          }
+          const [key, ...valParts] = query.split(/\s+/);
+          const val = valParts.join(' ').trim();
+          const cfg = Store.getConfig();
+          if (key === 'botname' && val) {
+            cfg.botName = val;
+            Store.updateConfig(cfg);
+            await this.sendMessage(from, `✅ Bot name set to: *${val}*`);
+          } else if (key === 'ai' && ['on','off'].includes(val.toLowerCase())) {
+            cfg.features = cfg.features || {};
+            cfg.features.aiReplies = val.toLowerCase() === 'on';
+            Store.updateConfig(cfg);
+            await this.sendMessage(from, `✅ AI replies ${val.toUpperCase()}`);
+          } else if (key === 'welcome' && ['on','off'].includes(val.toLowerCase())) {
+            cfg.features = cfg.features || {};
+            cfg.features.welcome = val.toLowerCase() === 'on';
+            Store.updateConfig(cfg);
+            await this.sendMessage(from, `✅ Welcome messages ${val.toUpperCase()}`);
+          } else if (key === 'autoreply' && ['on','off'].includes(val.toLowerCase())) {
+            cfg.features = cfg.features || {};
+            cfg.features.autoResponder = val.toLowerCase() === 'on';
+            Store.updateConfig(cfg);
+            await this.sendMessage(from, `✅ Auto-replies ${val.toUpperCase()}`);
+          } else {
+            await this.sendMessage(from, `❌ Unknown setting. Use *settings* to see options.`);
+          }
+          return;
+        }
+
         // Clean menu category drill-down (1-15)
         case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9': case '10':

@@ -225,11 +225,6 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
-    "name": "attp",
-    "desc": "Hmm sticker",
-    "primary": true
-   },
-   {
     "name": "photo",
     "desc": "HD pictures",
     "primary": true
@@ -845,7 +840,7 @@ export const MENU_CATEGORIES = [
    {
     "name": "aibuild",
     "desc": "Describe in words — AI builds group rules + automations",
-    "primary": true
+    "primary": false
    }
   ]
  },
@@ -1105,7 +1100,7 @@ export const MENU_CATEGORIES = [
    {
     "name": "automation",
     "desc": "Build automations in plain words",
-    "primary": true
+    "primary": false
    },
    {
     "name": "keyword",
