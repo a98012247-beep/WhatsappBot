@@ -709,34 +709,44 @@ class WhatsAppBot extends EventEmitter {
       transcriptData = await transcribeAudio(audioBuffer, mimeType);
     } catch (err) {
       console.error('Deepgram transcription error:', err.message);
-      await this.sendMessage(from, `🎙️ _Aapki voice note aayi, lekin transcription mein masla hua: ${err.message}_`);
+      await this.sendMessage(from, `🎙️ _Couldn't understand that voice note, please try again._`);
       return;
     }
 
     const transcript = transcriptData?.transcript?.trim();
     if (!transcript) {
-      await this.sendMessage(from, `🎙️ _Aapki voice note bohot dheemi ya khamosh thi, baraye meherbani thora saaf bol kar dobara bhejein!_`);
+      await this.sendMessage(from, `🎙️ _Couldn't hear that clearly, please speak up and try again._`);
       return;
     }
 
     console.log(`🎙️ [Voice Transcribed]: "${transcript}" (Lang: ${transcriptData.detectedLanguage})`);
 
-    // 2. Think & formulate response via Gemini AI
+    // 2. Think & formulate response — VOICE MODE (2026-10-17 per Hudson)
+    // Understand any language (Urdu/Roman/English) → translate to English →
+    // answer ALWAYS about the bot → reply as English voice note
     this.stats.aiQueries++;
-    const config = Store.getConfig();
-    const systemPrompt = config.ai?.systemPrompt ||
-      "You are AwaxBot, a warm, helpful, natural AI voice companion on WhatsApp. Speak like a close friend in natural Roman Urdu or English. Keep your spoken reply concise (2-3 sentences), engaging, and friendly.";
+    const voiceSystemPrompt =
+      `You are AwaisxBot's voice assistant on WhatsApp. ` +
+      `The user spoke in a voice note (transcribed below). The transcription may be in Urdu, Roman Urdu, or English — you understand all of them. ` +
+      `RULES: ` +
+      `1. ALWAYS reply in clear, natural English (never Urdu or Roman Urdu). ` +
+      `2. ALWAYS answer about the bot itself — its features, commands, and how to use them. ` +
+      `3. If the user asks something unrelated to the bot, politely redirect: explain what the bot CAN do instead. ` +
+      `4. Keep your spoken reply concise (2-3 sentences) — it will be read aloud as a voice note. ` +
+      `5. Bot features you can mention: menu (274 commands in 15 categories), song/music download, video downloader (TikTok/Reels/YouTube), photo search, AI tools, Islamic tools, group management, automation, status posting, stickers, games. ` +
+      `Transcription: "${transcript}"`;
 
     let aiReply = '';
     try {
+      const config = Store.getConfig();
       aiReply = await askAI(transcript, {
         senderId: sender,
-        systemPrompt,
+        systemPrompt: voiceSystemPrompt,
         model: config.ai?.model || 'gemini-1.5-flash',
         senderName
       });
     } catch (aiErr) {
-      aiReply = `Ji dost, main ne aapki voice sun li: "${transcript}". Main haazir hoon!`;
+      aiReply = `I heard your voice note. I'm AwaisxBot — I can help with music, videos, photos, AI tools, and group management. Just say "menu" to see everything I can do!`;
     }
 
     // 3. Convert AI Response into Speech Voice Note via Deepgram Aura TTS
@@ -758,7 +768,7 @@ class WhatsAppBot extends EventEmitter {
       });
     } catch (ttsErr) {
       console.warn('Deepgram TTS fallback to text:', ttsErr.message);
-      await this.sendMessage(from, `🎙️ *Aap ne farmaya:* "${transcript}"\n\n🤖 *AwaxBot Jawab:*\n${aiReply}`);
+      await this.sendMessage(from, `🎙️ *You said:* "${transcript}"\n\n🤖 *AwaisxBot:*\n${aiReply}`);
     }
   }
 
