@@ -812,10 +812,10 @@ export const HANDLERS = {
   dictionary: async (ctx, query) => {
     try {
       const word = (query || '').trim().split(/\s+/)[0];
-      if (!word) { await send(ctx, `📖 *Dictionary*\n\nIstimal: *${ctx.prefix}dict <lafz>*\nMisal: *${ctx.prefix}dict beautiful*`); return; }
+      if (!word) { await send(ctx, `📖 *Dictionary*\n\nUsage: *.dictionary <word>*\nExample: *.dictionary beautiful*`); return; }
       const data = await fetchJson(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
       const e0 = data?.[0];
-      if (!e0) { await send(ctx, `😕 "${word}" ka matlab nahi mila.`); return; }
+      if (!e0) { await send(ctx, `😕 "${word}" not found.`); return; }
       const phon = e0.phonetic || e0.phonetics?.find(p => p.text)?.text || '';
       const defs = (e0.meanings?.[0]?.definitions || []).slice(0, 2);
       let urdu = '';
@@ -825,9 +825,9 @@ export const HANDLERS = {
       } catch (e) { /* optional */ }
       let out = `📖 *${e0.word}*${phon ? `  (${phon})` : ''}\n`;
       if (urdu) out += `🇵🇰 Urdu: *${urdu}*\n`;
-      out += `\n${defs.map((x, i) => `${i + 1}. ${x.definition}${x.example ? `\n   _"${x.example}"_` : ''}`).join('\n') || 'Koi wazahat nahi mili.'}`;
+      out += `\n${defs.map((x, i) => `${i + 1}. ${x.definition}${x.example ? `\n   _"${x.example}"_` : ''}`).join('\n') || 'No definition found.'}`;
       await send(ctx, out);
-    } catch (e) { await send(ctx, '😟 Dictionary load nahi ho saki, lafz check kar ke dobara try karein.'); }
+    } catch (e) { await send(ctx, '😟 Could not load dictionary, check the word and try again.'); }
   },
   dict: 'dictionary',
   lughat: 'dictionary',
