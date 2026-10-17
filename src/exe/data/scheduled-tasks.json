@@ -12,12 +12,33 @@
     "id": "auto-mvc8qxgk",
     "automationType": "autopost",
     "enabled": true,
-    "createdAt": "2026-10-17T10:15:49.989Z"
+    "createdAt": "2026-10-17T10:15:49.989Z",
+    "active": false
   },
   {
     "id": "auto-mvc8qxs6",
     "automationType": "autopost",
     "enabled": true,
-    "createdAt": "2026-10-17T10:15:50.406Z"
+    "createdAt": "2026-10-17T10:15:50.406Z",
+    "active": false
+  },
+  {
+    "id": "auto-mvc989ca",
+    "automationType": "autopost",
+    "message": "HIIIIIIIIIIIIIIIII",
+    "schedule": "3:31 pm",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:29:18.538Z",
+    "type": "scheduled",
+    "target": "",
+    "updatedAt": "2026-10-17T10:30:11.159Z"
+  },
+  {
+    "id": "auto-mvc9a5yh",
+    "automationType": "autostatus",
+    "message": "🌅 Good morning! Have a blessed day! 🤲",
+    "schedule": "3:31 pm",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:30:47.466Z"
   }
 ]
