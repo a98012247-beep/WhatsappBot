@@ -38,8 +38,8 @@ export const GROUP_FEATURES = [
 const DEFAULTS = {
   welcome: true,
   goodbye: true,
-  antilink: false,
-  antispam: false,
+  antilink: true,
+  antispam: true,
   autoreply: true,
   chatbot: true,
   keywordalerts: true,
