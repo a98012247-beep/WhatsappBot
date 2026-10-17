@@ -3279,8 +3279,16 @@ class WhatsAppBot extends EventEmitter {
     // (SKIP in silent mode — no message in group chat)
     if (!silent) {
     // Media attachment (2026-10-17 per Hudson): image/video/audio from dashboard
+    // Supports direct upload (mediaData as base64) or URL
     const mediaType = options.mediaType || 'text';
     const mediaUrl = options.mediaUrl || '';
+    const mediaData = options.mediaData || null; // base64 from direct upload
+    // Convert base64 to buffer if uploaded directly
+    let mediaBuffer = null;
+    if (mediaData) {
+      try { mediaBuffer = Buffer.from(mediaData, 'base64'); } catch (e) {}
+    }
+    const mediaSource = mediaBuffer || (mediaUrl ? { url: mediaUrl } : null);
     try {
       const statusMsg = {
         backgroundColor: bgHex,
@@ -3296,14 +3304,14 @@ class WhatsAppBot extends EventEmitter {
           ]
         }
       };
-      if (mediaType === 'image' && mediaUrl) {
-        statusMsg.image = { url: mediaUrl };
+      if (mediaType === 'image' && mediaSource) {
+        statusMsg.image = mediaSource;
         statusMsg.caption = text;
-      } else if (mediaType === 'video' && mediaUrl) {
-        statusMsg.video = { url: mediaUrl };
+      } else if (mediaType === 'video' && mediaSource) {
+        statusMsg.video = mediaSource;
         statusMsg.caption = text;
-      } else if (mediaType === 'audio' && mediaUrl) {
-        statusMsg.audio = { url: mediaUrl };
+      } else if (mediaType === 'audio' && mediaSource) {
+        statusMsg.audio = mediaSource;
         statusMsg.mimetype = 'audio/mpeg';
         // Audio status: send text separately as caption isn't supported
         await this.sock.sendMessage(groupId, { ...statusMsg, text: undefined });

@@ -300,11 +300,11 @@ window.groupQuickAction = async function(groupId, action) {
   }
   if (action === 'status') {
     // Rich status composer with media options (2026-10-17 per Hudson)
-    openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl }) => {
+    openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl, mediaData, mediaName }) => {
       try {
         const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'status', text, options: { mediaType, mediaUrl } }),
+          body: JSON.stringify({ action: 'status', text, options: { mediaType, mediaUrl, mediaData, mediaName } }),
         });
         if (!res.ok) throw new Error('failed');
         showToast('Status posted');
@@ -2762,10 +2762,36 @@ function mediaOptionsHTML(selectedType = 'text') {
       `).join('')}
     </div>
     <div id="media-url-wrap" style="display:${selectedType === 'text' ? 'none' : 'block'}">
+      <input type="file" id="media-file" accept="image/*,video/*,audio/*"
+             style="margin-top:8px;width:100%;" onchange="previewMediaFile(this)">
+      <div id="media-file-name" style="font-size:12px;color:#666;margin-top:4px;"></div>
       <input type="text" class="media-url-input" id="media-url" 
-             placeholder="Paste media URL here...">
+             placeholder="Or paste media URL here...">
     </div>
   `;
+}
+
+function previewMediaFile(input) {
+  const nameEl = document.getElementById('media-file-name');
+  if (input.files && input.files[0] && nameEl) {
+    const f = input.files[0];
+    nameEl.textContent = `📎 ${f.name} (${(f.size/1024/1024).toFixed(1)}MB)`;
+    // Auto-select media type based on file
+    const type = f.type.startsWith('image/') ? 'image' :
+                 f.type.startsWith('video/') ? 'video' :
+                 f.type.startsWith('audio/') ? 'audio' : 'text';
+    selectMediaType(type);
+  }
+}
+
+// Read file as base64 for upload
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function selectMediaType(type) {
@@ -2791,12 +2817,27 @@ function openMessageComposer(title, onSend, showMedia = false) {
     ${showMedia ? mediaOptionsHTML() : ''}
   `;
   
-  openModal(title, bodyHTML, () => {
+  openModal(title, bodyHTML, async () => {
     const text = document.getElementById('wa-text').value.trim();
     if (!text) { showToast('Please enter a message', 'error'); return false; }
     const mediaType = window._selectedMediaType || 'text';
     const mediaUrl = document.getElementById('media-url')?.value.trim() || '';
-    onSend({ text, mediaType, mediaUrl });
+    
+    // Direct file upload (2026-10-17 per Hudson): no URL needed
+    let mediaData = null, mediaName = null;
+    const fileInput = document.getElementById('media-file');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const file = fileInput.files[0];
+      if (file.size > 50 * 1024 * 1024) {
+        showToast('File too large (max 50MB)', 'error');
+        return false;
+      }
+      showToast('Uploading media...', 'info');
+      mediaData = await readFileAsBase64(file);
+      mediaName = file.name;
+    }
+    
+    onSend({ text, mediaType, mediaUrl, mediaData, mediaName });
   });
 }
 
