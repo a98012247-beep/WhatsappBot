@@ -1020,13 +1020,10 @@ class WhatsAppBot extends EventEmitter {
       return; // Fully private — no response for anyone except owner
     }
 
-    // Strict Group Whitelist Enforcement:
-    // Owner can use the bot in any group (2026-10-17 per Hudson)
-    // (Non-owners are already blocked above, so this is just for owner)
+    // Bot does NOTHING in groups — only works in direct messages (2026-10-17 per Hudson)
+    // No commands, no link downloads, no auto-replies in groups
     if (isGroup) {
-      if (!senderIsOwner && !senderIsAdmin && !Store.isGroupAllowed(from)) {
-        return; // 100% strict silence in unselected groups (for non-owner/admin)
-      }
+      return; // Complete silence in all groups
     }
 
     // Interactive menu taps (buttons/lists) — route before command detection
