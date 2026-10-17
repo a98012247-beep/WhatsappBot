@@ -1183,6 +1183,20 @@ app.post('/api/automation/create', async (req, res) => {
       const list = readData('scheduled-tasks.json', []);
       list.push({ id, message: params.message, schedule: params.schedule, target: params.target, enabled: true, createdAt: new Date().toISOString() });
       writeData('scheduled-tasks.json', list);
+    } else if (type === 'autostatus' || type === 'autopost' || type === 'bulkmessage') {
+      // New automation types (2026-10-17 per Hudson): stored in scheduled-tasks.json
+      // with a type discriminator so the scheduler can route them
+      const list = readData('scheduled-tasks.json', []);
+      list.push({
+        id, automationType: type,
+        message: params.message, schedule: params.schedule,
+        target: params.target || params.targets,
+        targets: params.targets, contacts: params.contacts,
+        media: params.media, delay: params.delay,
+        silent: params.silent,
+        enabled: true, createdAt: new Date().toISOString(),
+      });
+      writeData('scheduled-tasks.json', list);
     } else if (type === 'keyword' || type === 'welcome' || type === 'goodbye' ||
                type === 'antilink' || type === 'antispam' || type === 'slowmode' ||
                type === 'recurring' || type === 'birthday' || type === 'rss' ||
