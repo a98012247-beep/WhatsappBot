@@ -7,5 +7,17 @@
     "message": "Goooooooooo",
     "updatedAt": "2026-10-17T09:36:29.801Z",
     "active": false
+  },
+  {
+    "id": "auto-mvc8qxgk",
+    "automationType": "autopost",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:15:49.989Z"
+  },
+  {
+    "id": "auto-mvc8qxs6",
+    "automationType": "autopost",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:15:50.406Z"
   }
 ]

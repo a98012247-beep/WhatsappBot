@@ -1403,6 +1403,15 @@ app.get('/api/commands/all', async (req, res) => {
 });
 
 // ─── Group quick actions ───
+// Recent messages for "repost as status" picker (2026-10-17 per Hudson)
+app.get('/api/groups/:id/recent-messages', async (req, res) => {
+  try {
+    const groupId = decodeURIComponent(req.params.id);
+    const msgs = botInstance?._recentMessages?.get(groupId) || [];
+    res.json({ messages: msgs });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/groups/:id/quick-action', async (req, res) => {
   try {
     const groupId = req.params.id;

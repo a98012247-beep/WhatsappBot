@@ -300,16 +300,28 @@ window.groupQuickAction = async function(groupId, action) {
   }
   if (action === 'status') {
     // Rich status composer with media options (2026-10-17 per Hudson)
-    openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl, mediaData, mediaName }) => {
-      try {
-        const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'status', text, options: { mediaType, mediaUrl, mediaData, mediaName } }),
-        });
-        if (!res.ok) throw new Error('failed');
-        showToast('Status posted');
-      } catch (e) { showToast('Action failed', 'error'); }
-    }, true); // showMedia = true
+    // Supports picking an already-posted message as status
+    const openStatusComposer = (prefillText = '') => {
+      openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl, mediaData, mediaName }) => {
+        try {
+          const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/quick-action', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'status', text, options: { mediaType, mediaUrl, mediaData, mediaName } }),
+          });
+          if (!res.ok) throw new Error('failed');
+          showToast('Status posted');
+        } catch (e) { showToast('Action failed', 'error'); }
+      }, true, groupId, prefillText); // showMedia = true, pass groupId for recent picker
+    };
+    
+    // Listen for picked message from recent picker
+    const pickHandler = (e) => {
+      document.removeEventListener('statusTextPicked', pickHandler);
+      openStatusComposer(window._pickedStatusText || '');
+    };
+    document.addEventListener('statusTextPicked', pickHandler);
+    
+    openStatusComposer();
     return;
   }
   if (action === 'setname' || action === 'setdesc') {
@@ -2807,13 +2819,54 @@ function selectMediaType(type) {
 }
 window._selectedMediaType = 'text';
 
+// Pick an already-posted message to use as status (2026-10-17 per Hudson)
+async function pickRecentMessage(groupId, textareaId, previewId) {
+  try {
+    const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/recent-messages');
+    const data = await res.json();
+    const msgs = data.messages || [];
+    if (!msgs.length) { showToast('No recent messages yet', 'error'); return; }
+    
+    const bodyHTML = `
+      <div style="display:grid;gap:8px;max-height:400px;overflow-y:auto;">
+        ${msgs.map((m, i) => `
+          <div class="row" style="cursor:pointer;" onclick="selectRecentMessage(${i}, '${textareaId}', '${previewId}')">
+            <span class="row-txt">
+              <strong>${escapeHtml(m.pushName || m.sender.split('@')[0])}</strong>
+              <span style="display:block;font-size:13px;">${escapeHtml(m.text.slice(0, 120))}</span>
+              <span style="font-size:11px;color:#888;">${new Date(m.timestamp).toLocaleString()}</span>
+            </span>
+            <span style="font-size:20px;">→</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    // Store messages temporarily for selection
+    window._recentMsgs = msgs;
+    openModal('Pick a Message', bodyHTML, () => false, 'Close');
+    document.getElementById('modal-submit').style.display = 'none';
+  } catch (e) { showToast('Could not load messages', 'error'); }
+}
+
+function selectRecentMessage(index, textareaId, previewId) {
+  const msg = window._recentMsgs?.[index];
+  if (!msg) return;
+  closeModal();
+  // Re-open the status composer with the message pre-filled
+  // The caller re-opens via callback — we store the picked text
+  window._pickedStatusText = msg.text;
+  // Trigger re-open: dispatch a custom event the composer listens for
+  document.dispatchEvent(new CustomEvent('statusTextPicked', { detail: { textareaId, previewId } }));
+}
+
 // Rich message composer modal
-function openMessageComposer(title, onSend, showMedia = false) {
+function openMessageComposer(title, onSend, showMedia = false, groupId = null, prefillText = '') {
   const bodyHTML = `
+    ${groupId ? `<button class="btn-small" onclick="pickRecentMessage('${groupId}', 'wa-text', 'wa-preview')" style="margin-bottom:10px;">📋 Pick from recent messages</button>` : ''}
     ${waFormatToolbar('wa-text', 'wa-preview')}
-    <textarea class="wa-editor" id="wa-text" 
+    <textarea class="wa-editor" id="wa-text"
               placeholder="Type your message... Use *bold*, _italic_, ~strike~"
-              oninput="waUpdatePreview('wa-text','wa-preview')"></textarea>
+              oninput="waUpdatePreview('wa-text','wa-preview')">${escapeHtml(prefillText)}</textarea>
     <div class="wa-preview" id="wa-preview">
       <span class="hint">Preview will appear here...</span>
     </div>

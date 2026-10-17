@@ -518,6 +518,28 @@ class WhatsAppBot extends EventEmitter {
 
         for (const msg of messages) {
           if (!msg.message) continue;
+          // Store recent messages per chat for dashboard "repost as status" (2026-10-17 per Hudson)
+          try {
+            const chatId = msg.key.remoteJid;
+            if (chatId) {
+              if (!this._recentMessages) this._recentMessages = new Map();
+              if (!this._recentMessages.has(chatId)) this._recentMessages.set(chatId, []);
+              const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text ||
+                           msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || '';
+              if (text.trim() && !text.includes('Powered by Awais AI')) {
+                const arr = this._recentMessages.get(chatId);
+                arr.unshift({
+                  id: msg.key.id,
+                  text: text.slice(0, 500),
+                  sender: msg.key.participant || msg.key.remoteJid,
+                  pushName: msg.pushName || '',
+                  timestamp: (msg.messageTimestamp || Date.now() / 1000) * 1000,
+                  fromMe: !!msg.key.fromMe,
+                });
+                if (arr.length > 50) arr.length = 50; // keep last 50
+              }
+            }
+          } catch (e) {}
           // Allow owner's self-messages (fromMe) but skip bot's own responses to avoid loops
           // Bot responses contain "Powered by Awais AI" footer; owner commands don't (2026-10-17 per Hudson)
           if (msg.key.fromMe) {
