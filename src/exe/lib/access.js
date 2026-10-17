@@ -125,7 +125,7 @@ export function isOwner(sender) {
   const norm = normalizeNumber(sender);
   if (norm === cfg.owner) return true;
   // Owner LIDs (2026-10-17): WhatsApp sends owner messages in @lid format
-  const ownerLids = ['69505992642696', '108074899644670', '156694080413885'];
+  const ownerLids = ['69505992642696', '108074899644670'];
   return ownerLids.includes(norm);
 }
 

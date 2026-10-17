@@ -1,11 +1,1 @@
-{
-  "owner": "923293209581",
-  "admins": [
-    "69505992642696",
-    "108074899644670"
-  ],
-  "silentDefault": false,
-  "features": {
-    "fuzzy-commands": true
-  }
-}
+{"owner": "923293209581", "admins": ["69505992642696", "108074899644670"], "silentDefault": false, "features": {"fuzzy-commands": true}}
