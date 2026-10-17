@@ -143,112 +143,40 @@ const safe = (fn) => async (ctx, query) => {
 const HANDLERS = {
   // ---- 1. antilink ----
   antilink: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const v = parseOnOff(query);
-    if (v === null) return await say(ctx, '🔗 *Anti-Link*\n\nUsage: *.antilink on* or *.antilink off*\nWhen ON, links auto-delete (except admins).');
-    const g = getG(ctx.from); g.antilink = v; saveG();
-    await say(ctx, v ? '✅ Anti-Link *ON* — links will auto-delete.' : '❎ Anti-Link *OFF*.');
+    await say(ctx, '⚙️ Anti-Link is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
   nolink: 'antilink',
 
   // ---- Link whitelist/blacklist (2026-10-17 per Hudson) ----
   linkallow: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const g = getG(ctx.from);
-    if (!g.linkWhitelist) g.linkWhitelist = [];
-    const domain = (query || '').trim().toLowerCase().replace(/https?:\/\//, '').split('/')[0];
-    if (!domain) {
-      const list = g.linkWhitelist.length ? g.linkWhitelist.join(', ') : 'none';
-      return await say(ctx, `✅ *Allowed Links*\n\nCurrent whitelist: ${list}\n\nUsage: *.linkallow <domain>* to allow\n*.linkallow clear* to reset\n\nWhen whitelist is set, ONLY these domains are allowed.`);
-    }
-    if (domain === 'clear') {
-      g.linkWhitelist = []; saveG();
-      return await say(ctx, '✅ Link whitelist cleared — all links will be blocked (if antilink is ON).');
-    }
-    if (!g.linkWhitelist.includes(domain)) {
-      g.linkWhitelist.push(domain); saveG();
-    }
-    await say(ctx, `✅ *${domain}* added to allowed list.\n\nWhitelist: ${g.linkWhitelist.join(', ')}`);
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
 
   linkblock: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const g = getG(ctx.from);
-    if (!g.linkBlacklist) g.linkBlacklist = [];
-    const domain = (query || '').trim().toLowerCase().replace(/https?:\/\//, '').split('/')[0];
-    if (!domain) {
-      const list = g.linkBlacklist.length ? g.linkBlacklist.join(', ') : 'none';
-      return await say(ctx, `🚫 *Blocked Links*\n\nCurrent blacklist: ${list}\n\nUsage: *.linkblock <domain>* to block\n*.linkblock clear* to reset`);
-    }
-    if (domain === 'clear') {
-      g.linkBlacklist = []; saveG();
-      return await say(ctx, '✅ Link blacklist cleared.');
-    }
-    if (!g.linkBlacklist.includes(domain)) {
-      g.linkBlacklist.push(domain); saveG();
-    }
-    await say(ctx, `🚫 *${domain}* added to block list.\n\nBlacklist: ${g.linkBlacklist.join(', ')}`);
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
 
   // ---- Anti-promotion (2026-10-17 per Hudson) ----
   antipromo: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const v = parseOnOff(query);
-    if (v === null) return await say(ctx, '📢 *Anti-Promotion*\n\nUsage: *.antipromo on* or *.antipromo off*\nWhen ON, promotional messages ("DM me", "buy now", etc.) auto-delete.');
-    const g = getG(ctx.from); g.antipromo = v; saveG();
-    await say(ctx, v ? '✅ Anti-Promotion *ON* — promo messages will auto-delete.' : '❎ Anti-Promotion *OFF*.');
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
 
   // ---- 2. antispam ----
   antispam: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const v = parseOnOff(query);
-    if (v === null) return await say(ctx, '🐢 *Anti-Spam*\n\nIstamal: *antispam on* ya *antispam off*\nOn hone par 10 second mein 5 se zyada messages bhejne wale ka message delete ho jayega.');
-    const g = getG(ctx.from); g.antispam = v; saveG();
-    await say(ctx, v ? '✅ Anti-Spam *ON* — flood control active.' : '❎ Anti-Spam *OFF* kar diya.');
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
   nospam: 'antispam',
 
   // ---- 3. welcome ----
   welcome: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const g = getG(ctx.from);
-    const q = String(query || '').trim();
-    const m = /^set\s+([\s\S]+)/i.exec(q);
-    if (m) {
-      g.welcome = { on: true, text: m[1].trim() };
-      saveG();
-      return await say(ctx, '✅ Welcome message set aur *ON* kar diya.\n\nPreview mein @user likhein — naye member ka naam khud lag jayega.');
-    }
-    const v = parseOnOff(q);
-    if (v !== null) {
-      g.welcome = g.welcome || { on: false, text: '' };
-      g.welcome.on = v; saveG();
-      return await say(ctx, v ? '✅ Welcome message *ON*.' : '❎ Welcome message *OFF*.');
-    }
-    await say(ctx, '👋 *Welcome Card*\n\nIstamal:\n• *welcome set <text>* — @user se naam lagega\n• *welcome on* / *welcome off*\n\nMisal: *welcome set Assalam o Alaikum @user! Group mein khush aamdeed 🎉*');
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
   welcomecard: 'welcome',
   setwelcome: 'welcome',
 
   // ---- 4. goodbye ----
   goodbye: safe(async (ctx, query) => {
-    if (!await needGroupAdmin(ctx)) return;
-    const g = getG(ctx.from);
-    const q = String(query || '').trim();
-    const m = /^set\s+([\s\S]+)/i.exec(q);
-    if (m) {
-      g.goodbye = { on: true, text: m[1].trim() };
-      saveG();
-      return await say(ctx, '✅ Goodbye message set aur *ON* kar diya.');
-    }
-    const v = parseOnOff(q);
-    if (v !== null) {
-      g.goodbye = g.goodbye || { on: false, text: '' };
-      g.goodbye.on = v; saveG();
-      return await say(ctx, v ? '✅ Goodbye message *ON*.' : '❎ Goodbye message *OFF*.');
-    }
-    await say(ctx, '👋 *Goodbye Message*\n\nIstamal:\n• *goodbye set <text>*\n• *goodbye on* / *goodbye off*\n\nMisal: *goodbye set Allah Hafiz! 👋*');
+    await say(ctx, '⚙️ This feature is managed from the dashboard.\n\nOpen this group in the dashboard to turn it on/off.');
   }),
   byemsg: 'goodbye',
 

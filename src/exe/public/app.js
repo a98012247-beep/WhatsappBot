@@ -238,7 +238,8 @@ function renderGroupDetail(d, activity) {
       ${toggleRow('welcome', 'Welcome messages', 'Greet new members')}
       ${toggleRow('goodbye', 'Goodbye messages', 'Farewell on leave')}
       ${toggleRow('antilink', 'Anti-link', 'Auto-delete links')}
-      ${toggleRow('antispam', 'Anti-spam', 'Detect spam')}
+      ${toggleRow('antipromo', 'Anti-promotion', 'Delete promotional messages')}
+      ${toggleRow('antispam', 'Anti-spam', 'Detect spam with warnings')}
       ${toggleRow('autoreply', 'Auto-replies', 'Keyword auto-responses')}
       ${toggleRow('chatbot', 'AI chatbot', 'AI replies in group')}
       ${toggleRow('keywordalerts', 'Keyword alerts', 'Notify on keywords')}
