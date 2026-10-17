@@ -3269,6 +3269,12 @@ class WhatsAppBot extends EventEmitter {
     };
     if (/tiktok|byteoversea|ibyteimg|musical\.ly/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.tiktok.com/';
+      cdnHeaders['Origin'] = 'https://www.tiktok.com';
+      cdnHeaders['Accept'] = '*/*';
+      cdnHeaders['Accept-Language'] = 'en-US,en;q=0.9';
+      cdnHeaders['Sec-Fetch-Dest'] = 'video';
+      cdnHeaders['Sec-Fetch-Mode'] = 'no-cors';
+      cdnHeaders['Sec-Fetch-Site'] = 'cross-site';
     } else if (/instagram|fbcdn|cdninstagram/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.instagram.com/';
     } else if (/twitter|twimg|x\.com/i.test(videoUrl)) {
