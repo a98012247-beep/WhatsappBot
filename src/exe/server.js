@@ -317,7 +317,6 @@ app.post('/api/groups/:id/settings', async (req, res) => {
 app.get('/api/automation', async (req, res) => {
   try {
     const { readData } = await import('./lib/batch-helpers.js');
-    const autoReplies = readData('autoReplies.json', []);
     const scheduled = readData('scheduled-tasks.json', []);
     const manychat = readData('batch8-autoreply.json', {});
     const auto = readData('batch4-auto.json', {});
@@ -332,16 +331,33 @@ app.get('/api/automation', async (req, res) => {
         reply: (r.reply || '').slice(0, 80), enabled: true,
       }));
     }
-    res.json({
-      autoreplies: (Array.isArray(autoReplies) ? autoReplies : []).map(r => ({
-        id: r.id, trigger: r.trigger, reply: (r.reply || '').slice(0, 80),
-        enabled: r.enabled !== false,
-      })),
-      scheduled: (Array.isArray(scheduled) ? scheduled : []).map(t => ({
+    // Dashboard autoreplies live in batch8-autoreply.json __global__ (2026-10-17 fix)
+    const dashReplies = [];
+    ((manychat['__global__'] || [])).forEach(r => dashReplies.push({
+      id: r.id, trigger: r.keyword, reply: (r.reply || '').slice(0, 80),
+      enabled: r.enabled !== false,
+    }));
+    // Split scheduled-tasks.json by automationType (2026-10-17 fix)
+    const byType = { scheduled: [], autostatus: [], autopost: [], bulkmessage: [], welcome: [], goodbye: [] };
+    (Array.isArray(scheduled) ? scheduled : []).forEach(t => {
+      const at = t.automationType || 'scheduled';
+      const entry = {
         id: t.id, message: (t.message || '').slice(0, 80),
         target: t.target || t.targetType, schedule: t.schedule,
+        targets: t.targets, contacts: t.contacts, group: t.target,
         enabled: t.enabled !== false,
-      })),
+      };
+      if (byType[at]) byType[at].push(entry);
+      else byType.scheduled.push(entry);
+    });
+    res.json({
+      autoreplies: dashReplies,
+      scheduled: byType.scheduled,
+      autostatus: byType.autostatus,
+      autopost: byType.autopost,
+      bulkmessage: byType.bulkmessage,
+      welcome: byType.welcome,
+      goodbye: byType.goodbye,
       keywords,
       manychat: manychatFlat,
     });
@@ -355,17 +371,23 @@ app.post('/api/automation/toggle', async (req, res) => {
     if (!type || !id) return res.status(400).json({ error: 'type and id required' });
     const on = !!enabled;
     if (type === 'autoreply') {
-      const list = readData('autoReplies.json', []);
-      const item = (Array.isArray(list) ? list : []).find(r => String(r.id) === String(id));
-      if (!item) return res.status(404).json({ error: 'not found' });
-      item.enabled = on; writeData('autoReplies.json', list);
-    } else if (type === 'scheduled') {
+      // Dashboard autoreplies live in batch8-autoreply.json (2026-10-17 fix)
+      const data = readData('batch8-autoreply.json', {});
+      let found = false;
+      for (const key of Object.keys(data)) {
+        for (const r of (data[key] || [])) {
+          if (String(r.id) === String(id)) { r.enabled = on; found = true; }
+        }
+      }
+      if (!found) return res.status(404).json({ error: 'not found' });
+      writeData('batch8-autoreply.json', data);
+    } else if (['scheduled','autostatus','autopost','bulkmessage','welcome','goodbye'].includes(type)) {
       const list = readData('scheduled-tasks.json', []);
       const item = (Array.isArray(list) ? list : []).find(t => String(t.id) === String(id));
       if (!item) return res.status(404).json({ error: 'not found' });
       item.enabled = on; writeData('scheduled-tasks.json', list);
     } else {
-      return res.status(400).json({ error: 'type must be autoreply or scheduled' });
+      return res.status(400).json({ error: 'unknown type' });
     }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1269,7 +1291,8 @@ app.put('/api/automation/:type/:id', async (req, res) => {
         }
       }
       if (found) writeData('batch8-autoreply.json', data);
-    } else if (type === 'scheduled') {
+    } else if (type === 'scheduled' || type === 'autostatus' || type === 'autopost' || type === 'bulkmessage' || type === 'welcome' || type === 'goodbye') {
+      // Scheduled + new types all live in scheduled-tasks.json (2026-10-17 fix)
       const list = readData('scheduled-tasks.json', []);
       for (const t of list) {
         if (String(t.id) === String(id)) { Object.assign(t, updates); found = true; }
@@ -1319,7 +1342,7 @@ app.delete('/api/automation/:type/:id', async (req, res) => {
         if (data[key].length < before) found = true;
       }
       writeData('batch8-autoreply.json', data);
-    } else if (type === 'scheduled') {
+    } else if (type === 'scheduled' || type === 'autostatus' || type === 'autopost' || type === 'bulkmessage' || type === 'welcome' || type === 'goodbye') {
       const list = readData('scheduled-tasks.json', []);
       const filtered = list.filter(t => String(t.id) !== String(id));
       if (filtered.length < list.length) { found = true; writeData('scheduled-tasks.json', filtered); }

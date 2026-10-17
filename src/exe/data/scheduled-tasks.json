@@ -48,5 +48,21 @@
     "schedule": "3:41 pm",
     "enabled": true,
     "createdAt": "2026-10-17T10:40:11.724Z"
+  },
+  {
+    "id": "auto-mvc9t6bp",
+    "automationType": "autopost",
+    "message": "hvjsndad",
+    "schedule": "3:46 pm",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:45:34.405Z"
+  },
+  {
+    "id": "auto-mvc9tjhi",
+    "automationType": "autostatus",
+    "message": "wwwwwww",
+    "schedule": "3:46 pm",
+    "enabled": true,
+    "createdAt": "2026-10-17T10:45:51.478Z"
   }
 ]
