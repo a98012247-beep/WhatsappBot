@@ -286,6 +286,28 @@ class WhatsAppBot extends EventEmitter {
   // Clean menu (2026-10-13, Hudson's order: old menu was cluttered).
   // 15 merged categories instead of 28 overlapping ones. User sends the
   // number to see commands in that category.
+  // Find closest matching command for typo suggestions (2026-10-17)
+  findClosestCommand(input) {
+    if (!input || input.length < 2) return null;
+    let best = null, bestScore = 0;
+    for (const cmd of KNOWN_COMMANDS) {
+      // Simple similarity: common prefix + length proximity
+      let score = 0;
+      const a = input.toLowerCase(), b = cmd.toLowerCase();
+      // Prefix match bonus
+      let prefixLen = 0;
+      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] === b[i]) prefixLen++;
+        else break;
+      }
+      score = prefixLen * 2 - Math.abs(a.length - b.length);
+      // Contains bonus
+      if (b.includes(a) || a.includes(b)) score += 3;
+      if (score > bestScore && score > 1) { bestScore = score; best = cmd; }
+    }
+    return best;
+  }
+
   getCleanMenu() {
     const cats = [
       ['🎙️', 'Voice AI', 'Voice notes, text-to-speech, voice-to-text'],
@@ -1030,7 +1052,7 @@ class WhatsAppBot extends EventEmitter {
 
     // Command detection — DOT PREFIX ONLY (2026-10-17 per Hudson).
     // Only ".command" works. Plain "command" and "!command" are removed.
-    // ".invalidcommand" stays silent (never falls through to AI).
+    // ".invalidcommand" → suggests the correct command (no AI reply).
     let cmdText = null;
     // Strip leading . (with optional space after): ".menu" or ". menu"
     const stripped = trimmed.replace(/^\.\s*/, '');
@@ -1040,11 +1062,26 @@ class WhatsAppBot extends EventEmitter {
       if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
         cmdText = stripped;
       } else {
-        // Dot-prefixed but not a valid command → stay silent, never AI reply
+        // Wrong command → suggest correct one (2026-10-17 per Hudson)
+        const suggestion = this.findClosestCommand(firstWord);
+        if (suggestion) {
+          await this.sendMessage(from,
+            `❌ *Unknown command:* .${firstWord}\n\n` +
+            `💡 Did you mean *.${suggestion}*?\n\n` +
+            `Type *.menu* to see all commands.\n\n` +
+            `🤖 *Powered by Awais AI*`
+          );
+        } else {
+          await this.sendMessage(from,
+            `❌ *Unknown command:* .${firstWord}\n\n` +
+            `Type *.menu* to see all commands.\n\n` +
+            `🤖 *Powered by Awais AI*`
+          );
+        }
         return;
       }
     }
-    // No dot prefix → not a command, falls through to AI/natural handling
+    // No dot prefix → not a command, no reply (AI disabled per Hudson)
     if (cmdText) {
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
@@ -2584,18 +2621,9 @@ class WhatsAppBot extends EventEmitter {
       }
     }
 
-    // Natural Language & AI Intent Engine (Easy for ordinary people without typing !)
-    const handledNatural = await this.handleNaturalLanguage({
-      msg,
-      from,
-      sender,
-      senderName,
-      isGroup,
-      text: trimmed,
-      config,
-      prefix
-    });
-    if (handledNatural) return;
+    // Natural Language & AI Intent Engine — DISABLED (2026-10-17 per Hudson)
+    // AI only replies on .ai command. Regular messages get no reply.
+    // (handleNaturalLanguage kept for .ai use, not called for plain text)
   }
 
   /**
