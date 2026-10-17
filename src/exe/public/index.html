@@ -350,37 +350,178 @@
       <!-- AUTOMATION -->
       <section class="tab-pane" id="tab-automation">
         <div class="sect-head">
-          <h2 class="section-title" style="margin:0">Automation</h2>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-primary btn-sm" id="btn-open-auto-templates">📋 Templates</button>
-            <button class="btn-primary btn-sm" id="btn-open-auto-builder">+ New Automation</button>
+          <div>
+            <h2 class="section-title" style="margin:0">Automation</h2>
+            <p class="hint" style="margin:4px 0 0 0">Auto-replies, scheduled messages, keyword alerts and ManyChat replies</p>
           </div>
         </div>
-        
-        <!-- Unified All Automations (2026-10-17 per Hudson) -->
-        <h2 class="section-title">All Automations <span class="alias-count" id="auto-all-count"></span></h2>
-        <div class="group" id="auto-all-list">
-          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+
+        <!-- ═══ 💬 AUTO-REPLIES ═══ -->
+        <div class="auto-section" id="sec-autoreply">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">💬</span>
+            <div class="auto-sec-info">
+              <h3>Auto-replies</h3>
+              <p>Automatic replies when someone sends a trigger word</p>
+            </div>
+            <span class="alias-count" id="count-autoreply">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openAutoReplyBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('autoreply')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-autoreply">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
         </div>
 
-        <h2 class="section-title">Auto-replies</h2>
-        <div class="group" id="auto-replies-list">
-          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        <!-- ═══ ⏰ SCHEDULED MESSAGES ═══ -->
+        <div class="auto-section" id="sec-scheduled">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">⏰</span>
+            <div class="auto-sec-info">
+              <h3>Scheduled Messages</h3>
+              <p>Messages sent automatically at set times</p>
+            </div>
+            <span class="alias-count" id="count-scheduled">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openScheduledBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('scheduled')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-scheduled">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
         </div>
 
-        <h2 class="section-title">Scheduled messages</h2>
-        <div class="group" id="auto-scheduled-list">
-          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        <!-- ═══ 🔑 KEYWORD ALERTS ═══ -->
+        <div class="auto-section" id="sec-keyword">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">🔑</span>
+            <div class="auto-sec-info">
+              <h3>Keyword Alerts</h3>
+              <p>Get notified when specific keywords appear in chats</p>
+            </div>
+            <span class="alias-count" id="count-keyword">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openKeywordBuilder()">+ Add</button>
+          </div>
+          <div class="group" id="list-keyword">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
         </div>
 
-        <h2 class="section-title">Keyword alerts</h2>
-        <div class="group" id="auto-keywords-list">
-          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        <!-- ═══ 🤖 MANYCHAT ═══ -->
+        <div class="auto-section" id="sec-manychat">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">🤖</span>
+            <div class="auto-sec-info">
+              <h3>ManyChat Replies</h3>
+              <p>Chatbot-style flow replies with buttons</p>
+            </div>
+            <span class="alias-count" id="count-manychat">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openManychatBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('manychat')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-manychat">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
         </div>
 
-        <h2 class="section-title">ManyChat replies</h2>
-        <div class="group" id="auto-manychat-list">
-          <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+        <!-- ═══ 👋 WELCOME ═══ -->
+        <div class="auto-section" id="sec-welcome">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">👋</span>
+            <div class="auto-sec-info">
+              <h3>Welcome Messages</h3>
+              <p>Greet new members when they join groups</p>
+            </div>
+            <span class="alias-count" id="count-welcome">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openWelcomeBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('welcome')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-welcome">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
+        </div>
+
+        <!-- ═══ 👋 GOODBYE ═══ -->
+        <div class="auto-section" id="sec-goodbye">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">👋</span>
+            <div class="auto-sec-info">
+              <h3>Goodbye Messages</h3>
+              <p>Farewell messages when members leave groups</p>
+            </div>
+            <span class="alias-count" id="count-goodbye">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openGoodbyeBuilder()">+ Add</button>
+          </div>
+          <div class="group" id="list-goodbye">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
+        </div>
+
+        <!-- ═══ 📊 AUTO-STATUS ═══ -->
+        <div class="auto-section" id="sec-autostatus">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">📊</span>
+            <div class="auto-sec-info">
+              <h3>Auto Status</h3>
+              <p>Scheduled status posts</p>
+            </div>
+            <span class="alias-count" id="count-autostatus">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openAutoStatusBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('autostatus')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-autostatus">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
+        </div>
+
+        <!-- ═══ 📢 AUTO-POST ═══ -->
+        <div class="auto-section" id="sec-autopost">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">📢</span>
+            <div class="auto-sec-info">
+              <h3>Auto Post</h3>
+              <p>Scheduled posts to multiple groups</p>
+            </div>
+            <span class="alias-count" id="count-autopost">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openAutoPostBuilder()">+ Add</button>
+          </div>
+          <div class="group" id="list-autopost">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
+        </div>
+
+        <!-- ═══ 📨 BULK MESSAGE ═══ -->
+        <div class="auto-section" id="sec-bulkmessage">
+          <div class="auto-sec-head">
+            <span class="auto-sec-icon">📨</span>
+            <div class="auto-sec-info">
+              <h3>Bulk Messages</h3>
+              <p>Send messages to multiple contacts with delay</p>
+            </div>
+            <span class="alias-count" id="count-bulkmessage">0</span>
+          </div>
+          <div class="auto-sec-actions">
+            <button class="btn-primary btn-sm" onclick="openBulkBuilder()">+ Add</button>
+            <button class="btn-soft btn-sm" onclick="openAutoTemplates('bulkmessage')">📋 Templates</button>
+          </div>
+          <div class="group" id="list-bulkmessage">
+            <div class="row static"><span class="row-txt"><span class="hint">Loading…</span></span></div>
+          </div>
         </div>
       </section>
 

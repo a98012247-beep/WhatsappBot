@@ -542,3 +542,48 @@ textarea { resize: vertical; }
   width: 100%; padding: 10px; border: 1px solid #ddd;
   border-radius: 8px; font-size: 13px; margin-top: 8px; box-sizing: border-box;
 }
+
+/* ═══ Advanced Automation Sections (2026-10-17 per Hudson) ═══ */
+.auto-section {
+  background: #fff; border-radius: 16px; padding: 18px;
+  margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid #f0f0f0;
+}
+.auto-sec-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+}
+.auto-sec-icon {
+  font-size: 32px; width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f8f9fa; border-radius: 14px; flex-shrink: 0;
+}
+.auto-sec-info { flex: 1; }
+.auto-sec-info h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.auto-sec-info p { margin: 2px 0 0 0; font-size: 12px; color: #888; }
+.auto-sec-actions {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.auto-sec-actions .btn-sm {
+  padding: 8px 14px; font-size: 13px; border-radius: 10px;
+}
+.auto-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; border: 1px solid #f0f0f0; border-radius: 12px;
+  margin-bottom: 8px; background: #fafafa;
+}
+.auto-item-info { flex: 1; min-width: 0; }
+.auto-item-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.auto-item-preview { font-size: 12px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auto-item-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.auto-toggle {
+  position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  background: #ddd; border-radius: 12px; cursor: pointer; border: none;
+  transition: background 0.2s;
+}
+.auto-toggle.on { background: #25d366; }
+.auto-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; background: #fff; border-radius: 50%;
+  transition: left 0.2s;
+}
+.auto-toggle.on::after { left: 22px; }

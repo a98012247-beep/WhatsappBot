@@ -1720,126 +1720,306 @@ async function toggleAutomationItem(type, id, enabled, input) {
   }
 }
 
+// ═══ Advanced Automation Page (2026-10-17 per Hudson) ═══
+// Each type has its own section with Add/Edit/Templates/Delete/Toggle
 async function loadAutomation() {
   try {
     const res = await fetch('/api/automation');
     if (!res.ok) throw new Error('load failed');
     const data = await res.json();
 
-    // ─── Unified All Automations (2026-10-17 per Hudson) ───
-    // Every automation from every type, with Edit + Delete
-    const allList = document.getElementById('auto-all-list');
-    const allItems = [];
-    const typeLabels = {
-      autoreply: 'Auto-reply', scheduled: 'Scheduled', keyword: 'Keyword',
-      manychat: 'ManyChat', welcome: 'Welcome', goodbye: 'Goodbye',
-      autostatus: 'Auto-status', autopost: 'Auto-post', bulkmessage: 'Bulk msg',
-    };
+    // Render each section
+    renderAutoSection('autoreply', data.autoreplies || [], 
+      item => item.trigger || item.keyword || '(untitled)',
+      item => item.reply ? String(item.reply).slice(0, 100) : '');
     
-    function addAllRow(type, item, title, preview) {
-      allItems.push({ type, item, title, preview });
-    }
+    renderAutoSection('scheduled', data.scheduled || [],
+      item => (item.message || '').slice(0, 40) || '(no message)',
+      item => [item.target, item.schedule].filter(Boolean).join(' · '));
     
-    (data.autoreplies || []).forEach(item => {
-      addAllRow('autoreply', item, item.trigger || '(untitled)',
-        item.reply ? String(item.reply).slice(0, 80) : '');
-      // Also render in type section
-      const ar = document.getElementById('auto-replies-list');
-    });
-
-    const ar = document.getElementById('auto-replies-list');
-    if (ar) {
-      ar.innerHTML = '';
-      (data.autoreplies || []).forEach(item => {
-        const preview = item.reply ? String(item.reply).slice(0, 120) : '';
-        const row = makeSwitchRow(item.trigger, preview, item.enabled,
-          (v, inp) => toggleAutomationItem('autoreply', item.id, v, inp));
-        // Edit/Delete for auto-replies (2026-10-17 per Hudson)
-        row.appendChild(makeAutoActions('autoreply', item));
-        ar.appendChild(row);
-      });
-      if (!(data.autoreplies || []).length) ar.appendChild(emptyRowText('No auto-replies configured.'));
-    }
-
-    const sc = document.getElementById('auto-scheduled-list');
-    if (sc) {
-      sc.innerHTML = '';
-      (data.scheduled || []).forEach(item => {
-        addAllRow('scheduled', item, (item.message || '').slice(0, 40),
-          [item.target, item.schedule].filter(Boolean).join(' · '));
-        const preview = [item.target, item.schedule].filter(Boolean).join(' · ');
-        const row = makeSwitchRow(item.message, preview, item.enabled,
-          (v, inp) => toggleAutomationItem('scheduled', item.id, v, inp));
-        row.appendChild(makeAutoActions('scheduled', item));
-        sc.appendChild(row);
-      });
-      if (!(data.scheduled || []).length) sc.appendChild(emptyRowText('No scheduled messages.'));
-    }
-
-    const kw = document.getElementById('auto-keywords-list');
-    if (kw) {
-      kw.innerHTML = '';
-      (data.keywords || []).forEach(item => {
-        addAllRow('keyword', item, item.keyword || '(untitled)', 'Alerts on');
-        const row = makeSwitchRow(item.keyword, 'Alerts on', item.enabled,
-          (v, inp) => toggleAutomationItem('keyword', item.id || item.keyword, v, inp));
-        row.appendChild(makeAutoActions('keyword', item));
-        kw.appendChild(row);
-      });
-      if (!(data.keywords || []).length) kw.appendChild(emptyRowText('No keyword alerts.'));
-    }
-
-    const mc = document.getElementById('auto-manychat-list');
-    if (mc) {
-      mc.innerHTML = '';
-      (data.manychat || []).forEach(item => {
-        const title = [item.chat, item.keyword].filter(Boolean).join(' · ');
-        const preview = item.reply ? String(item.reply).slice(0, 120) : '';
-        addAllRow('manychat', item, title, preview);
-        const row = makeSwitchRow(title, preview, item.enabled !== false,
-          (v, inp) => toggleAutomationItem('manychat', item.id, v, inp));
-        row.appendChild(makeAutoActions('manychat', item));
-        mc.appendChild(row);
-      });
-      if (!(data.manychat || []).length) mc.appendChild(emptyRowText('No ManyChat replies.'));
-    }
-
-    // Render unified All list
-    if (allList) {
-      allList.innerHTML = '';
-      const countEl = document.getElementById('auto-all-count');
-      if (countEl) countEl.textContent = allItems.length + ' total';
-      allItems.forEach(({ type, item, title, preview }) => {
-        const row = document.createElement('div');
-        row.className = 'row';
-        const badge = document.createElement('span');
-        badge.className = 'scope-badge scope-both';
-        badge.textContent = typeLabels[type] || type;
-        badge.style.marginLeft = '0';
-        badge.style.marginRight = '8px';
-        const txt = document.createElement('span');
-        txt.className = 'row-txt';
-        const strong = document.createElement('strong');
-        strong.textContent = title;
-        txt.appendChild(strong);
-        if (preview) {
-          const sub = document.createElement('span');
-          sub.textContent = preview;
-          sub.style.display = 'block';
-          sub.style.fontSize = '12px';
-          sub.style.color = '#888';
-          txt.appendChild(sub);
-        }
-        row.appendChild(badge);
-        row.appendChild(txt);
-        row.appendChild(makeAutoActions(type, item));
-        allList.appendChild(row);
-      });
-      if (!allItems.length) allList.appendChild(emptyRowText('No automations yet. Click "+ New Automation" or pick a template.'));
-    }
+    renderAutoSection('keyword', data.keywords || [],
+      item => item.keyword || '(untitled)',
+      item => item.action ? String(item.action).slice(0, 100) : '');
+    
+    renderAutoSection('manychat', data.manychat || [],
+      item => item.keyword || '(untitled)',
+      item => item.reply ? String(item.reply).slice(0, 100) : '');
+    
+    renderAutoSection('welcome', data.welcome || [],
+      item => item.group || 'All groups',
+      item => item.message ? String(item.message).slice(0, 100) : '');
+    
+    renderAutoSection('goodbye', data.goodbye || [],
+      item => item.group || 'All groups',
+      item => item.message ? String(item.message).slice(0, 100) : '');
+    
+    renderAutoSection('autostatus', data.autostatus || [],
+      item => (item.message || '').slice(0, 40) || '(no message)',
+      item => item.schedule || '');
+    
+    renderAutoSection('autopost', data.autopost || [],
+      item => (item.message || '').slice(0, 40) || '(no message)',
+      item => [item.groups?.length + ' groups', item.schedule].filter(Boolean).join(' · '));
+    
+    renderAutoSection('bulkmessage', data.bulkmessage || [],
+      item => (item.message || '').slice(0, 40) || '(no message)',
+      item => [item.contacts?.length + ' contacts', item.schedule].filter(Boolean).join(' · '));
+    
   } catch (e) {
     showToast('Could not load automation', 'error');
   }
+}
+
+// Render one automation section
+function renderAutoSection(type, items, titleFn, previewFn) {
+  const listEl = document.getElementById('list-' + type);
+  const countEl = document.getElementById('count-' + type);
+  if (!listEl) return;
+  
+  if (countEl) countEl.textContent = items.length;
+  
+  listEl.innerHTML = '';
+  if (!items.length) {
+    listEl.innerHTML = '<div class="row static"><span class="row-txt"><span class="hint">No items yet. Click "+ Add" or use Templates.</span></span></div>';
+    return;
+  }
+  
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'auto-item';
+    
+    const info = document.createElement('div');
+    info.className = 'auto-item-info';
+    info.innerHTML = `
+      <div class="auto-item-title">${escapeHtml(titleFn(item))}</div>
+      <div class="auto-item-preview">${escapeHtml(previewFn(item))}</div>
+    `;
+    
+    const actions = document.createElement('div');
+    actions.className = 'auto-item-actions';
+    
+    // Toggle
+    const toggle = document.createElement('button');
+    toggle.className = 'auto-toggle' + (item.enabled !== false ? ' on' : '');
+    toggle.onclick = () => toggleAutoItem(type, item, toggle);
+    
+    // Edit
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-small';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.onclick = () => editAutoItem(type, item);
+    
+    // Delete
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-small danger';
+    delBtn.textContent = '🗑️';
+    delBtn.onclick = () => deleteAutoItem(type, item);
+    
+    actions.appendChild(toggle);
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+    
+    div.appendChild(info);
+    div.appendChild(actions);
+    listEl.appendChild(div);
+  });
+}
+
+async function toggleAutoItem(type, item, toggleEl) {
+  const newState = !toggleEl.classList.contains('on');
+  try {
+    const res = await fetch('/api/automation/toggle', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, id: item.id || item.keyword, enabled: newState }),
+    });
+    if (!res.ok) throw new Error('failed');
+    toggleEl.classList.toggle('on', newState);
+    showToast(newState ? 'Enabled' : 'Disabled', 'success');
+  } catch (e) { showToast('Toggle failed', 'error'); }
+}
+
+// ─── Builders: open Add/Edit modal for each type ───
+function openAutoBuilder(type, item = null) {
+  const configs = {
+    autoreply: {
+      title: item ? 'Edit Auto-reply' : 'New Auto-reply',
+      fields: [
+        { name: 'trigger', label: 'Trigger word', value: item?.trigger || item?.keyword || '', placeholder: 'e.g. price' },
+        { name: 'reply', label: 'Reply message', value: item?.reply || '', textarea: true, placeholder: 'What the bot replies...' },
+      ],
+    },
+    scheduled: {
+      title: item ? 'Edit Scheduled Message' : 'New Scheduled Message',
+      fields: [
+        { name: 'message', label: 'Message', value: item?.message || '', textarea: true },
+        { name: 'target', label: 'Target (group ID or number)', value: item?.target || '', placeholder: '120363410975468944@g.us' },
+        { name: 'schedule', label: 'Schedule (cron or plain)', value: item?.schedule || '', placeholder: '0 9 * * *  (9 AM daily)' },
+      ],
+    },
+    keyword: {
+      title: item ? 'Edit Keyword Alert' : 'New Keyword Alert',
+      fields: [
+        { name: 'keyword', label: 'Keyword to watch', value: item?.keyword || '', placeholder: 'e.g. urgent' },
+        { name: 'action', label: 'Alert action', value: item?.action || '', textarea: true, placeholder: 'What to do when found...' },
+      ],
+    },
+    manychat: {
+      title: item ? 'Edit ManyChat Reply' : 'New ManyChat Reply',
+      fields: [
+        { name: 'keyword', label: 'Keyword', value: item?.keyword || '' },
+        { name: 'reply', label: 'Reply with buttons', value: item?.reply || '', textarea: true },
+      ],
+    },
+    welcome: {
+      title: item ? 'Edit Welcome' : 'New Welcome Message',
+      fields: [
+        { name: 'group', label: 'Group (ID or "all")', value: item?.group || '', placeholder: 'all' },
+        { name: 'message', label: 'Welcome message', value: item?.message || '', textarea: true },
+      ],
+    },
+    goodbye: {
+      title: item ? 'Edit Goodbye' : 'New Goodbye Message',
+      fields: [
+        { name: 'group', label: 'Group (ID or "all")', value: item?.group || '', placeholder: 'all' },
+        { name: 'message', label: 'Goodbye message', value: item?.message || '', textarea: true },
+      ],
+    },
+    autostatus: {
+      title: item ? 'Edit Auto Status' : 'New Auto Status',
+      fields: [
+        { name: 'message', label: 'Status text', value: item?.message || '', textarea: true },
+        { name: 'schedule', label: 'Schedule', value: item?.schedule || '', placeholder: '0 9 * * *' },
+      ],
+    },
+    autopost: {
+      title: item ? 'Edit Auto Post' : 'New Auto Post',
+      fields: [
+        { name: 'message', label: 'Post message', value: item?.message || '', textarea: true },
+        { name: 'groups', label: 'Group IDs (comma separated)', value: (item?.groups || []).join(', ') },
+        { name: 'schedule', label: 'Schedule', value: item?.schedule || '', placeholder: '0 9 * * *' },
+      ],
+    },
+    bulkmessage: {
+      title: item ? 'Edit Bulk Message' : 'New Bulk Message',
+      fields: [
+        { name: 'message', label: 'Message', value: item?.message || '', textarea: true },
+        { name: 'contacts', label: 'Numbers (comma separated)', value: (item?.contacts || []).join(', ') },
+        { name: 'delay', label: 'Delay between sends (seconds)', value: item?.delay || '5' },
+      ],
+    },
+  };
+  
+  const cfg = configs[type];
+  if (!cfg) return;
+  
+  const bodyHTML = cfg.fields.map(f => `
+    <label style="font-weight:600;display:block;margin-bottom:6px;">${escapeHtml(f.label)}</label>
+    ${f.textarea
+      ? `<textarea id="auto-${f.name}" class="wa-editor" style="min-height:80px;margin-bottom:12px;" placeholder="${escapeHtml(f.placeholder || '')}">${escapeHtml(f.value)}</textarea>`
+      : `<input type="text" id="auto-${f.name}" class="media-url-input" style="margin-bottom:12px;" placeholder="${escapeHtml(f.placeholder || '')}" value="${escapeHtml(f.value)}">`
+    }
+  `).join('');
+  
+  openModal(cfg.title, bodyHTML, async () => {
+    const payload = { type };
+    cfg.fields.forEach(f => {
+      let val = document.getElementById('auto-' + f.name).value.trim();
+      // Parse comma-separated lists
+      if ((f.name === 'groups' || f.name === 'contacts') && val) {
+        val = val.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      payload[f.name] = val;
+    });
+    
+    try {
+      const url = item 
+        ? `/api/automation/${type}/${encodeURIComponent(item.id || item.keyword)}`
+        : '/api/automation/create';
+      const method = item ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('failed');
+      showToast(item ? 'Updated' : 'Created', 'success');
+      loadAutomation();
+    } catch (e) { showToast('Save failed', 'error'); }
+  }, item ? 'Save' : 'Create');
+}
+
+// Convenience wrappers for each section's Add button
+function openAutoReplyBuilder() { openAutoBuilder('autoreply'); }
+function openScheduledBuilder() { openAutoBuilder('scheduled'); }
+function openKeywordBuilder() { openAutoBuilder('keyword'); }
+function openManychatBuilder() { openAutoBuilder('manychat'); }
+function openWelcomeBuilder() { openAutoBuilder('welcome'); }
+function openGoodbyeBuilder() { openAutoBuilder('goodbye'); }
+function openAutoStatusBuilder() { openAutoBuilder('autostatus'); }
+function openAutoPostBuilder() { openAutoBuilder('autopost'); }
+function openBulkBuilder() { openAutoBuilder('bulkmessage'); }
+
+function editAutoItem(type, item) { openAutoBuilder(type, item); }
+
+async function deleteAutoItem(type, item) {
+  if (!confirm('Delete this automation?')) return;
+  try {
+    const res = await fetch(`/api/automation/${type}/${encodeURIComponent(item.id || item.keyword)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('failed');
+    showToast('Deleted', 'success');
+    loadAutomation();
+  } catch (e) { showToast('Delete failed', 'error'); }
+}
+
+// Templates filtered by type
+async function openAutoTemplates(filterType = null) {
+  try {
+    const res = await fetch('/api/automation/templates');
+    const data = await res.json();
+    let templates = data.templates || [];
+    if (filterType) templates = templates.filter(t => t.type === filterType);
+    
+    if (!templates.length) { showToast('No templates for this type', 'error'); return; }
+    
+    const bodyHTML = `
+      <div style="display:grid;gap:10px;">
+        ${templates.map(t => `
+          <div class="row" style="cursor:pointer;" onclick="useAutoTemplate('${t.id}')">
+            <span class="row-txt">
+              <strong>${escapeHtml(t.name)}</strong>
+              <span style="display:block;font-size:12px;color:#888;">${escapeHtml(t.desc)}</span>
+            </span>
+            <span style="font-size:20px;">→</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    openModal('Choose a Template', bodyHTML, () => false, 'Close');
+    document.getElementById('modal-submit').style.display = 'none';
+  } catch (e) { showToast('Could not load templates', 'error'); }
+}
+
+async function useAutoTemplate(tplId) {
+  try {
+    const res = await fetch('/api/automation/templates');
+    const data = await res.json();
+    const tpl = (data.templates || []).find(t => t.id === tplId);
+    if (!tpl) return;
+    closeModal();
+    // Open builder pre-filled with template defaults
+    const fakeItem = {};
+    Object.entries(tpl.defaults || {}).forEach(([k, v]) => { fakeItem[k] = v; });
+    // Map template type to builder, pre-fill via item
+    openAutoBuilder(tpl.type, null);
+    // Fill fields after modal opens
+    setTimeout(() => {
+      Object.entries(tpl.defaults || {}).forEach(([k, v]) => {
+        const el = document.getElementById('auto-' + k);
+        if (el) el.value = Array.isArray(v) ? v.join(', ') : String(v);
+      });
+    }, 100);
+  } catch (e) { showToast('Error', 'error'); }
 }
 
 // Shared Edit/Delete buttons for automation rows (2026-10-17 per Hudson)
@@ -2917,72 +3097,4 @@ function openPollCreator(onCreate) {
 }
 
 // ─── Automation Templates Modal (2026-10-17 per Hudson) ───
-async function openAutomationTemplates() {
-  try {
-    const res = await fetch('/api/automation/templates');
-    const data = await res.json();
-    const templates = data.templates || [];
-    
-    const bodyHTML = `
-      <div style="display:grid;gap:10px;">
-        ${templates.map(t => `
-          <div class="row" style="cursor:pointer;" onclick="useTemplate('${t.id}')">
-            <span class="row-txt">
-              <strong>${escapeHtml(t.name)}</strong>
-              <span style="display:block;font-size:12px;color:#888;">${escapeHtml(t.desc)}</span>
-              <span class="scope-badge scope-both" style="margin:4px 0 0 0;">${escapeHtml(t.type)}</span>
-            </span>
-            <span style="font-size:20px;">→</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    
-    openModal('Choose a Template', bodyHTML, () => false, 'Close');
-    // Hide submit button for template picker
-    document.getElementById('modal-submit').style.display = 'none';
-  } catch (e) { showToast('Could not load templates', 'error'); }
-}
 
-async function useTemplate(tplId) {
-  try {
-    const res = await fetch('/api/automation/templates');
-    const data = await res.json();
-    const tpl = (data.templates || []).find(t => t.id === tplId);
-    if (!tpl) return;
-    
-    closeModal();
-    // Open the automation builder pre-filled with template defaults
-    // For now, show an info modal with the template details
-    const fields = Object.entries(tpl.defaults || {}).map(([k, v]) => `
-      <label style="font-weight:600;display:block;margin-bottom:6px;">${escapeHtml(k)}</label>
-      <textarea id="tpl-${k}" class="wa-editor" style="min-height:60px;margin-bottom:12px;">${escapeHtml(String(v))}</textarea>
-    `).join('');
-    
-    openModal('Edit: ' + tpl.name, `
-      <p style="color:#666;font-size:13px;margin-bottom:12px;">${escapeHtml(tpl.desc)}</p>
-      ${fields}
-    `, async () => {
-      // Collect edited values and create the automation
-      const params = { type: tpl.type };
-      Object.keys(tpl.defaults || {}).forEach(k => {
-        params[k] = document.getElementById('tpl-' + k).value;
-      });
-      try {
-        const cr = await fetch('/api/automation/create', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params),
-        });
-        if (!cr.ok) throw new Error('failed');
-        showToast('Automation created from template', 'success');
-        loadAutomation();
-      } catch (e) { showToast('Failed to create', 'error'); }
-    }, 'Create Automation');
-  } catch (e) { showToast('Error', 'error'); }
-}
-
-// Wire up templates button
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btn-open-auto-templates');
-  if (btn) btn.addEventListener('click', openAutomationTemplates);
-});
