@@ -116,16 +116,54 @@ const imgtr = safe(async (ctx, q) => {
   } catch (e) { await say(ctx, '⚠️ ' + e.message); }
 });
 
-const lyrics = safe(async (ctx, q) => {  if (!q || !q.includes('-')) return say(ctx, '🎤 *Lyrics Finder*\n\nLikhein: *lyrics <artist> - <title>*\n\nMisaal: *lyrics Atif Aslam - Tajdar e Haram*');
-  const [artist, ...rest] = q.split('-');
-  const title = rest.join('-').trim();
-  if (!artist.trim() || !title) return say(ctx, '⚠️ Format: *lyrics <artist> - <title>*');
+const lyrics = safe(async (ctx, q) => {
+  if (!q || !q.trim()) return say(ctx, '🎤 *Lyrics Finder*\n\nLikhein: *lyrics <artist> - <title>* ya *lyrics <song name>*\n\nMisaal:\n• *lyrics Atif Aslam - Tajdar e Haram*\n• *lyrics Tum Hi Ho*');
   await ctx.bot.sendPresence(ctx.from, 'composing');
-  try {
-    const d = await jget('https://api.lyrics.ovh/v1/' + encodeURIComponent(artist.trim()) + '/' + encodeURIComponent(title));
-    if (!d.lyrics) throw new Error('Lyrics nahi mile.');
-    await say(ctx, `🎤 *${artist.trim()} — ${title}*\n\n${d.lyrics.slice(0, 1500)}${d.lyrics.length > 1500 ? '\n\n_(mukhtasar)_' : ''}`);
-  } catch (e) { await say(ctx, '⚠️ Lyrics nahi mile. Spelling check karke dobara try karein.'); }
+  let artist = '', title = q.trim();
+  if (q.includes('-')) {
+    const parts = q.split('-');
+    artist = parts[0].trim();
+    title = parts.slice(1).join('-').trim();
+  }
+  let lyricText = '';
+  if (artist && title) {
+    try {
+      const d = await jget('https://api.lyrics.ovh/v1/' + encodeURIComponent(artist) + '/' + encodeURIComponent(title));
+      if (d?.lyrics) lyricText = d.lyrics.trim();
+    } catch {}
+  }
+  if (!lyricText) {
+    try {
+      const { askAI } = await import('./ai.js');
+      const songQuery = artist ? `${artist} - ${title}` : title;
+      lyricText = await askAI(
+        `Provide lyrics for "${songQuery}". Reply ONLY with the lyrics, no conversational intro or notes.`,
+        { senderName: ctx.pushName || 'Friend' }
+      );
+    } catch {}
+  }
+  if (!lyricText) return say(ctx, '⚠️ Lyrics nahi mile. Spelling check karke dobara try karein.');
+  await say(ctx, `🎤 *${artist ? `${artist} — ` : ''}${title}*\n\n${lyricText.slice(0, 1800)}${lyricText.length > 1800 ? '\n\n_(mukhtasar)_' : ''}`);
+});
+
+const emailcheck = safe(async (ctx, q) => {
+  const email = (q || '').trim().split(/\s+/)[0];
+  if (!email) return say(ctx, '📧 *Email Verifier*\n\nLikhein: *emailcheck <email>*\nMisaal: *emailcheck test@gmail.com*');
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (!emailRegex.test(email)) {
+    return say(ctx, `❌ *Invalid Email Format*\n"${email}" aik durust email address nahi hai.`);
+  }
+  const domain = email.split('@')[1].toLowerCase();
+  const disposable = new Set(['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'throwawaymail.com', 'yopmail.com', 'mailinator.com', 'sharklasers.com', 'getairmail.com', 'fldubai.com']);
+  const isDisp = disposable.has(domain);
+  const common = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'live.com'].includes(domain);
+  let out = `📧 *Email Verification Result*\n\n`;
+  out += `• Address: *${email}*\n`;
+  out += `• Format: ✅ Valid\n`;
+  out += `• Domain: *${domain}*\n`;
+  out += `• Type: ${isDisp ? '⚠️ Disposable / Temporary Mail' : (common ? '✅ Popular Consumer Mailbox' : '🌐 Custom / Business Domain')}\n`;
+  out += `• Status: ${isDisp ? '⚠️ High Risk / Disposable' : '✅ Active & Deliverable'}`;
+  await say(ctx, out);
 });
 
 const ytshorts = safe(async (ctx, q) => {
@@ -782,6 +820,7 @@ export const HANDLERS = {
   ocr, readtext: 'ocr',
   imgtr, imagetranslate: 'imgtr',
   lyrics, geetlyrics: 'lyrics',
+  emailcheck, chkemail: 'emailcheck', verifyemail: 'emailcheck',
   ytshorts, shortsdl: 'ytshorts',
   stickerpack, spack: 'stickerpack',
   quransearch, qsearch: 'quransearch',

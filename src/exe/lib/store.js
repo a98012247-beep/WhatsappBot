@@ -203,21 +203,23 @@ export const Store = {
     const active = this.getStatuses();
     return active.find(s => s.groupId === groupId) || null;
   },
-  setGroupStatus({ groupId, groupName, text, author, authorName, isBroadcast = false }) {
+  setGroupStatus({ groupId, groupName, text, author, authorName, isBroadcast = false, isChannel = false }) {
     let list = this.getStatuses();
     // Remove previous status for this target
     list = list.filter(s => s.groupId !== groupId);
 
     const now = Date.now();
     const duration = 24 * 60 * 60 * 1000; // 24 hours
+    const isChan = isChannel || (groupId && groupId.endsWith('@newsletter'));
     const newStatus = {
       id: 'stat-' + Date.now(),
       groupId: groupId || 'status@broadcast',
-      groupName: groupName || (isBroadcast ? 'WhatsApp Story Broadcast' : 'Group Chat'),
+      groupName: groupName || (isBroadcast ? 'WhatsApp Story Broadcast' : (isChan ? 'WhatsApp Channel' : 'Group Chat')),
       text: text.trim(),
       author: author || 'Admin',
       authorName: authorName || 'Admin',
       isBroadcast: !!isBroadcast,
+      isChannel: !!isChan,
       createdAt: now,
       expiresAt: now + duration
     };
@@ -265,5 +267,18 @@ export const Store = {
   isOnboarded(userId) {
     const p = this.getUserProfile(userId);
     return !!(p && p.onboarded);
+  },
+
+  // Channel Settings & Customization
+  getChannelSettings(channelId) {
+    const all = readJson('channel-settings.json', {});
+    return channelId ? (all[channelId] || {}) : all;
+  },
+  updateChannelSettings(channelId, patch) {
+    if (!channelId) return {};
+    const all = readJson('channel-settings.json', {});
+    all[channelId] = { ...(all[channelId] || {}), ...patch };
+    writeJson('channel-settings.json', all);
+    return all[channelId];
   },
 };

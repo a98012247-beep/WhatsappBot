@@ -315,6 +315,7 @@ const HANDLERS = {
   pinmsg: safe(async (ctx, query) => {
     await doPin(ctx, 1);
   }),
+  pin: 'pinmsg',
   unpin: safe(async (ctx, query) => {
     await doPin(ctx, 2);
   }),
@@ -592,7 +593,7 @@ export async function onMessage(ctx) {
 
       // --- antilink (with whitelist/blacklist + promotion detection) ---
       try {
-        if (groupFeatureOn(from, 'antilink', g.antilink) && text) {
+        if (groupFeatureOn(from, 'antilink', g.antilink || false) && text) {
           const hasLink = LINK_RE.test(text);
           const isPromo = PROMO_RE.test(text);
           
@@ -623,7 +624,7 @@ export async function onMessage(ctx) {
           }
           
           // Promotion detection (even without links)
-          if (!shouldDelete && isPromo && groupFeatureOn(from, 'antipromo', g.antipromo)) {
+          if (!shouldDelete && isPromo && groupFeatureOn(from, 'antipromo', g.antipromo || false)) {
             shouldDelete = true;
             reason = 'promotional content';
           }
@@ -643,7 +644,7 @@ export async function onMessage(ctx) {
 
       // --- antispam ---
       try {
-        if (groupFeatureOn(from, 'antispam', g.antispam) && sender) {
+        if (groupFeatureOn(from, 'antispam', g.antispam || false) && sender) {
           const k = from + '|' + sender, now = Date.now();
           const arr = (spamMap.get(k) || []).filter(t => now - t < 10000);
           arr.push(now); spamMap.set(k, arr);
@@ -663,7 +664,7 @@ export async function onMessage(ctx) {
 
       // --- slowmode ---
       try {
-        if (groupFeatureOn(from, 'slowmode', !!g.slowmode) && g.slowmode && sender && text && msg?.key) {
+        if (groupFeatureOn(from, 'slowmode', false) && g.slowmode && sender && text && msg?.key) {
           const admin = await isGroupAdmin(ctx.bot.sock, from, sender).catch(() => false);
           if (!admin) {
             const k = from + '|' + sender, now = Date.now();
@@ -677,7 +678,7 @@ export async function onMessage(ctx) {
 
       // --- autoreact ---
       try {
-        if (g.autoreact && msg?.key && text) {
+        if (g.autoreact && groupFeatureOn(from, 'autoreact', false) && msg?.key && text) {
           const em = ['❤️', '😂', '👍', '🔥', '😮'];
           await ctx.bot.sock.sendMessage(from, { react: { text: em[Math.floor(Math.random() * em.length)], key: msg.key } }).catch(() => {});
         }
@@ -873,6 +874,7 @@ setInterval(() => {
 // MENU + WEB
 // ============================================================================
 export const MENU_SECTION = `🛡️ *16. Group Control*
+• *gstatus* ➔ Group status & permissions
 • *antilink on|off* ➔ Link auto-delete
 • *antispam on|off* ➔ Flood control
 • *welcome set <text>* ➔ Custom welcome
@@ -885,6 +887,7 @@ export const MENU_SECTION = `🛡️ *16. Group Control*
 • *inactive <days>* ➔ Khamosh members
 • *bday add <naam> <DD-MM>* ➔ Birthday alerts
 • *pin* ➔ Message pin (reply)
+• *unpin* ➔ Message unpin (reply)
 • *pollsched <10m> <Q> | <A>* ➔ Scheduled poll
 
 ⚙️ *17. Automation*
@@ -911,6 +914,8 @@ export const WEB_COMMANDS = [
   { command: 'inactive', title: 'Inactive Members', usage: 'inactive <days>', example: 'inactive 7', section: 'Group Control', admin: true, desc: 'Khamosh members ki list' },
   { command: 'birthday', title: 'Birthday Alerts', usage: 'bday add <naam> <DD-MM>', example: 'bday add Ali 15-08', section: 'Group Control', admin: false, desc: 'Subah 9 baje birthday alert' },
   { command: 'pinmsg', title: 'Pin Message', usage: 'pin (reply karke)', example: 'pin', section: 'Group Control', admin: true, desc: 'Reply kiye gaye message ko pin karein (unpin se hatayein)' },
+  { command: 'unpin', title: 'Unpin Message', usage: 'unpin (reply karke)', example: 'unpin', section: 'Group Control', admin: true, desc: 'Pinned message ko unpin karein' },
+  { command: 'groupstatus', title: 'Group Status', usage: 'gstatus', example: 'gstatus', section: 'Group Control', admin: false, desc: 'Group security audit, bot rights aur member count dekhein' },
   { command: 'pollsched', title: 'Scheduled Poll', usage: 'pollsched <10m|2h|1d> <Q> | <A> | <B>', example: 'pollsched 10m Chai ya coffee? | Chai | Coffee', section: 'Group Control', admin: true, desc: 'Muqarrar waqt baad poll bhejein' },
   { command: 'rsswatch', title: 'RSS Watch', usage: 'rss add <url>', example: 'rss add https://feeds.bbci.co.uk/news/rss.xml', section: 'Automation', admin: false, desc: 'Har 15 min mein nayi khabrein auto-post' },
   { command: 'keywordalert', title: 'Keyword Alerts', usage: 'keyword add <lafz>', example: 'keyword add match', section: 'Automation', admin: false, desc: 'Lafz kahin aaye to foran alert' },

@@ -1,4 +1,5 @@
 import { Store } from './store.js';
+import { recordMessage, clearUserMemory } from './memory.js';
 
 // ---- Conversation memory (2026-10-13, Hudson's order: bot forgot context).
 // Per-sender rolling history, last 10 messages (5 exchanges). In-memory;
@@ -40,10 +41,16 @@ export function pushHistory(senderId, role, content) {
   h.push({ role, content: String(content).slice(0, 2000) });
   while (h.length > MAX_HISTORY) h.shift();
   convoHistory.set(senderId, h);
+  try {
+    recordMessage(senderId, role === 'assistant' ? 'bot' : 'user', content);
+  } catch {}
 }
 
 export function clearHistory(senderId) {
   convoHistory.delete(senderId);
+  try {
+    clearUserMemory(senderId);
+  } catch {}
 }
 
 // ---- Multi-key pool: rotation + cooldown fallback ---------------------------
@@ -206,6 +213,13 @@ export async function askAI(prompt, opts = {}) {
     'Bilkul casual, friendly aur mukhtasar baat karein. AI-generated NA lagein — real insaan lagein. ' +
     'Yaad rakhein: user se pehle bhi baat hui hai, context ko madde nazar rakhein.' +
     (userCtx ? ` ${userCtx}` : '');
+
+  // Hydrate persistent history from disk if not yet loaded in memory
+  if (senderId) {
+    try {
+      await ensureHistoryLoaded(senderId);
+    } catch {}
+  }
 
   // Record user turn, build history-aware messages
   pushHistory(senderId, 'user', prompt);

@@ -84,6 +84,19 @@ const SEERAH_QUIZ = [
   { q: 'Quran ki sab se chhoti surah?', o: ['Ikhlas', 'Kawthar', 'Asr', 'Falaq'], a: 1 },
 ];
 
+const SCIENCE_QUIZ = [
+  { q: 'Pani ka chemical formula kya hai?', o: ['CO2', 'H2O', 'NaCl', 'O2'], a: 1 },
+  { q: 'Hawa mein sab se zyada konsi gas pai jati hai?', o: ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Hydrogen'], a: 1 },
+  { q: 'Suraj ke sab se qareeb konsa sayara (planet) hai?', o: ['Venus', 'Mercury', 'Mars', 'Earth'], a: 1 },
+  { q: 'Insani jism ka sab se bara organ konsa hai?', o: ['Liver', 'Heart', 'Skin (Jild)', 'Brain'], a: 2 },
+  { q: 'Light ki raftaar (speed of light) kitni hai?', o: ['300,000 km/s', '150,000 km/s', '50,000 km/s', '1,000 km/s'], a: 0 },
+  { q: 'Insani jism mein kitni haddiyan (bones) hoti hain?', o: ['180', '206', '250', '300'], a: 1 },
+  { q: 'Suraj mein energy kis process se banti hai?', o: ['Nuclear Fission', 'Nuclear Fusion', 'Combustion', 'Photosynthesis'], a: 1 },
+  { q: 'Plant cell mein photosynthesis kahan hoti hai?', o: ['Mitochondria', 'Chloroplast', 'Nucleus', 'Ribosome'], a: 1 },
+  { q: 'Zameen ka natural satellite konsa hai?', o: ['Moon (Chand)', 'Mars', 'Titan', 'Europa'], a: 0 },
+  { q: 'Gravity kis science-daan ne daryaft ki?', o: ['Albert Einstein', 'Isaac Newton', 'Galileo', 'Nikola Tesla'], a: 1 },
+];
+
 const HIFZ_AYAHS = [
   { ar: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', ur: 'Allah ke naam se jo bara Meherban nihayat Rehem wala hai', ref: 'Al-Fatiha 1:1' },
   { ar: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', ur: 'Sab tareef Allah ke liye jo tamam jahanon ka Rab hai', ref: 'Al-Fatiha 1:2' },
@@ -908,6 +921,33 @@ export const HANDLERS = {
     } catch (e) { await send(ctx, '😟 Fact load nahi ho saka.'); }
   },
   science: 'sciencefact',
+
+  sciencequiz: async (ctx, query) => {
+    try {
+      const q = (query || '').trim().toLowerCase();
+      const d = readEdu();
+      d.sciquiz = d.sciquiz || {};
+      const me = d.sciquiz[ctx.sender] || { score: 0, played: 0 };
+      const letters = ['a', 'b', 'c', 'd'];
+      const pend = getPending(ctx.from);
+      if (pend && pend.kind === 'science' && letters.includes(q)) {
+        const item = SCIENCE_QUIZ[pend.idx];
+        const correct = letters[item.a];
+        me.played += 1;
+        let msg;
+        if (q === correct) { me.score += 1; msg = `✅ *Sahih jawab!* Zabardast 🔬`; }
+        else msg = `❌ Ghalat. Sahih jawab: *${correct.toUpperCase()} — ${item.o[item.a]}*`;
+        d.sciquiz[ctx.sender] = me; saveEdu(d); clearPending(ctx.from);
+        await send(ctx, `${msg}\n\n📊 Aap ka score: *${me.score}/${me.played}*\n\nAgla sawal: *${ctx.prefix}sciencequiz*`);
+        return;
+      }
+      const idx = Math.floor(Math.random() * SCIENCE_QUIZ.length);
+      const item = SCIENCE_QUIZ[idx];
+      setPending(ctx.from, { kind: 'science', idx });
+      await send(ctx, `🔬 *Science Quiz*\n\n❓ ${item.q}\n\nA) ${item.o[0]}\nB) ${item.o[1]}\nC) ${item.o[2]}\nD) ${item.o[3]}\n\nJawab: *${ctx.prefix}sciencequiz a* (ya b/c/d)\n📊 Score: ${me.score}/${me.played}`);
+    } catch (e) { await send(ctx, '😟 Science quiz load nahi ho saka.'); }
+  },
+  sciquiz: 'sciencequiz',
 
   // 16. On this day
   onthisday: async (ctx, query) => {

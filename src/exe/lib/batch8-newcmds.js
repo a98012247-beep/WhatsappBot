@@ -190,28 +190,52 @@ const HANDLERS = {
       emojis = query.match(/\p{Extended_Pictographic}(\uFE0F|\u200D\p{Extended_Pictographic})*/gu) || [];
     }
     if (emojis.length < 2) {
-      ctx.bot.setPending(ctx.from, 'emojimix');
-      await say(ctx, '😀➕😎 *EmojiMix*\n\nSend two emojis and I\'ll mix them!\nExample: *.emojimix 😀 😎*\n\n_Or just reply with the two emojis now._');
+      if (ctx.bot?.setPending) ctx.bot.setPending(ctx.from, 'emojimix');
+      await say(ctx, '😀➕😎 *EmojiMix*\n\nDo emojis send karein jinhein mix karna ho!\nExample: *.emojimix 😀 😎*\n\n_Ya direct reply mein do emojis bhejein._');
       return;
     }
     try {
-      const e1 = encodeURIComponent(emojis[0]);
-      const e2 = encodeURIComponent(emojis[1]);
-      const url = `https://emojik.vercel.app/s/${e1}_${e2}?size=256`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-      if (!res.ok) throw new Error('mix failed ' + res.status);
+      // 1. Primary Engine: Official Google Emoji Kitchen (via emoji-mixer on gstatic CDN)
+      let url = null;
+      try {
+        const { default: getEmojiMixUrl } = await import('emoji-mixer');
+        url = getEmojiMixUrl(emojis[0], emojis[1]) || getEmojiMixUrl(emojis[1], emojis[0]);
+      } catch (e) {
+        console.warn('[emojimix] emoji-mixer import error:', e.message);
+      }
+
+      if (!url) {
+        await say(ctx, `😅 In do emojis (${emojis[0]} + ${emojis[1]}) ka official Emoji Kitchen mix available nahi hai.\n\nKuch popular emojis try karein jaise:\n• *.emojimix 😀 😎*\n• *.emojimix 🔥 ❤️*\n• *.emojimix 🐱 😭*\n• *.emojimix 💀 🤖*\n• *.emojimix 🥺 💖*`);
+        return;
+      }
+
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15000),
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      if (!res.ok) throw new Error(`Google CDN HTTP ${res.status}`);
       const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.length < 1000) throw new Error('empty image');
-      // Convert to WebP (2026-10-15): WhatsApp mobile rejects non-WebP
-      // stickers ("information missing"); Web renders them leniently.
+      if (buf.length < 500) throw new Error('empty image');
+
+      // Convert to 512x512 transparent WebP WhatsApp sticker
       let stickerBuf = buf;
       try {
         const sharp = (await import('sharp')).default;
-        stickerBuf = await sharp(buf).resize(512, 512, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 90 }).toBuffer();
-      } catch {}
+        stickerBuf = await sharp(buf)
+          .resize(512, 512, {
+            fit: 'contain',
+            background: { r: 0, g: 0, b: 0, alpha: 0 }
+          })
+          .webp({ quality: 90 })
+          .toBuffer();
+      } catch (sharpErr) {
+        console.warn('[emojimix] sharp webp error:', sharpErr.message);
+      }
+
       await ctx.bot.sock.sendMessage(ctx.from, { sticker: stickerBuf }, { quoted: ctx.msg });
     } catch (e) {
-      await say(ctx, '😅 Could not mix emojis. Send two valid emojis.\nExample: *.emojimix 😀 😎*');
+      console.error('[emojimix] fatal:', e.message);
+      await say(ctx, '😅 Emoji mix sticker nahi ban saka. Dobara try karein!\nExample: *.emojimix 😀 😎*');
     }
   }),
   emix: 'emojimix',
@@ -333,8 +357,8 @@ async function onMessage(ctx) {
     if (!text || text.length > 100) return false;
     // Don't trigger on commands (messages starting with prefix)
     if (/^[!/.]/.test((ctx.text || '').trim())) return false;
-    // Dashboard control: per-group autoreply toggle (2026-10-14)
-    if (ctx.isGroup && !groupFeatureOn(ctx.from, 'autoreply', true)) return false;
+    // Dashboard control: per-group autoreply toggle (default false for groups)
+    if (ctx.isGroup && !groupFeatureOn(ctx.from, 'autoreply', false)) return false;
     const data = readData('batch8-autoreply.json', {});
     const replies = data[ctx.from] || [];
     for (const r of replies) {

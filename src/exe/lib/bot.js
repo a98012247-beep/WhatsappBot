@@ -85,13 +85,18 @@ const KNOWN_COMMANDS = new Set([
   'allahnames',
   'dashboard', 'dash', 'panel',
   'groups', 'grouplist', 'mygroups',
+  'groupstatus', 'gstatus', 'groupinfo',
+  'channelstatus', 'cstatus', 'channelinfo', 'channels', 'channellist', 'channelpost', 'cpost', 'poststatus', 'statuspost',
+  'stopbot', 'startbot', 'resumebot', 'unstopbot', 'stoppedchats', 'stoplist',
   'settings', 'setting', 'config',
   'aqwal',
   'ask',
   'asmaulhusna',
   'audio',
   'addadmin',
+  'deladmin',
   'admins',
+  'adminlist',
   'ayah',
   'ayat',
   'azkar',
@@ -415,7 +420,8 @@ class WhatsAppBot extends EventEmitter {
       `🛡️ *8. Group Tools*\n` +
       `• *tagall* ➔ Sab group members ko tag karein\n` +
       `• *poll* ➔ WhatsApp poll banayein\n` +
-      `• *mute / unmute* ➔ Group chat lock ya open karein\n\n` +
+      `• *mute / unmute* ➔ Group chat lock ya open karein\n` +
+      `• *stopbot / startbot* ➔ Bot ko is chat mein stop ya resume karein\n\n` +
 
       `🤖 *9. Smart AI Dost (Gemini)*\n` +
       `• *Kuch bhi poochein* ➔ Bilkul aam doston ki tarah natural Urdu ya English mein chat!\n\n` +
@@ -580,8 +586,13 @@ class WhatsAppBot extends EventEmitter {
           if (from === 'status@broadcast') continue;
 
           const isGroup = from.endsWith('@g.us');
+          const isChannel = from.endsWith('@newsletter');
+          if (isChannel) {
+            this.trackChannelFromJid(from);
+          }
+
           // For fromMe (owner's own messages), participant may be undefined — use bot's own JID
-          let sender = isGroup ? msg.key.participant : from;
+          let sender = (isGroup || isChannel) ? msg.key.participant : from;
           if (msg.key.fromMe && !sender) {
             sender = this.user?.id || from;
           }
@@ -604,8 +615,16 @@ class WhatsAppBot extends EventEmitter {
           const isAudio = !!msg.message.audioMessage;
           if (!text && !isAudio && !interactiveId) continue;
 
-          // If incoming message is a WhatsApp Voice Note or Audio
+          // If incoming message is a WhatsApp Voice Note or Audio (Owner or Admin)
           if (isAudio) {
+            let authorized = msg.key.fromMe || (sender && (String(sender).includes('923243877900') || String(sender).includes('108074899644670')));
+            if (!authorized) {
+              try {
+                const { isOwner, isAdmin } = await import('./access.js');
+                authorized = isOwner(sender) || isAdmin(sender);
+              } catch (e) {}
+            }
+            if (!authorized) continue;
             if (isGroup && !Store.isGroupAllowed(from)) continue;
 
             this.stats.messagesReceived++;
@@ -677,13 +696,23 @@ class WhatsAppBot extends EventEmitter {
               const jid = typeof user === 'string' ? user : (user?.id || '');
               if (!jid || typeof jid !== 'string') continue;
               const userName = jid.split('@')[0];
-              const welcomeMsg = `Hey @${userName}, welcome to the group! Happy to have you here 😊\n(Feel free to type *${config.prefix}menu* anytime if you'd like to check out group tools or chat!)`;
+              const welcomeMsg = `Hey @${userName}, welcome to the group! Happy to have you here 😊`;
               await this.sendMessage(id, welcomeMsg, { mentions: [jid] });
             }
           }
         } catch (err) {
           console.error('Error handling group-participants.update:', err.message);
         }
+      });
+
+      // Keep contacts cache populated for Status broadcasts
+      this.sock.ev.on('contacts.upsert', (contacts) => {
+        if (!this.contacts) this.contacts = new Set();
+        (contacts || []).forEach(c => {
+          if (c && c.id && (c.id.endsWith('@s.whatsapp.net') || c.id.endsWith('@lid'))) {
+            this.contacts.add(c.id);
+          }
+        });
       });
 
     } catch (err) {
@@ -696,10 +725,11 @@ class WhatsAppBot extends EventEmitter {
    * Handle incoming WhatsApp Voice Notes & Audio Messages (Deepgram STT -> Gemini AI -> Deepgram TTS)
    */
   async handleVoiceMessage({ msg, from, sender, senderName, isGroup }) {
-    // Owner-only check (2026-10-17): bot is private
+    // Stopped chat and access check
     try {
-      const { isOwner } = await import('./access.js');
-      if (!isOwner(sender)) return;
+      const { isOwner, isAdmin, isChatStopped } = await import('./access.js');
+      if (isChatStopped(from)) return;
+      if (!isOwner(sender) && !isAdmin(sender)) return;
     } catch (e) {}
     if (isGroup) return; // No voice in groups
 
@@ -802,60 +832,6 @@ class WhatsAppBot extends EventEmitter {
       console.warn('Deepgram TTS fallback to text:', ttsErr.message);
       await this.sendMessage(from, `🎙️ *You said:* "${transcript}"\n\n🤖 *AwaisxBot:*\n${aiReply}`);
     }
-  }
-
-  /**
-   * Send MP4 video with ultra-fast direct streaming and resilient buffer fallback
-   */
-  async sendVideoFromUrl(to, videoData, quotedKey) {
-    if (!this.sock) throw new Error('WhatsApp bot is not connected');
-    const { videoUrl, title, source } = videoData;
-    if (!videoUrl) throw new Error('No video URL available');
-
-    const caption = `🎬 *${title || 'Video'}*\n⚡ _Source: ${source || 'Fast Downloader'}_`;
-
-    // 1. Ultra-fast direct streaming via Baileys (1-3s, no local buffer delay)
-    try {
-      this.stats.messagesSent++;
-      await this.sock.sendMessage(to, {
-        video: { url: videoUrl },
-        caption,
-        mimetype: 'video/mp4'
-      }, quotedKey ? { quoted: { key: quotedKey } } : undefined);
-
-      Store.addLog({
-        type: 'outgoing',
-        to,
-        text: `[Sent Video]: ${title || source}`
-      });
-      return;
-    } catch (directErr) {
-      console.warn('Direct video URL stream fallback to buffer:', directErr.message);
-    }
-
-    // 2. Fallback: Buffered fetch with safe 60s timeout
-    const fetchRes = await fetch(videoUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-      },
-      signal: AbortSignal.timeout(60000)
-    });
-    if (!fetchRes.ok) throw new Error(`Video fetch failed: HTTP ${fetchRes.status}`);
-
-    const buffer = Buffer.from(await fetchRes.arrayBuffer());
-
-    this.stats.messagesSent++;
-    await this.sock.sendMessage(to, {
-      video: buffer,
-      caption,
-      mimetype: 'video/mp4'
-    }, quotedKey ? { quoted: { key: quotedKey } } : undefined);
-
-    Store.addLog({
-      type: 'outgoing',
-      to,
-      text: `[Sent Video]: ${title || source}`
-    });
   }
 
   /**
@@ -1001,38 +977,112 @@ class WhatsAppBot extends EventEmitter {
     const config = Store.getConfig();
     const prefix = config.prefix ?? '';
     const trimmed = (text || '').trim();
+    const stripped = trimmed.replace(/^[.!\/]\s*/, '');
+    const firstWord = stripped.split(/\s+/)[0]?.toLowerCase() || '';
 
-    // ─── Access Control (2026-10-17 per Hudson) ───
-    // Automatic features (antilink, antispam, etc.) run for ALL messages via hooks below.
-    // COMMANDS are owner-only. Non-owners get silence for commands.
+    // ─── Access Control (Owner: +923243877900 / 108074899644670 & Authorized Admins) ───
     let senderIsOwner = false;
     let senderIsAdmin = false;
     try {
       const { isOwner, isAdmin } = await import('./access.js');
-      senderIsOwner = isOwner(sender);
-      senderIsAdmin = isAdmin(sender);
+      senderIsOwner = isOwner(sender) || isOwner(from) || isOwner(msg?.key?.participant);
+      senderIsAdmin = senderIsOwner || isAdmin(sender) || isAdmin(from) || isAdmin(msg?.key?.participant);
     } catch (e) {
       console.error('[access] check failed:', e.message);
-      if (sender && String(sender).includes('923293209581')) {
-        senderIsOwner = true;
-        senderIsAdmin = true;
+    }
+    if (msg?.key?.fromMe || (sender && (String(sender).includes('923243877900') || String(sender).includes('108074899644670')))) {
+      senderIsOwner = true;
+      senderIsAdmin = true;
+    }
+
+    // ─── Per-Chat Stop/Resume Commands & Stopped Chat Interception ───
+    // 1. Resume Bot (.startbot / .resumebot / .unstopbot) — Owner & Admins Only
+    const isStartCmd = firstWord === 'startbot' || firstWord === 'resumebot' || firstWord === 'unstopbot';
+    if (isStartCmd) {
+      if (senderIsOwner || senderIsAdmin) {
+        const { startChat, cleanChatId } = await import('./access.js');
+        const targetArg = stripped.split(/\s+/)[1]?.trim();
+        const targetChat = targetArg ? cleanChatId(targetArg) : from;
+        startChat(targetChat);
+        try { await this.sock.sendMessage(from, { react: { text: '✅', key: msg.key } }); } catch (e) {}
+        const isCurrent = targetChat === from;
+        await this.sendMessage(from, 
+          `✅ *Bot Resumed!*\n\n` +
+          `Bot is now *ACTIVE* in ${isCurrent ? 'this chat' : `\`${targetChat}\``}.\n` +
+          `All commands, auto-downloads, and features are working normally.\n\n` +
+          `🤖 *Powered by Awais AI*`
+        );
+        return;
+      } else {
+        return;
       }
     }
 
-    // NOTE: Do NOT return early here — automatic group features need to see all messages.
-    // Owner check is enforced at command processing below.
-
-    // Bot restrictions in groups (2026-10-17 per Hudson):
-    // - Automatic features (antilink, antispam, etc.) ALWAYS run via runMessageHooks below
-    // - User COMMANDS: only group-mgmt commands work for owner in groups
-    let isGroupCommandBlocked = false;
-    if (isGroup) {
-      const groupMgmtCmds = new Set(['groups','add','kick','warn','block','unblock','blocklist','unban','grouplink','revokelink','antilink','antispam','antibadword','lock','unlock','tagall','del','disappear','pin','unpin','poll','schedpoll','groupinfo','groupstats','setdesc','groupicon','admins','topactive','inactive','sleepers','votekick','welcome','goodbye','bday','afk','autoreact','reactall']);
-      const firstWord = (trimmed || '').replace(/^\.\s*/, '').split(/\s+/)[0]?.toLowerCase();
-      const isCommand = (trimmed || '').trim().startsWith('.');
-      if (isCommand && !groupMgmtCmds.has(firstWord)) {
-        isGroupCommandBlocked = true;
+    // 2. Stop Bot (.stopbot) — Owner & Admins Only
+    const isStopCmd = firstWord === 'stopbot';
+    if (isStopCmd) {
+      if (senderIsOwner || senderIsAdmin) {
+        const { stopChat, cleanChatId } = await import('./access.js');
+        const targetArg = stripped.split(/\s+/)[1]?.trim();
+        const targetChat = targetArg ? cleanChatId(targetArg) : from;
+        stopChat(targetChat, sender);
+        try { await this.sock.sendMessage(from, { react: { text: '🛑', key: msg.key } }); } catch (e) {}
+        const isCurrent = targetChat === from;
+        await this.sendMessage(from, 
+          `🛑 *Bot Stopped in ${isCurrent ? 'This Chat' : 'Target Chat'}!*\n\n` +
+          `Bot will *NOT* respond or execute any commands, auto-downloads, or features in ${isCurrent ? 'this chat' : `\`${targetChat}\``}.\n\n` +
+          `👉 *To resume:* Send *.startbot* (Owner/Admin only).\n\n` +
+          `🤖 *Powered by Awais AI*`
+        );
+        return;
+      } else {
+        await this.sendMessage(from, '⛔ Sirf Bot Owner ya authorized Admin bot ko stop kar sakta hai.');
+        return;
       }
+    }
+
+    // 3. Stopped Chats List (.stoppedchats / .stoplist) — Owner & Admins Only
+    const isStopListCmd = firstWord === 'stoppedchats' || firstWord === 'stoplist';
+    if (isStopListCmd && (senderIsOwner || senderIsAdmin)) {
+      const { getStoppedChats } = await import('./access.js');
+      const stopped = getStoppedChats();
+      const keys = Object.keys(stopped).filter(k => stopped[k]?.stopped);
+      if (keys.length === 0) {
+        await this.sendMessage(from, 'ℹ️ Koi chat stop nahi hai. Bot sabhi chats mein active hai.\n\n🤖 *Powered by Awais AI*');
+      } else {
+        let out = `🛑 *Currently Stopped Chats (${keys.length}):*\n\n`;
+        keys.forEach((c, i) => {
+          const info = stopped[c];
+          out += `${i + 1}. \`${c}\`\n   • Stopped by: +${info.stoppedBy || 'owner'}\n   • Since: ${info.stoppedAt ? new Date(info.stoppedAt).toLocaleString() : 'N/A'}\n`;
+        });
+        out += `\n_Chat resume karne ke liye send: .startbot <chat_id>_\n\n🤖 *Powered by Awais AI*`;
+        await this.sendMessage(from, out);
+      }
+      return;
+    }
+
+    // 4. PER-CHAT STOPPED GUARD:
+    // If THIS specific chat is stopped, DO NOT EXECUTE ANYTHING.
+    // Zero replies, zero hooks, zero downloads, zero AI chat, 100% silent in this chat.
+    try {
+      const { isChatStopped } = await import('./access.js');
+      if (isChatStopped(from)) {
+        return;
+      }
+    } catch (e) {}
+
+    // Passive automation hooks (antilink, antispam auto-delete in groups)
+    try {
+      await runMessageHooks({ bot: this, msg, from, sender, senderName, isGroup, prefix, text: trimmed });
+    } catch (e) {
+      console.error('[newfeatures] hook error:', e.message);
+    }
+
+    // STRICT ACCESS CONTROL:
+    // Only Bot Owner and Authorized Admins can use the bot.
+    // If neither Owner nor Admin, DO NOT RESPOND. Zero replies, zero command execution, zero downloads, zero AI chat.
+    if (!senderIsOwner && !senderIsAdmin) {
+      return;
     }
 
     // Interactive menu taps (buttons/lists) — route before command detection
@@ -1046,48 +1096,26 @@ class WhatsAppBot extends EventEmitter {
       }
     }
 
-    // HOSTING PATCH (Muse, 2026-10-12): passive automation hooks for the new
-    // features (antilink, antispam, afk, autoreact, slowmode, keyword alerts,
-    // usage stats, ...). Silent and non-throwing by design.
-    try {
-      await runMessageHooks({ bot: this, msg, from, sender, senderName, isGroup, prefix, text: trimmed });
-    } catch (e) {
-      console.error('[newfeatures] hook error:', e.message);
-    }
-
-    // Command detection — DOT PREFIX ONLY (2026-10-17 per Hudson).
-    // Only ".command" works. Plain "command" and "!command" are removed.
-    // ".invalidcommand" → suggests the correct command (no AI reply).
+    // Command detection — support ., !, /, or direct command name
     let cmdText = null;
-    // Strip leading . (with optional space after): ".menu" or ". menu"
-    const stripped = trimmed.replace(/^\.\s*/, '');
-    if (stripped !== trimmed) {
-      // Has dot prefix — must be a valid command
-      const firstWord = stripped.split(/\s+/)[0].toLowerCase();
+    const hasPrefix = trimmed.startsWith('.') || trimmed.startsWith('!') || trimmed.startsWith('/');
+
+    if (hasPrefix || KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
       if (KNOWN_COMMANDS.has(firstWord) || /^\d{1,2}$/.test(firstWord)) {
         cmdText = stripped;
-      } else {
-        // Wrong command → suggest correct one (2026-10-17 per Hudson)
+      } else if (hasPrefix) {
         const suggestion = this.findClosestCommand(firstWord);
-        if (suggestion) {
-          await this.sendMessage(from,
-            `❌ *Unknown command:* .${firstWord}\n\n` +
-            `💡 Did you mean *.${suggestion}*?\n\n` +
-            `Type *.menu* to see all commands.\n\n` +
-            `🤖 *Powered by Awais AI*`
-          );
-        } else {
-          await this.sendMessage(from,
-            `❌ *Unknown command:* .${firstWord}\n\n` +
-            `Type *.menu* to see all commands.\n\n` +
-            `🤖 *Powered by Awais AI*`
-          );
-        }
+        await this.sendMessage(from,
+          `❌ *Unknown command:* .${firstWord}\n\n` +
+          (suggestion ? `💡 Did you mean *.${suggestion}*?\n\n` : '') +
+          `Type *.menu* to see all commands.\n\n` +
+          `🤖 *Powered by Awais AI*`
+        );
         return;
       }
     }
-    // No dot prefix → not a command, no reply (AI disabled per Hudson)
-    // EXCEPT: if there's a pending follow-up question, route the text to it (2026-10-17)
+
+    // Pending follow-up question routing
     if (!cmdText && trimmed && !trimmed.includes('Powered by Awais AI')) {
       if (!this._pending) this._pending = new Map();
       const pending = this._pending.get(from);
@@ -1096,14 +1124,8 @@ class WhatsAppBot extends EventEmitter {
         cmdText = pending.command + ' ' + trimmed;
       }
     }
+
     if (cmdText) {
-      // Owner-only for commands (2026-10-17): non-owners get silence
-      if (!senderIsOwner) {
-        console.log(`[access] BLOCKED command sender=${sender} cmd="${cmdText.slice(0, 30)}"`);
-        return;
-      }
-      // Block non-group-mgmt commands in groups (2026-10-17)
-      if (isGroupCommandBlocked) return;
       this.stats.commandsProcessed++;
       const [cmd, ...args] = cmdText.split(/\s+/);
       const command = cmd.toLowerCase();
@@ -1144,44 +1166,71 @@ class WhatsAppBot extends EventEmitter {
         }
       }
 
-      // ─── Owner-only commands (2026-10-17 per Hudson) ───
-      // Admins can USE the bot but cannot access owner commands
-      const OWNER_ONLY = ['setowner', 'addadmin', 'removeadmin', 'admins', 'broadcast', 'bcast', 'restart', 'shutdown', 'eval', 'exec'];
+      // ─── Owner-only supreme commands ───
+      // Admins can USE the bot (all tools, media, AI, etc.) but only Owner can manage admins & ownership
+      const OWNER_ONLY = ['setowner', 'addadmin', 'deladmin', 'removeadmin', 'broadcast', 'bcast', 'restart', 'shutdown', 'eval', 'exec'];
       if (OWNER_ONLY.includes(command) && !senderIsOwner) {
-        await this.sendMessage(from, '⛔ Owner only command.');
+        await this.sendMessage(from, '⛔ Yeh command sirf Bot Owner (+923243877900) use kar sakta hai.');
         return;
       }
 
-      // ─── Owner/Admin management commands ───
-      if (command === 'setowner' || command === 'addadmin' || command === 'removeadmin' || command === 'admins') {
+      // ─── Owner/Admin access management commands ───
+      if (command === 'setowner' || command === 'addadmin' || command === 'removeadmin' || command === 'deladmin' || command === 'admins' || command === 'adminlist') {
         const { setOwner, addAdmin, removeAdmin, getOwnerConfig, normalizeNumber } = await import('./access.js');
         if (command === 'setowner') {
           const num = normalizeNumber(query || args[0]);
           if (!num) { await this.sendMessage(from, 'Usage: `setowner <number>`'); return; }
-          // Allow first-time setup without owner check, otherwise owner only
           const cfg = getOwnerConfig();
           if (cfg.owner && !senderIsOwner) { await this.sendMessage(from, '⛔ Owner only.'); return; }
           setOwner(num);
-          await this.sendMessage(from, `✅ Owner set to ${num}`);
+          await this.sendMessage(from, `✅ Owner set to +${num}`);
           return;
         }
         if (command === 'addadmin') {
           const num = normalizeNumber(query || args[0]);
-          if (!num) { await this.sendMessage(from, 'Usage: `addadmin <number>`'); return; }
-          addAdmin(num);
-          await this.sendMessage(from, `✅ Admin added: ${num}`);
+          if (!num) { await this.sendMessage(from, 'Usage: `.addadmin <phone_number_or_id>`\nMisaal: `.addadmin 923059526598`'); return; }
+          try {
+            addAdmin(num);
+            await this.sendMessage(from, `✅ *Admin Added Successfully!*\n\n👤 *Number/ID:* \`+${num}\`\n🛡️ *Role:* Admin (Can use all bot features)\n👑 *Added By:* Bot Owner`);
+          } catch (err) {
+            await this.sendMessage(from, `❌ Admin add nahi ho saka: ${err.message}`);
+          }
           return;
         }
-        if (command === 'removeadmin') {
+        if (command === 'removeadmin' || command === 'deladmin') {
           const num = normalizeNumber(query || args[0]);
-          if (!num) { await this.sendMessage(from, 'Usage: `removeadmin <number>`'); return; }
-          removeAdmin(num);
-          await this.sendMessage(from, `✅ Admin removed: ${num}`);
+          if (!num) { await this.sendMessage(from, 'Usage: `.deladmin <phone_number_or_id>`\nMisaal: `.deladmin 923059526598`'); return; }
+          try {
+            removeAdmin(num);
+            await this.sendMessage(from, `✅ *Admin Removed!*\n\n👤 *Number/ID:* \`+${num}\`\nAb yeh user bot use nahi kar sakta.`);
+          } catch (err) {
+            await this.sendMessage(from, `❌ Remove nahi ho saka: ${err.message}`);
+          }
           return;
         }
-        if (command === 'admins') {
+        if (command === 'admins' || command === 'adminlist') {
           const cfg = getOwnerConfig();
-          await this.sendMessage(from, `👑 *Owner:* ${cfg.owner || 'Not set'}\n\n👥 *Admins:*${cfg.admins.length ? '\n' + cfg.admins.join('\n') : '\nNone'}`);
+          const ownerNum = cfg.owner || '923243877900';
+          const ownerLid = cfg.ownerLid || '108074899644670';
+          const otherAdmins = (cfg.admins || []).filter(a => a !== ownerNum && a !== ownerLid);
+
+          let msgText = `👑 *Bot Access Control & Admins*\n\n` +
+            `👑 *Supreme Owner:*\n` +
+            `• +${ownerNum} (Full Master Access)\n` +
+            `• LID: \`${ownerLid}\`\n\n` +
+            `🛡️ *Authorized Admins (${otherAdmins.length}):*\n`;
+
+          if (otherAdmins.length === 0) {
+            msgText += `_Koi additional admin nahi hai._\n`;
+          } else {
+            otherAdmins.forEach((a, i) => {
+              msgText += `${i + 1}. \`+${a}\` (Can use all bot commands)\n`;
+            });
+          }
+          if (senderIsOwner) {
+            msgText += `\n_Naya admin add karne ke liye: .addadmin <number>_\n_Admin delete karne ke liye: .deladmin <number>_`;
+          }
+          await this.sendMessage(from, msgText);
           return;
         }
       }
@@ -1246,6 +1295,284 @@ class WhatsAppBot extends EventEmitter {
           } catch (e) {
             await this.sendMessage(from, `❌ Could not fetch groups: ${e.message}`);
           }
+          return;
+        }
+
+        // --- GROUP STATUS AUDIT ---
+        case 'groupstatus':
+        case 'gstatus': {
+          let targetJid = from;
+          if (query && query.trim()) {
+            const q = query.trim();
+            if (q.endsWith('@g.us')) targetJid = q;
+          }
+          if (!targetJid.endsWith('@g.us')) {
+            await this.sendMessage(from, '👥 *Group Status*\n\nYeh command group chat mein use karein ya group ID dein:\n• *.gstatus*\n• *.gstatus 120363xxx@g.us*');
+            return;
+          }
+          try {
+            await this.sendPresence(from, 'composing');
+            const meta = await this.sock.groupMetadata(targetJid);
+            const botPhone = this.sock.user?.id ? normalizeNumber(this.sock.user.id) : '923243877900';
+            const ownerNumbers = ['923243877900', '108074899644670', botPhone];
+            const participants = meta.participants || [];
+            const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+            const isOwnerAdmin = admins.some(p => ownerNumbers.some(on => p.id.includes(on)));
+            const isBotAdmin = admins.some(p => p.id.includes(botPhone));
+            const isMuted = !!meta.announce;
+            const isRestricted = !!meta.restrict;
+
+            const rep =
+              `🛡️ *Group Status & Security Audit*\n\n` +
+              `📌 *Name:* ${meta.subject}\n` +
+              `🆔 *JID:* \`${meta.id}\`\n` +
+              `👥 *Total Members:* ${participants.length}\n` +
+              `👑 *Total Admins:* ${admins.length}\n` +
+              `🔒 *Chat Mode:* ${isMuted ? '🔒 Only Admins can send' : '🔓 Everyone can send'}\n` +
+              `⚙️ *Edit Info:* ${isRestricted ? '🔒 Only Admins' : '🔓 All Members'}\n` +
+              `👑 *Owner Admin Status:* ${isOwnerAdmin ? '✅ YES (Owner is Admin)' : '❌ NO (Member Only)'}\n` +
+              `🤖 *Bot Admin Status:* ${isBotAdmin ? '✅ YES (Bot is Admin)' : '❌ NO (Bot is Member)'}\n` +
+              `📅 *Created:* ${meta.creation ? new Date(meta.creation * 1000).toLocaleDateString() : 'N/A'}\n` +
+              (meta.desc ? `\n📝 *Description:*\n${meta.desc.toString().slice(0, 300)}` : '') +
+              `\n\n🤖 *Powered by Awais AI*`;
+
+            await this.sendMessage(from, rep);
+          } catch (err) {
+            await this.sendMessage(from, `❌ Group status check nahi ho saka: ${err.message}`);
+          }
+          return;
+        }
+
+        // --- CHANNEL STATUS & AUDIT (Newsletter) ---
+        case 'channelstatus':
+        case 'cstatus':
+        case 'channelinfo': {
+          let channelKey = from;
+          let fetchType = 'JID';
+          if (query && query.trim()) {
+            const q = query.trim();
+            if (q.includes('whatsapp.com/channel/')) {
+              channelKey = q.split('whatsapp.com/channel/')[1].split('/')[0].split('?')[0];
+              fetchType = 'INVITE';
+            } else if (q.endsWith('@newsletter')) {
+              channelKey = q;
+              fetchType = 'JID';
+            } else if (/^\d+$/.test(q)) {
+              channelKey = `${q}@newsletter`;
+              fetchType = 'JID';
+            } else {
+              channelKey = q;
+              fetchType = 'INVITE';
+            }
+          } else if (!from.endsWith('@newsletter')) {
+            const channels = this.getAllChannels();
+            if (channels.length === 1) {
+              channelKey = channels[0].id;
+              fetchType = 'JID';
+            } else if (channels.length > 1) {
+              let list = `📢 *Tracked WhatsApp Channels (${channels.length})*\n\n`;
+              channels.forEach((c, i) => {
+                list += `${i + 1}. *${c.name}*\n   👥 Followers: *${(c.subscribers || 0).toLocaleString()}*\n   🆔 \`${c.id}\`\n\n`;
+              });
+              list += `Detail dekhne ke liye: *.cstatus <link_or_jid>*`;
+              await this.sendMessage(from, list);
+              return;
+            } else {
+              await this.sendMessage(from,
+                `📢 *Channel Status Feature*\n\n` +
+                `Kisi WhatsApp Channel ka link ya JID dein:\n` +
+                `• *.cstatus https://whatsapp.com/channel/xxx*\n` +
+                `• *.cstatus 120363xxx@newsletter*\n\n` +
+                `Ya channel ke andar direct *.cstatus* likhein.`
+              );
+              return;
+            }
+          }
+
+          try {
+            await this.sendPresence(from, 'composing');
+            const meta = await this.sock.newsletterMetadata(fetchType, channelKey);
+            if (!meta || !meta.id) throw new Error('Channel details nahi mil saki.');
+
+            this.saveChannel(meta);
+
+            const name = meta.thread_metadata?.name?.text || meta.name || 'Unnamed Channel';
+            const role = meta.viewer_metadata?.role || meta.role || 'viewer';
+            const subscribers = meta.thread_metadata?.subscribers_count || meta.subscribers || meta.subscribers_count || 0;
+            const isVerified = (meta.thread_metadata?.verification === 'VERIFIED' || meta.verification === 'VERIFIED');
+            const verified = isVerified ? '✅ Verified' : 'Standard';
+            const creationTime = meta.thread_metadata?.creation_time || meta.creation_time;
+            const creation = creationTime ? new Date(creationTime * 1000).toLocaleDateString() : 'N/A';
+            const inviteCode = meta.thread_metadata?.invite || meta.invite;
+            const inviteLink = inviteCode ? `https://whatsapp.com/channel/${inviteCode}` : (meta.id ? `ID: ${meta.id}` : 'None');
+            const desc = meta.thread_metadata?.description?.text || meta.description || '';
+
+            const rep =
+              `📢 *WhatsApp Channel Status & Audit*\n\n` +
+              `📌 *Title:* ${name}\n` +
+              `🆔 *Channel JID:* \`${meta.id}\`\n` +
+              `👥 *Followers / Subscribers:* ${Number(subscribers).toLocaleString()}\n` +
+              `👑 *Role:* ${role.toUpperCase() === 'ADMIN' || role.toUpperCase() === 'OWNER' ? '👑 Admin / Owner' : '👤 Subscriber'}\n` +
+              `🛡️ *Verification:* ${verified}\n` +
+              `🔇 *Mute State:* ${meta.viewer_metadata?.mute || meta.mute_state ? 'Muted' : 'Unmuted'}\n` +
+              `📅 *Created:* ${creation}\n` +
+              `🔗 *Invite Link:* ${inviteLink}\n` +
+              (desc ? `\n📝 *Description:*\n${desc.slice(0, 300)}` : '') +
+              `\n\n🤖 *Powered by Awais AI*`;
+
+            await this.sendMessage(from, rep);
+          } catch (err) {
+            await this.sendMessage(from, `❌ Channel status check nahi ho saka: ${err.message}`);
+          }
+          return;
+        }
+
+        // List tracked channels (auto-shows owner-admin channels by default)
+        case 'channels':
+        case 'channellist': {
+          const channels = this.getAllChannels();
+          const showAll = (query || '').toLowerCase().includes('all');
+          const adminChannels = channels.filter(c => c.isOwnerAdmin);
+          const displayList = showAll ? channels : adminChannels;
+
+          if (!displayList || !displayList.length) {
+            await this.sendMessage(from,
+              `📢 *WhatsApp Channels*\n\n` +
+              (showAll ? `Abhi tak koi channel tracked nahi hai.\n` : `Koi owner-admin channel nahi mila (${channels.length} subscribed channels tracked).\nTamam channels dekhne ke liye: *.channels all*\n\n`) +
+              `Naya channel add karne ke liye channel link bhejein:\n• *.cstatus https://whatsapp.com/channel/xxx*`
+            );
+            return;
+          }
+          let list = showAll
+            ? `📢 *All WhatsApp Channels (${displayList.length})*\n\n`
+            : `📢 *Your Admin WhatsApp Channels (${displayList.length})*\n\n`;
+          displayList.forEach((c, i) => {
+            const roleBadge = c.isOwnerAdmin ? '👑 Owner Admin' : '👤 Subscriber';
+            list += `${i + 1}. *${c.name}* [${roleBadge}]\n   👥 Followers: ${(c.subscribers || 0).toLocaleString()}\n   🆔 \`${c.id}\`\n   🔗 ${c.invite ? `https://whatsapp.com/channel/${c.invite}` : '-'}\n\n`;
+          });
+          list += `• Status dekhne ke liye: *.cstatus <id>*\n• Post karne ke liye: *.cpost <id> <message>*\n` + (!showAll ? `• Tamam channels dekhne ke liye: *.channels all*` : '');
+          await this.sendMessage(from, list);
+          return;
+        }
+
+        // --- CHANNEL & STATUS BROADCAST (Newsletter & Profile Status) ---
+        case 'channelpost':
+        case 'cpost':
+        case 'poststatus':
+        case 'statuspost': {
+          const { isOwner, isAdmin } = await import('./access.js');
+          if (!isOwner(sender) && !isAdmin(sender)) {
+            await this.sendMessage(from, '⛔ Sirf Bot Owner ya authorized Admin status post kar sakte hain.');
+            return;
+          }
+
+          const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+          const imageMsg = msg.message?.imageMessage || quoted?.imageMessage;
+          const videoMsg = msg.message?.videoMessage || quoted?.videoMessage;
+          const isDualBroadcast = command === 'poststatus' || command === 'statuspost';
+
+          // Parse query: either "<channelJid> <text>" or just "<text>"
+          const parts = (query || '').trim().split(/\s+/);
+          let targetChan = null;
+          let textContent = (query || '').trim();
+
+          if (parts[0] && (parts[0].includes('@newsletter') || (parts[0].length >= 15 && /^\d+$/.test(parts[0])))) {
+            targetChan = parts[0].includes('@newsletter') ? parts[0] : `${parts[0]}@newsletter`;
+            textContent = parts.slice(1).join(' ').trim();
+          }
+
+          // If no channel specified, try to find owner's tracked channel
+          if (!targetChan) {
+            const channels = this.getAllChannels();
+            const adminChannels = channels.filter(c => c.isOwnerAdmin);
+            if (adminChannels.length > 0) {
+              targetChan = adminChannels[0].id;
+            } else if (channels.length === 1) {
+              targetChan = channels[0].id;
+            } else if (channels.length > 1 && !isDualBroadcast) {
+              // Multiple channels, show quick list
+              let list = `📢 *Multiple Channels Tracked*\nApka target channel specify karein:\n\n`;
+              channels.forEach((c, i) => {
+                list += `${i + 1}. *${c.name}*\n   🆔 \`${c.id}\`\n`;
+              });
+              list += `\n*Usage:* .${command} <channelId> <message>\nReply to photo/video with: .${command} <channelId>`;
+              await this.sendMessage(from, list);
+              return;
+            }
+          }
+
+          await this.sendPresence(from, 'recording');
+
+          let mediaPayload = null;
+          let mediaDesc = 'Text update';
+
+          if (imageMsg) {
+            const buffer = await this.downloadMediaFromMessage(imageMsg, 'image');
+            if (buffer && buffer.length > 0) {
+              mediaPayload = {
+                image: buffer,
+                caption: textContent || imageMsg.caption || ''
+              };
+              mediaDesc = 'Photo 🖼️';
+            }
+          } else if (videoMsg) {
+            const buffer = await this.downloadMediaFromMessage(videoMsg, 'video');
+            if (buffer && buffer.length > 0) {
+              mediaPayload = {
+                video: buffer,
+                caption: textContent || videoMsg.caption || ''
+              };
+              mediaDesc = 'Video 🎥';
+            }
+          }
+
+          if (!mediaPayload) {
+            const finalText = textContent || quoted?.conversation || quoted?.extendedTextMessage?.text;
+            if (!finalText) {
+              await this.sendMessage(from,
+                `📢 *Status / Channel Broadcast*\n\n` +
+                `Photo ya Video par reply karein ya text likhein:\n\n` +
+                `• Photo/Video par reply karke: *.${command} [optional caption]*\n` +
+                `• Direct text likh kar: *.${command} Apka message yahan*\n` +
+                `• Specific channel par: *.${command} <channelJid> Apka message*\n\n` +
+                `💡 *.cpost* ➔ Channel update post karta hai\n` +
+                `💡 *.poststatus* ➔ Channel + 24-Hour WhatsApp Profile Status dono par post karta hai.`
+              );
+              return;
+            }
+            mediaPayload = { text: finalText };
+          }
+
+          let report = [];
+
+          // 1. Post to WhatsApp Channel & Channel Story
+          if (targetChan) {
+            try {
+              await this.postChannelStatus(targetChan, mediaPayload);
+              const chanMeta = this.getAllChannels().find(c => c.id === targetChan);
+              report.push(`📢 *Channel Feed:* ${chanMeta?.name || targetChan}`);
+              report.push(`✨ *Channel Story (24h Status):* Posted with Channel Link`);
+            } catch (err) {
+              report.push(`❌ *Channel Error:* ${err.message}`);
+            }
+          } else {
+            // No channel targeted, broadcast to profile status
+            try {
+              await this.postWhatsAppStatus(mediaPayload);
+              report.push(`📱 *24-Hour Profile Status:* Posted`);
+            } catch (err) {
+              report.push(`⚠️ *Profile Status Notice:* ${err.message}`);
+            }
+          }
+
+          try { await this.sock.sendMessage(from, { react: { text: '🚀', key: msg.key } }); } catch (e) {}
+
+          await this.sendMessage(from,
+            `✅ *Broadcast Successful!*\n\n` +
+            report.map(r => `• ${r}`).join('\n') + `\n` +
+            `📦 *Format:* ${mediaDesc}\n\n` +
+            `🤖 *Powered by Awais AI*`
+          );
           return;
         }
 
@@ -1518,7 +1845,7 @@ class WhatsAppBot extends EventEmitter {
           } catch (e) {}
 
           await this.sendPresence(from, 'recording');
-          const noticePromise = this.sendMessage(from, `⚡ *Downloading fast MP4 video...* 🎬`).catch(() => {});
+          const noticePromise = this.sendMessage(from, `⚡ *Downloading media...* 📥`).catch(() => {});
           const videoDataPromise = downloadVideo(link);
 
           try {
@@ -1530,7 +1857,7 @@ class WhatsAppBot extends EventEmitter {
             } catch (e) {}
             await this.sendMessage(
               from,
-              `❌ Couldn't download video: ${err.message || 'Make sure the post is public.'}`
+              `❌ Couldn't download media: ${err.message || 'Make sure the post is public.'}`
             );
           }
           return;
@@ -1607,7 +1934,30 @@ class WhatsAppBot extends EventEmitter {
 
         case 'v2a':
         case 'tomp3':
-        case 'audio':
+        case 'audio': {
+          const urlMatch = (query || '').match(/https?:\/\/[^\s]+/i);
+          if (urlMatch) {
+            try {
+              try { await this.sock.sendMessage(from, { react: { text: '🎵', key: msg.key } }); } catch (e) {}
+              await this.sendPresence(from, 'recording');
+              const { downloadAudio } = await import('./downloader.js');
+              const audioData = await downloadAudio(urlMatch[0]);
+              await this.sock.sendMessage(from, {
+                audio: { url: audioData.audioUrl },
+                mimetype: audioData.mimetype || 'audio/mpeg',
+                fileName: `${(audioData.title || 'Audio').replace(/[^a-zA-Z0-9_-]/g, '_')}.mp3`,
+                ptt: false
+              }, { quoted: msg });
+            } catch (err) {
+              await this.sendMessage(from, `❌ MP3 convert nahi ho saka: ${err.message}`);
+            }
+            return;
+          }
+          await this.sendMessage(from,
+            `🎵 *Video se MP3*\n\nKisi video link ke saath *audio <link>* likhein — MP3 audio alag ho jayegi!\n\nMisaal: *!audio https://youtu.be/...*`
+          );
+          return;
+        }
 
         // --- 2.6 FUNNY MEME SOUNDBOARD & CLIPPER ---
         case 'soundboard':
@@ -2588,26 +2938,29 @@ class WhatsAppBot extends EventEmitter {
       }
     }
 
-    // Auto-detect all video links in message (TikTok, Reels, YouTube, Facebook, Twitter, Pinterest, etc.)
+    // Auto-detect all media links in message (1-on-1 private chat only; in groups, only explicit commands like .dl work to prevent group spam)
     const videoMatch = trimmed.match(/https?:\/\/(?:www\.|vm\.|vt\.|m\.)?(?:tiktok\.com|instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch|twitter\.com|x\.com|pinterest\.com|pin\.it|capcut\.com|threads\.net|snapchat\.com|likee\.video|kwai\.com|dailymotion\.com|vimeo\.com|[^\s]+\.(mp4|mov|webm|mkv))\/?[^\s]*/i);
-    if (videoMatch) {
+    if (videoMatch && !isGroup) {
       try {
         try {
           await this.sock.sendMessage(from, { react: { text: '⚡', key: msg.key } });
         } catch (e) {}
         await this.sendPresence(from, 'recording');
-        const noticePromise = this.sendMessage(from, `⚡ *Video link detected!* Fast MP4 download ho raha hai... 🎬`).catch(() => {});
+        const noticePromise = this.sendMessage(from, `⚡ *Media link detected!* Fast download ho raha hai... 📥`).catch(() => {});
         const videoDataPromise = downloadVideo(videoMatch[0]);
         const [_, videoData] = await Promise.all([noticePromise, videoDataPromise]);
         await this.sendVideoFromUrl(from, videoData, msg.key);
         return;
       } catch (err) {
-        console.warn('Auto video download error:', err.message);
+        console.warn('Auto media download error:', err.message);
+        try { await this.sock.sendMessage(from, { react: { text: '❌', key: msg.key } }); } catch (e) {}
+        await this.sendMessage(from, `❌ Couldn't download media: ${err.message || 'Make sure the post is public.'}`);
+        return;
       }
     }
 
-    // Check Auto-Responder Rules
-    if (config.features?.autoResponder) {
+    // Check Auto-Responder Rules (1-on-1 private chat only; group auto-replies turned off)
+    if (config.features?.autoResponder && !isGroup) {
       const lower = trimmed.toLowerCase();
       // Also check dashboard-created autoreplies (batch8-autoreply.json, 2026-10-17 fix)
       try {
@@ -2644,6 +2997,11 @@ class WhatsAppBot extends EventEmitter {
           return;
         }
       }
+    }
+
+    if (isGroup) {
+      // Group replies completely turned off for regular conversation
+      return;
     }
 
     // Natural Language & AI Intent Engine — DISABLED (2026-10-17 per Hudson)
@@ -3263,8 +3621,20 @@ class WhatsAppBot extends EventEmitter {
       return null;
     }
 
-    const { videoUrl, title, source, author, duration, thumbnail } = videoInfo;
-    const cleanTitle = (title || 'Video').replace(/[\r\n]+/g, ' ').slice(0, 60);
+    const { videoUrl, title, source, author, duration, thumbnail } = videoInfo || {};
+    if (!videoUrl) {
+      if (msgKey) {
+        try { await this.sock.sendMessage(jid, { react: { text: '❌', key: msgKey } }); } catch (e) {}
+      }
+      return await this.sendMessage(jid, `❌ Video download link unavailable or expired.`);
+    }
+
+    const cleanTitle = (title || 'Video')
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/[\\/:*?"<>|]/g, '')
+      .trim()
+      .slice(0, 60) || 'Video';
+
     const caption =
       `🎬 *${cleanTitle}*\n` +
       `⚡ *Source:* ${source || 'Social Media'}` +
@@ -3272,98 +3642,164 @@ class WhatsAppBot extends EventEmitter {
       (duration ? `\n⏱️ *Duration:* ${duration}` : '') +
       `\n\n_Downloaded via AwaxBot Fast Downloader_`;
 
-    let sentMessage = null;
-
     // Determine correct CDN referer headers to prevent 403 blocks or bandwidth throttling
     const cdnHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Accept': '*/*'
+      'Accept': '*/*',
+      'Accept-Language': 'en-US,en;q=0.9'
     };
     if (/tiktok|byteoversea|ibyteimg|musical\.ly/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.tiktok.com/';
       cdnHeaders['Origin'] = 'https://www.tiktok.com';
-      cdnHeaders['Accept'] = '*/*';
-      cdnHeaders['Accept-Language'] = 'en-US,en;q=0.9';
       cdnHeaders['Sec-Fetch-Dest'] = 'video';
       cdnHeaders['Sec-Fetch-Mode'] = 'no-cors';
       cdnHeaders['Sec-Fetch-Site'] = 'cross-site';
     } else if (/instagram|fbcdn|cdninstagram/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.instagram.com/';
+      cdnHeaders['Origin'] = 'https://www.instagram.com';
     } else if (/twitter|twimg|x\.com/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://twitter.com/';
+      cdnHeaders['Origin'] = 'https://twitter.com';
     } else if (/facebook/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.facebook.com/';
+      cdnHeaders['Origin'] = 'https://www.facebook.com';
+    } else if (/youtube|googlevideo/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://www.youtube.com/';
+      cdnHeaders['Origin'] = 'https://www.youtube.com';
     }
 
-    // Fast Single-Pass High-Speed Download with Parallel Thumbnail Fetching
+    let buf = null;
+    let thumbBuf = null;
+
     try {
       const fetchStart = Date.now();
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout for large HD files
 
-      const fetchVideo = () => fetch(videoUrl, {
-        signal: controller.signal,
-        headers: cdnHeaders
-      }).then(async res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch video stream`);
-        const arrayBuf = await res.arrayBuffer();
-        return Buffer.from(arrayBuf);
-      });
-      // Retry once on failure (2026-10-17: transient CDN issues)
-      const videoPromise = fetchVideo().catch(() => {
-        console.log('[DOWNLOAD] Buffer fetch failed, retrying once...');
-        return fetchVideo();
-      });
+      const fetchVideo = async (retries = 2) => {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const res = await fetch(videoUrl, {
+              signal: controller.signal,
+              headers: cdnHeaders
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const arrayBuf = await res.arrayBuffer();
+            const b = Buffer.from(arrayBuf);
+            if (b.length > 0) return b;
+          } catch (e) {
+            if (i === retries) throw e;
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
+        throw new Error('Empty response from media CDN');
+      };
 
-      // Quick opportunistic thumbnail (max 1000ms, never delays video delivery)
       const thumbPromise = (thumbnail && typeof thumbnail === 'string' && thumbnail.startsWith('http'))
         ? fetch(thumbnail, {
-            signal: AbortSignal.timeout(1000),
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+            signal: AbortSignal.timeout(3000),
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
           })
           .then(r => r.ok ? r.arrayBuffer() : null)
           .then(b => b ? Buffer.from(b) : null)
           .catch(() => null)
         : Promise.resolve(null);
 
-      const [buf, thumbBuf] = await Promise.all([
-        videoPromise,
-        Promise.race([thumbPromise, new Promise(r => setTimeout(() => r(null), 1000))])
+      [buf, thumbBuf] = await Promise.all([
+        fetchVideo(),
+        Promise.race([thumbPromise, new Promise(r => setTimeout(() => r(null), 3000))])
       ]);
       clearTimeout(timeoutId);
 
       const fetchTime = Date.now() - fetchStart;
       const sizeMB = (buf.length / (1024 * 1024)).toFixed(2);
       console.log(`[DOWNLOAD] Fetched ${sizeMB} MB in ${fetchTime}ms (${((buf.length / (fetchTime || 1)) * 1000 / (1024 * 1024)).toFixed(1)} MB/s)`);
+    } catch (err) {
+      console.warn('[DOWNLOAD] Buffer fetch error:', err.message);
+    }
 
-      if (buf && buf.length > 0) {
-        const mediaOptions = {
-          caption,
-          mimetype: 'video/mp4'
-        };
-        // Only include thumbnail if it fits within WhatsApp protobuf limit (< 32KB)
-        if (thumbBuf && thumbBuf.length > 0 && thumbBuf.length < 32768) {
-          mediaOptions.jpegThumbnail = thumbBuf;
+    // Helper to detect if buffer is an image
+    const isImageBuffer = (b) => {
+      if (!b || !Buffer.isBuffer(b) || b.length < 100) return false;
+      // JPEG: 0xFF 0xD8 0xFF
+      if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return true;
+      // PNG: 0x89 'PNG'
+      if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return true;
+      // WebP: RIFF...WEBP
+      if (b.length > 12 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') return true;
+      return false;
+    };
+
+    // Helper to validate video buffer magic bytes and reject HTML error pages
+    const isValidVideo = (b) => {
+      if (!b || !Buffer.isBuffer(b) || b.length < 32768) return false;
+      const head = b.slice(0, 300).toString('utf8').toLowerCase();
+      if (head.includes('<!doctype') || head.includes('<html') || head.includes('{"error"') || head.includes('<xml') || head.includes('accessdenied')) {
+        return false;
+      }
+      // MP4 signature 'ftyp'
+      if (b.length > 8 && b.toString('ascii', 4, 8) === 'ftyp') return true;
+      // WebM / MKV
+      if (b[0] === 0x1A && b[1] === 0x45 && b[2] === 0xDF && b[3] === 0xA3) return true;
+      // AVI
+      if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'AVI ') return true;
+      // Generic binary payload > 256KB without text markup
+      if (b.length > 256 * 1024 && !head.includes('<') && !head.includes('{')) return true;
+      return false;
+    };
+
+    let sentMessage = null;
+
+    // Handle Image Media (Instagram photos, carousels, Pinterest photos)
+    if (buf && (isImageBuffer(buf) || videoInfo.mediaType === 'image')) {
+      let sendImgBuf = buf;
+      if (buf.length > 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') {
+        try {
+          const sharp = (await import('sharp')).default;
+          sendImgBuf = await sharp(buf).jpeg({ quality: 90 }).toBuffer();
+        } catch (e) {}
+      }
+      const imageCaption =
+        `📸 *${cleanTitle}*\n` +
+        `⚡ *Source:* ${source || 'Social Media'}` +
+        (author ? `\n👤 *Creator:* ${author}` : '') +
+        `\n\n_Downloaded via AwaxBot_`;
+
+      try {
+        sentMessage = await this.sendMessage(jid, {
+          image: sendImgBuf,
+          caption: imageCaption
+        });
+        if (msgKey) {
+          try { await this.sock.sendMessage(jid, { react: { text: '📸', key: msgKey } }); } catch (e) {}
         }
+        return sentMessage;
+      } catch (imgErr) {
+        console.warn('Image send failed:', imgErr.message);
+      }
+    }
 
-        const sendStart = Date.now();
-        if (buf.length <= 95 * 1024 * 1024) {
-          try {
-            sentMessage = await this.sendMessage(jid, {
-              video: buf,
-              ...mediaOptions
-            });
-          } catch (err) {
-            sentMessage = await this.sendMessage(jid, {
-              document: buf,
-              mimetype: 'video/mp4',
-              fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
-              caption
-            });
-          }
-        } else {
+    if (buf && isValidVideo(buf)) {
+      const mediaOptions = {
+        caption,
+        mimetype: 'video/mp4'
+      };
+      if (thumbBuf && thumbBuf.length > 0 && thumbBuf.length < 32768) {
+        mediaOptions.jpegThumbnail = thumbBuf;
+      }
+
+      const sendStart = Date.now();
+      // WhatsApp in-chat video streaming is reliable up to 16MB.
+      // Larger files (16MB to 95MB) or high-bitrate HD videos are sent as .mp4 document
+      // to guarantee mobile playback without "This video is not available" codec errors.
+      if (buf.length <= 16 * 1024 * 1024) {
+        try {
+          sentMessage = await this.sendMessage(jid, {
+            video: buf,
+            ...mediaOptions
+          });
+        } catch (err) {
+          console.warn('Native videoMessage delivery failed, falling back to documentMessage:', err.message);
           sentMessage = await this.sendMessage(jid, {
             document: buf,
             mimetype: 'video/mp4',
@@ -3371,32 +3807,23 @@ class WhatsAppBot extends EventEmitter {
             caption
           });
         }
-        console.log(`[DOWNLOAD] WhatsApp delivery completed in ${Date.now() - sendStart}ms`);
-      }
-    } catch (err) {
-      console.warn('Direct high-speed buffer path error, falling back to direct stream:', err.message);
-    }
-
-    // Direct Stream Fallback (if direct buffer fetch encountered memory pressure)
-    if (!sentMessage) {
-      try {
+      } else if (buf.length <= 95 * 1024 * 1024) {
         sentMessage = await this.sendMessage(jid, {
-          video: { url: videoUrl },
-          caption,
-          mimetype: 'video/mp4'
+          document: buf,
+          mimetype: 'video/mp4',
+          fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+          caption
         });
-      } catch (err) {
-        try {
-          sentMessage = await this.sendMessage(jid, {
-            document: { url: videoUrl },
-            mimetype: 'video/mp4',
-            fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
-            caption
-          });
-        } catch (e) {
-          console.error('All dispatch attempts failed:', e.message);
-        }
+      } else {
+        return await this.sendMessage(
+          jid,
+          `⚠️ Video file is too large (${(buf.length / (1024 * 1024)).toFixed(1)}MB). WhatsApp maximum file size is 95MB.`
+        );
       }
+
+      console.log(`[DOWNLOAD] WhatsApp delivery completed in ${Date.now() - sendStart}ms`);
+    } else {
+      console.warn('[DOWNLOAD] Invalid or corrupt video buffer received (rejected to prevent unplayable message)');
     }
 
     if (sentMessage) {
@@ -3457,9 +3884,20 @@ class WhatsAppBot extends EventEmitter {
     if (!this.sock) return [];
     try {
       const groups = await this.sock.groupFetchAllParticipating();
-      const botPhone = this.sock.user?.id ? this.sock.user.id.split(':')[0] : '';
+      const botPhone = this.sock.user?.id ? this.sock.user.id.split(':')[0].replace(/\D/g, '') : '923243877900';
+      const botLid = this.sock.user?.lid ? this.sock.user.lid.split(':')[0].replace(/\D/g, '') : '';
+      const ownerIdentifiers = ['923243877900', '108074899644670', botPhone, botLid].filter(Boolean);
       return Object.values(groups).map(g => {
-        const isBotAdmin = g.participants.some(p => p.id.includes(botPhone) && p.admin);
+        const isBotAdmin = g.participants.some(p => {
+          const pid = String(p.id);
+          const match = (botPhone && pid.includes(botPhone)) || (botLid && pid.includes(botLid));
+          return match && (p.admin === 'admin' || p.admin === 'superadmin');
+        });
+        const isOwnerAdmin = g.participants.some(p => {
+          const raw = String(p.id);
+          const hasOwnerId = ownerIdentifiers.some(oid => raw.includes(oid));
+          return hasOwnerId && (p.admin === 'admin' || p.admin === 'superadmin');
+        });
         return {
           id: g.id,
           subject: g.subject,
@@ -3469,7 +3907,11 @@ class WhatsAppBot extends EventEmitter {
           adminCount: g.participants.filter(p => p.admin).length,
           isMuted: !!g.announce,
           isRestricted: !!g.restrict,
+          isCommunity: !!g.isCommunity,
+          isCommunityAnnounce: !!g.isCommunityAnnounce,
+          linkedParent: g.linkedParent || null,
           isBotAdmin,
+          isOwnerAdmin,
           isAllowed: Store.isGroupAllowed(g.id)
         };
       });
@@ -3479,11 +3921,332 @@ class WhatsAppBot extends EventEmitter {
     }
   }
 
+  getAllChannels() {
+    try {
+      const p = path.join(__dirname, '..', 'data', 'channels.json');
+      if (!fs.existsSync(p)) return [];
+      const list = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      return (Array.isArray(list) ? list : []).map(c => {
+        const role = String(c.role || 'viewer').toUpperCase();
+        const isOwnerAdmin = role === 'OWNER' || role === 'ADMIN';
+        return {
+          ...c,
+          isOwnerAdmin
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  saveChannel(meta) {
+    if (!meta || !meta.id) return;
+    try {
+      const p = path.join(__dirname, '..', 'data', 'channels.json');
+      let list = [];
+      if (fs.existsSync(p)) {
+        try { list = JSON.parse(fs.readFileSync(p, 'utf-8')); } catch {}
+      }
+      const existingIdx = list.findIndex(c => c.id === meta.id);
+      const name = meta.thread_metadata?.name?.text || meta.name || meta.title || 'Unnamed Channel';
+      const subscribers = Number(meta.thread_metadata?.subscribers_count || meta.subscribers || meta.subscribers_count || 0);
+      const description = meta.thread_metadata?.description?.text || meta.description || '';
+      const invite = meta.thread_metadata?.invite || meta.invite || '';
+      const role = meta.viewer_metadata?.role || meta.role || 'viewer';
+      const isOwnerAdmin = String(role).toUpperCase() === 'OWNER' || String(role).toUpperCase() === 'ADMIN';
+      const verification = meta.thread_metadata?.verification || meta.verification || 'NONE';
+      const creationTime = meta.thread_metadata?.creation_time || meta.creation_time || null;
+      const picture = meta.thread_metadata?.picture?.direct_path || meta.picture || null;
+      const ch = {
+        id: meta.id,
+        name,
+        subscribers,
+        description,
+        invite,
+        role,
+        isOwnerAdmin,
+        verification,
+        creationTime,
+        picture,
+        updatedAt: Date.now()
+      };
+      if (existingIdx >= 0) {
+        list[existingIdx] = { ...list[existingIdx], ...ch };
+      } else {
+        list.push(ch);
+      }
+      fs.writeFileSync(p, JSON.stringify(list, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('[channels] saveChannel error:', e.message);
+    }
+  }
+
+  async trackChannelFromJid(jid) {
+    if (!jid || !jid.endsWith('@newsletter') || !this.sock) return;
+    try {
+      const meta = await this.sock.newsletterMetadata('JID', jid);
+      if (meta && meta.id) this.saveChannel(meta);
+    } catch {}
+  }
+
+  async downloadMediaFromMessage(mediaObj, type) {
+    if (!mediaObj) return null;
+    try {
+      const stream = await downloadContentFromMessage(mediaObj, type);
+      let buffer = Buffer.from([]);
+      for await (const chunk of stream) {
+        buffer = Buffer.concat([buffer, chunk]);
+      }
+      return buffer;
+    } catch (e) {
+      console.error(`[downloadMedia] ${type} error:`, e.message);
+      return null;
+    }
+  }
+
+  /**
+   * Collect all eligible audience JIDs for WhatsApp 24-Hour Status (Story) broadcast.
+   * WhatsApp multi-device encrypts status messages per-device using Signal sender keys.
+   * To ensure the status story appears in the Updates tab for the owner, admins,
+   * DM contacts, and group participants, statusJidList MUST include their JIDs.
+   */
+  async getAllStatusAudienceJids(extraJids = []) {
+    const audience = new Set();
+
+    // 1. Bot's own account
+    const myId = (this.sock?.user?.id || '').replace(/:.*@/, '@');
+    if (myId) audience.add(myId);
+    if (this.sock?.user?.lid) audience.add(this.sock.user.lid);
+
+    // 2. Owner & Authorized Admins from access config
+    try {
+      const { getOwnerConfig, normalizeNumber } = await import('./access.js');
+      const cfg = getOwnerConfig();
+      if (cfg.owner) {
+        audience.add(`${normalizeNumber(cfg.owner)}@s.whatsapp.net`);
+      }
+      if (cfg.ownerLid) {
+        audience.add(cfg.ownerLid.endsWith('@lid') ? cfg.ownerLid : `${cfg.ownerLid}@lid`);
+      }
+      (cfg.admins || []).forEach(a => {
+        if (!a) return;
+        const str = String(a).trim();
+        if (str.endsWith('@s.whatsapp.net') || str.endsWith('@lid')) {
+          audience.add(str);
+        } else {
+          const digits = str.replace(/[^0-9]/g, '');
+          if (digits.length > 14) audience.add(`${digits}@lid`);
+          else if (digits.length >= 10) audience.add(`${digits}@s.whatsapp.net`);
+        }
+      });
+    } catch (e) {
+      console.warn('[getAllStatusAudienceJids] Error reading owner config:', e.message);
+    }
+
+    // 3. User Profiles (all contacts who have interacted with the bot)
+    try {
+      const { readData } = await import('./batch-helpers.js');
+      const profiles = readData('user-profiles.json', {});
+      Object.keys(profiles).forEach(jid => {
+        if (jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'))) {
+          audience.add(jid);
+        }
+      });
+    } catch (e) {
+      console.warn('[getAllStatusAudienceJids] Error reading user profiles:', e.message);
+    }
+
+    // 4. Cached group participants from batch4-groups.json
+    try {
+      const { readData } = await import('./batch-helpers.js');
+      const b4 = readData('batch4-groups.json', {});
+      Object.keys(b4).forEach(gid => {
+        Object.keys(b4[gid]?.lastseen || {}).forEach(pjid => {
+          if (pjid && (pjid.endsWith('@s.whatsapp.net') || pjid.endsWith('@lid'))) {
+            audience.add(pjid);
+          }
+        });
+      });
+    } catch (e) {}
+
+    // 5. In-memory / Baileys tracked contacts
+    if (this.contacts && this.contacts.size > 0) {
+      for (const cjid of this.contacts) {
+        if (cjid && (cjid.endsWith('@s.whatsapp.net') || cjid.endsWith('@lid'))) {
+          audience.add(cjid);
+        }
+      }
+    }
+
+    // 6. Active Group Participants from live WhatsApp connection
+    if (this.sock?.groupFetchAllParticipating) {
+      try {
+        const groups = await this.sock.groupFetchAllParticipating();
+        for (const [gid, meta] of Object.entries(groups || {})) {
+          for (const p of (meta.participants || [])) {
+            if (p.id && (p.id.endsWith('@s.whatsapp.net') || p.id.endsWith('@lid'))) {
+              audience.add(p.id);
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 7. Any extra JIDs passed explicitly
+    if (Array.isArray(extraJids)) {
+      extraJids.forEach(j => {
+        if (j && typeof j === 'string') audience.add(j);
+      });
+    }
+
+    return Array.from(audience);
+  }
+
+  async postChannelStatus(channelJid, content, options = {}) {
+    if (!this.sock) throw new Error('WhatsApp bot is not connected');
+
+    // Resolve channel metadata for story attribution
+    const chanMeta = this.getAllChannels().find(c => c.id === channelJid);
+    const channelName = chanMeta?.name || options.channelName || 'WhatsApp Channel';
+
+    let payload = {};
+    if (typeof content === 'string') {
+      const mediaData = options.mediaData;
+      const mediaUrl = options.mediaUrl;
+      const mediaType = options.mediaType || 'text';
+
+      let mediaBuffer = null;
+      if (mediaData) {
+        try { mediaBuffer = Buffer.from(mediaData, 'base64'); } catch (e) {}
+      }
+
+      if (mediaType === 'image' && (mediaBuffer || mediaUrl)) {
+        payload = {
+          image: mediaBuffer || { url: mediaUrl },
+          caption: content || options.caption || ''
+        };
+      } else if (mediaType === 'video' && (mediaBuffer || mediaUrl)) {
+        payload = {
+          video: mediaBuffer || { url: mediaUrl },
+          caption: content || options.caption || ''
+        };
+      } else {
+        payload = { text: content };
+      }
+    } else if (typeof content === 'object') {
+      payload = { ...content };
+    }
+
+    let res = null;
+
+    // 1. Dispatch post to WhatsApp Channel (@newsletter) feed
+    if (options.storyOnly !== true) {
+      try {
+        res = await this.sock.sendMessage(channelJid, payload);
+        this.stats.messagesSent++;
+        const logText = payload.text || payload.caption || '[Channel Media Update]';
+        Store.addLog({
+          type: 'outgoing',
+          to: channelJid,
+          text: `[Channel Post]: ${logText}`
+        });
+      } catch (postErr) {
+        console.error('Channel post error:', postErr);
+        if (options.channelOnly === true) throw postErr;
+      }
+    }
+
+    // 2. Dispatch to 24-Hour Status (Story) with Official Channel Attribution
+    // This makes it appear in the WhatsApp Status / Updates tab as an interactive Story with "View Channel" link!
+    if (options.skipBroadcast !== true && options.channelOnly !== true) {
+      try {
+        const bgHex = options.backgroundColor || '#14213d';
+        const audience = await this.getAllStatusAudienceJids(options.statusJidList);
+
+        const storyMsg = { ...payload };
+        // Attach official forwarded newsletter context info for Channel Story attribution
+        storyMsg.contextInfo = {
+          ...(storyMsg.contextInfo || {}),
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: channelJid,
+            newsletterName: channelName,
+            serverMessageId: res?.key?.serverId || 1,
+            contentType: 1 // UPDATE
+          }
+        };
+
+        const statusOptions = {
+          backgroundColor: bgHex,
+          font: 3,
+          statusJidList: audience,
+          broadcast: true
+        };
+
+        try {
+          await this.sock.sendMessage('status@broadcast', storyMsg, statusOptions);
+        } catch (storyErr) {
+          console.warn('Channel story with attribution failed, trying clean story:', storyErr.message);
+          const cleanStoryMsg = { ...payload };
+          await this.sock.sendMessage('status@broadcast', cleanStoryMsg, statusOptions);
+        }
+
+        this.stats.messagesSent++;
+        const storyLog = payload.text || payload.caption || '[Channel Story Media]';
+        Store.addLog({
+          type: 'outgoing',
+          to: 'status@broadcast',
+          text: `[Channel Story Broadcast (${audience.length} recipients)]: ${storyLog}`
+        });
+        this.emit('message', {
+          type: 'outgoing',
+          to: 'status@broadcast',
+          text: `[Channel Story Broadcast (${audience.length} recipients)]: ${storyLog}`,
+          timestamp: new Date().toISOString()
+        });
+      } catch (broadcastErr) {
+        console.warn('Channel story broadcast warning:', broadcastErr.message);
+      }
+    }
+
+    return res || { ok: true };
+  }
+
   async setGroupMute(groupId, mute) {
     if (!this.sock) throw new Error('Bot is not connected');
+
+    // Pre-check for Community Announcement group
+    if (!mute) {
+      try {
+        const meta = await this.sock.groupMetadata(groupId);
+        if (meta?.isCommunityAnnounce) {
+          throw new Error('Yeh group ek WhatsApp Community Announcement group hai jo WhatsApp ke rule ke mutabiq hamesha announcement-only rehta hai aur unmute nahi ho sakta.');
+        }
+      } catch (checkErr) {
+        if (checkErr.message.includes('Community Announcement')) throw checkErr;
+      }
+    }
+
     const setting = mute ? 'announcement' : 'not_announcement';
-    await this.sock.groupSettingUpdate(groupId, setting);
-    return true;
+    try {
+      await this.sock.groupSettingUpdate(groupId, setting);
+      return true;
+    } catch (err) {
+      if (/bad-request/i.test(err.message)) {
+        try {
+          const meta = await this.sock.groupMetadata(groupId);
+          if (meta?.isCommunityAnnounce) {
+            throw new Error('Yeh group ek WhatsApp Community Announcement group hai jo WhatsApp ke rule ke mutabiq hamesha announcement-only rehta hai aur unmute nahi ho sakta.');
+          }
+          if (!mute && !meta?.announce) {
+            // Group is already not in announcement mode
+            return true;
+          }
+        } catch (innerErr) {
+          if (innerErr.message.includes('Community Announcement')) throw innerErr;
+        }
+      }
+      throw err;
+    }
   }
 
   /**
@@ -3501,9 +4264,6 @@ class WhatsAppBot extends EventEmitter {
     // NOTE: Temporarily disabled — status@broadcast alone not delivering. Reverted to group post.
     const silent = false; // options.silent === true || options.silent === 'yes';
 
-    // 1. Dispatch Group Status via Baileys isGroupStatus context flag
-    // (SKIP in silent mode — no message in group chat)
-    if (!silent) {
     // Media attachment (2026-10-17 per Hudson): image/video/audio from dashboard
     // Supports direct upload (mediaData as base64) or URL
     const mediaType = options.mediaType || 'text';
@@ -3520,6 +4280,10 @@ class WhatsAppBot extends EventEmitter {
       try { mediaBuffer = Buffer.from(mediaData, 'base64'); } catch (e) {}
     }
     const mediaSource = mediaBuffer || (validUrl ? { url: validUrl } : null);
+
+    // 1. Dispatch Group Status via Baileys isGroupStatus context flag
+    // (SKIP in silent mode — no message in group chat)
+    if (!silent) {
     try {
       const statusMsg = {
         backgroundColor: bgHex,
@@ -3560,12 +4324,17 @@ class WhatsAppBot extends EventEmitter {
     // 2. Also broadcast to status@broadcast targeted to all group participants
     // This ensures it appears in the WhatsApp Status / Updates tab for everyone in the group
     try {
-      await this.sock.sendMessage('status@broadcast', {
-        text,
+      const audience = participants && participants.length > 0 ? participants : await this.getAllStatusAudienceJids();
+      let broadcastPayload = { text, backgroundColor: bgHex, font: 3 };
+      if (mediaType === 'image' && mediaSource) {
+        broadcastPayload = { image: mediaSource, caption: text };
+      } else if (mediaType === 'video' && mediaSource) {
+        broadcastPayload = { video: mediaSource, caption: text };
+      }
+      await this.sock.sendMessage('status@broadcast', broadcastPayload, {
         backgroundColor: bgHex,
-        font: 3
-      }, {
-        statusJidList: participants
+        font: 3,
+        statusJidList: audience
       });
     } catch (err) {
       console.warn('Broadcast status warning:', err.message);
@@ -3581,19 +4350,50 @@ class WhatsAppBot extends EventEmitter {
     return { groupName, participantsCount: participants.length };
   }
 
-  async postWhatsAppStatus(text) {
+  async postWhatsAppStatus(content, options = {}) {
     if (!this.sock) throw new Error('WhatsApp bot is not connected');
     this.stats.messagesSent++;
-    const res = await this.sock.sendMessage('status@broadcast', { text });
+
+    let payload = {};
+    if (typeof content === 'string') {
+      const mediaType = options.mediaType || 'text';
+      const mediaData = options.mediaData;
+      const mediaUrl = options.mediaUrl;
+      let mediaBuffer = null;
+      if (mediaData) {
+        try { mediaBuffer = Buffer.from(mediaData, 'base64'); } catch (e) {}
+      }
+
+      if (mediaType === 'image' && (mediaBuffer || mediaUrl)) {
+        payload = { image: mediaBuffer || { url: mediaUrl }, caption: content || '' };
+      } else if (mediaType === 'video' && (mediaBuffer || mediaUrl)) {
+        payload = { video: mediaBuffer || { url: mediaUrl }, caption: content || '' };
+      } else {
+        payload = { text: content };
+      }
+    } else if (typeof content === 'object') {
+      payload = content;
+    }
+
+    const audience = await this.getAllStatusAudienceJids(options.statusJidList);
+    const statusOptions = {
+      backgroundColor: options.backgroundColor || '#14213d',
+      font: 1,
+      statusJidList: audience,
+      broadcast: true
+    };
+
+    const res = await this.sock.sendMessage('status@broadcast', payload, statusOptions);
+    const logText = payload.text || payload.caption || '[24h Status Media]';
     Store.addLog({
       type: 'outgoing',
       to: 'status@broadcast',
-      text: `[24h WhatsApp Status]: ${text}`
+      text: `[24h WhatsApp Status (${audience.length} recipients)]: ${logText}`
     });
     this.emit('message', {
       type: 'outgoing',
       to: 'status@broadcast',
-      text: `[24h WhatsApp Status]: ${text}`,
+      text: `[24h WhatsApp Status (${audience.length} recipients)]: ${logText}`,
       timestamp: new Date().toISOString()
     });
     return res;

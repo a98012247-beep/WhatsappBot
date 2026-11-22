@@ -1,23 +1,396 @@
 {
   "120363410975468944@g.us": {
-    "antilink": true,
-    "antispam": true,
-    "slowmode": true,
+    "antilink": false,
+    "antispam": false,
+    "slowmode": false,
     "antidelete": true,
     "silent": true,
-    "welcome": true,
-    "goodbye": true,
-    "chatbot": true,
+    "welcome": false,
+    "goodbye": false,
+    "chatbot": false,
     "keywordalerts": true,
-    "autoreply": true
+    "autoreply": false,
+    "antipromo": false
   },
   "120363413100580818@g.us": {
-    "antilink": false
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
   },
   "120363413030623100@g.us": {
     "antispam": false,
     "silent": false,
     "welcome": false,
-    "autoreply": false
+    "autoreply": false,
+    "antilink": false,
+    "antipromo": false,
+    "chatbot": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363422277345192@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363420573775296@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363427965007001@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363410829119440@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363407227707555@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363408921334026@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363410175442252@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363409649475153@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363420935060072@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363425786470758@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363427573323740@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363407444776370@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363424020878374@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363420168715264@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363412765148428@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363404221541356@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363384835894040@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363431042811102@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363430576588162@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363427519435578@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363410777397135@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363428926271558@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363427046287235@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363429537552284@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363429341414462@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363430580431471@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363431845978092@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363430321766922@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363413400618979@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363410468503032@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363414234444495@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363402356423326@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363283652991041@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363313983925675@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363334082511194@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
+  },
+  "120363413349708423@g.us": {
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "welcome": false,
+    "goodbye": false,
+    "slowmode": false
   }
 }

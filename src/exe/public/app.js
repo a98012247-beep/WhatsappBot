@@ -58,6 +58,10 @@ const headingMap = {
     title: 'Group Details',
     sub: 'Dedicated control page for this group'
   },
+  'tab-channel-detail': {
+    title: 'Channel Hub & Status',
+    sub: 'Dedicated management, live status broadcasting, and subscriber analytics for this WhatsApp Channel'
+  },
   'tab-features': {
     title: 'Features',
     sub: 'Switch bot feature categories on or off'
@@ -108,13 +112,20 @@ navItems.forEach(item => {
   });
 });
 
-// ─── Hash routing for group detail pages ───
+// ─── Hash routing for group and channel detail pages ───
 function handleHashRoute() {
   const hash = window.location.hash || '';
-  const m = hash.match(/^#\/groups\/(.+)$/);
-  if (m) {
-    const groupId = decodeURIComponent(m[1]);
+  const mg = hash.match(/^#\/groups\/(.+)$/);
+  if (mg) {
+    const groupId = decodeURIComponent(mg[1]);
     openGroupDetail(groupId);
+    return;
+  }
+  const mc = hash.match(/^#\/channels\/(.+)$/);
+  if (mc) {
+    const channelId = decodeURIComponent(mc[1]);
+    openChannelDetail(channelId);
+    return;
   }
 }
 window.addEventListener('hashchange', handleHashRoute);
@@ -124,6 +135,242 @@ document.getElementById('btn-back-groups')?.addEventListener('click', () => {
   window.location.hash = '';
   document.querySelector('[data-tab="tab-groups-status"]')?.click();
 });
+
+// Back from channel detail
+document.getElementById('btn-back-channels')?.addEventListener('click', () => {
+  window.location.hash = '';
+  document.querySelector('[data-tab="tab-groups-status"]')?.click();
+});
+
+// ─── Channel detail page ───
+async function openChannelDetail(channelId) {
+  navItems.forEach(n => n.classList.remove('active'));
+  tabPanes.forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById('tab-channel-detail');
+  if (pane) pane.classList.add('active');
+  if (headingMap['tab-channel-detail']) {
+    pageHeading.textContent = headingMap['tab-channel-detail'].title;
+    pageSubheading.textContent = headingMap['tab-channel-detail'].sub;
+  }
+  const content = document.getElementById('channel-detail-content');
+  if (!content) return;
+  content.innerHTML = '<div class="td-empty" style="padding:24px;text-align:center">Loading channel…</div>';
+
+  try {
+    const [detailRes, activityRes] = await Promise.all([
+      fetch('/api/channels/' + encodeURIComponent(channelId) + '/detail'),
+      fetch('/api/channels/' + encodeURIComponent(channelId) + '/activity')
+    ]);
+    if (!detailRes.ok) throw new Error('Channel not found');
+    const d = await detailRes.json();
+    const activity = activityRes.ok ? (await activityRes.json()).activity : [];
+    renderChannelDetail(d, activity);
+  } catch (e) {
+    content.innerHTML = '<div class="td-empty" style="padding:24px;text-align:center">Could not load channel: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+window.openChannelStatusComposer = function(channelId, prefillText = '') {
+  const openStatusComposer = (textToPrefill = '') => {
+    openMessageComposer('Post Status', async ({ text, mediaType, mediaUrl, mediaData, mediaName, postToStory, postToFeed }) => {
+      try {
+        const destDesc = (postToStory !== false && postToFeed !== false) ? 'Channel & 24h Story' : ((postToStory !== false) ? '24h Story' : 'Channel Feed');
+        showToast(`Posting status to ${destDesc}...`);
+        const res = await fetch(`/api/channels/${encodeURIComponent(channelId)}/quick-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'status',
+            text,
+            options: {
+              mediaType,
+              mediaUrl,
+              mediaData,
+              mediaName,
+              storyOnly: postToFeed === false,
+              skipBroadcast: postToStory === false
+            }
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed');
+        showToast(`✅ Status posted to ${destDesc} successfully!`);
+        if (typeof openChannelDetail === 'function' && document.getElementById('channel-detail-modal')?.classList.contains('active')) {
+          openChannelDetail(channelId);
+        }
+      } catch (e) {
+        showToast('Action failed: ' + e.message, 'error');
+      }
+    }, true, channelId, textToPrefill);
+  };
+
+  // Listen for picked message from recent picker
+  const pickHandler = (e) => {
+    document.removeEventListener('statusTextPicked', pickHandler);
+    openStatusComposer(window._pickedStatusText || '');
+  };
+  document.addEventListener('statusTextPicked', pickHandler);
+
+  openStatusComposer(prefillText);
+};
+
+window.channelQuickAction = async function(channelId, action, extraText = null) {
+  try {
+    let text = extraText;
+    if (action === 'status') {
+      window.openChannelStatusComposer(channelId);
+      return;
+    }
+    if (action === 'setname' && !text) {
+      text = prompt('Enter new channel name:');
+      if (!text || !text.trim()) return;
+    } else if (action === 'setdesc' && !text) {
+      text = prompt('Enter new channel description:');
+      if (!text || !text.trim()) return;
+    } else if (action === 'send' || action === 'post') {
+      if (!text) {
+        window.openChannelStatusComposer(channelId);
+        return;
+      }
+    } else if (action === 'invite') {
+      const inviteUrl = extraText || (window.__currentChannelInvite ? `https://whatsapp.com/channel/${window.__currentChannelInvite}` : null);
+      if (inviteUrl) {
+        navigator.clipboard?.writeText(inviteUrl);
+        showToast('Invite link copied to clipboard!');
+      } else {
+        showToast('No public invite link for this channel');
+      }
+      return;
+    }
+
+    const res = await fetch(`/api/channels/${encodeURIComponent(channelId)}/quick-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Action failed');
+    showToast(`Channel action "${action}" completed successfully!`);
+    openChannelDetail(channelId); // refresh
+  } catch (e) {
+    showToast('Failed: ' + e.message, 'error');
+  }
+};
+
+function renderChannelDetail(d, activity) {
+  const content = document.getElementById('channel-detail-content');
+  if (!content) return;
+  const s = d.settings || {};
+  window.__currentChannelInvite = d.invite || '';
+
+  const inviteLink = d.invite ? `https://whatsapp.com/channel/${d.invite}` : '';
+  const isOwnerAdmin = d.isOwnerAdmin || (d.role && (d.role.toUpperCase() === 'OWNER' || d.role.toUpperCase() === 'ADMIN'));
+  const followers = Number(d.subscribers || d.subscribers_count || 0).toLocaleString();
+  const createdDate = d.creationTime ? new Date(d.creationTime * 1000).toLocaleDateString() : 'N/A';
+
+  const toggleRow = (key, label, hint) => `
+    <label class="row">
+      <span class="row-txt"><strong>${label}</strong><span>${hint}</span></span>
+      <span class="switch"><input type="checkbox" data-cset="${key}" ${s[key] ? 'checked' : ''}><i></i></span>
+    </label>`;
+
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:48px;height:48px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;">📢</div>
+        <div>
+          <h2 class="section-title" style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span>${escapeHtml(d.name || 'Unnamed Channel')}</span>
+            ${isOwnerAdmin ? '<span class="badge" style="background:#059669;color:#fff;font-size:0.72rem;padding:3px 8px;border-radius:12px;">👑 Owner Admin</span>' : '<span class="badge" style="background:#334155;color:#94a3b8;font-size:0.72rem;padding:3px 8px;border-radius:12px;">👤 Subscriber</span>'}
+            ${d.verification === 'VERIFIED' ? '<span class="badge" style="background:#2563eb;color:#fff;font-size:0.72rem;padding:3px 8px;border-radius:12px;">✅ Verified</span>' : ''}
+          </h2>
+          <div style="font-size:0.75rem;color:#64748b;font-family:'JetBrains Mono',monospace;margin-top:2px;">${escapeHtml(d.id)}</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        ${inviteLink ? `<a href="${inviteLink}" target="_blank" class="btn-primary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;">🌐 Open in WhatsApp ↗</a>` : ''}
+        <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'sync')">🔄 Sync WhatsApp Data</button>
+      </div>
+    </div>
+
+    ${d.description ? `<div class="group pad" style="margin-bottom:16px;background:rgba(255,255,255,0.03);"><div style="font-size:0.78rem;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Channel Description</div><div style="font-size:0.88rem;color:var(--text-main);line-height:1.4;">${escapeHtml(d.description)}</div></div>` : ''}
+
+    <div class="stats" style="margin-bottom:20px;">
+      <div class="stat"><strong>${followers}</strong><span>Followers</span></div>
+      <div class="stat"><strong>${isOwnerAdmin ? '👑 Admin' : '👤 Viewer'}</strong><span>Your Role</span></div>
+      <div class="stat"><strong>${d.verification === 'VERIFIED' ? 'Verified' : 'Standard'}</strong><span>Status</span></div>
+      <div class="stat"><strong>${createdDate}</strong><span>Created</span></div>
+    </div>
+
+    <!-- PUBLISH UPDATE COMPOSER -->
+    <h2 class="section-title">📢 Post Status Update to Channel & Story</h2>
+    <div class="group pad" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-weight:600;font-size:0.95rem;color:var(--text-main);">Create Status & Story Broadcast</div>
+        <div style="font-size:0.8rem;color:#64748b;margin-top:2px;">Compose rich WhatsApp formatted text, images, videos, audio notes, and 24h stories.</div>
+      </div>
+      <button type="button" class="btn-primary" onclick="openChannelStatusComposer('${escapeHtml(d.id)}')" style="display:inline-flex;align-items:center;gap:6px;font-size:0.9rem;padding:8px 16px;">
+        📱 Post Status (Rich Story Composer)
+      </button>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <h2 class="section-title">Channel Quick Actions</h2>
+    <div class="group pad" style="margin-bottom:20px;">
+      <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
+        <button class="btn-primary btn-sm" onclick="openChannelStatusComposer('${escapeHtml(d.id)}')">📱 Post Status</button>
+        <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'invite', '${escapeHtml(inviteLink)}')">📋 Copy Invite Link</button>
+        ${isOwnerAdmin ? `
+          <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'setname')">✏️ Edit Channel Name</button>
+          <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'setdesc')">📝 Edit Description</button>
+        ` : ''}
+        <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'mute')">🔇 Mute Channel</button>
+        <button class="btn-soft btn-sm" onclick="channelQuickAction('${escapeHtml(d.id)}', 'unmute')">🔊 Unmute Channel</button>
+      </div>
+    </div>
+
+    <!-- FEATURE TOGGLES -->
+    <h2 class="section-title">Channel Features & Customization</h2>
+    <div class="group" id="cd-toggles" style="margin-bottom:20px;">
+      ${toggleRow('autoBroadcast', 'Auto-Broadcast Status Stories', 'Automatically syndicate all WhatsApp Story statuses to this channel')}
+      ${toggleRow('silentMode', 'Silent Updates', 'Post channel updates silently without push notifications')}
+      ${toggleRow('adminLockdown', 'Admin-Only Lockdown', 'Strictly ensure only the bot owner (+923243877900) can post to this channel')}
+      ${toggleRow('logActivity', 'Log Channel Activity', 'Record all outgoing and incoming posts to the bot activity audit')}
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <h2 class="section-title">Recent Channel Activity & Posts</h2>
+    <div class="group"><div id="cd-activity" class="monitor-feed">
+      ${(activity || []).length ? activity.map(log => `
+        <div class="mon-row">
+          <span class="mon-time">${new Date(log.timestamp).toLocaleTimeString()}</span>
+          <span class="mon-type">${escapeHtml(log.type || 'post')}</span>
+          <span class="mon-text">${escapeHtml((log.text || JSON.stringify(log)).slice(0, 150))}</span>
+        </div>`).join('') : '<div class="td-empty" style="padding:16px;text-align:center">No recent channel activity or posts yet</div>'}
+    </div></div>
+  `;
+
+
+
+  // Wire Toggle Switches
+  content.querySelectorAll('[data-cset]').forEach(input => {
+    input.addEventListener('change', async () => {
+      const key = input.dataset.cset;
+      try {
+        const res = await fetch('/api/channels/' + encodeURIComponent(d.id) + '/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [key]: input.checked }),
+        });
+        if (!res.ok) throw new Error('save failed');
+        showToast(`"${key}" ${input.checked ? 'enabled' : 'disabled'}`);
+      } catch (e) {
+        input.checked = !input.checked;
+        showToast('Failed to update: ' + e.message, 'error');
+      }
+    });
+  });
+}
 
 // ─── Group detail page ───
 async function openGroupDetail(groupId) {
@@ -228,8 +475,12 @@ function renderGroupDetail(d, activity) {
         <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','invite')">🔗 Invite link</button>
         <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','setname')">✏️ Set name</button>
         <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','setdesc')">📝 Set description</button>
-        <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','mute')">🔇 Mute</button>
-        <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','unmute')">🔊 Unmute</button>
+        ${d.isCommunityAnnounce ? `
+          <button class="btn-soft btn-sm" disabled title="Community Announcement groups are permanently announcement-only by WhatsApp design" style="opacity:0.6;cursor:not-allowed;">📢 Community Announcement (Always Muted)</button>
+        ` : `
+          <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','mute')">🔇 Mute</button>
+          <button class="btn-soft btn-sm" onclick="groupQuickAction('${escapeHtml(d.id)}','unmute')">🔊 Unmute</button>
+        `}
       </div>
     </div>
 
@@ -368,9 +619,13 @@ window.groupQuickAction = async function(groupId, action) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
-      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Action failed');
       showToast(action === 'mute' ? 'Group muted' : 'Group unmuted');
-    } catch (e) { showToast('Action failed', 'error'); }
+      if (typeof openGroupDetail === 'function' && document.getElementById('group-detail-modal')?.classList.contains('active')) {
+        openGroupDetail(groupId);
+      }
+    } catch (e) { showToast(e.message || 'Action failed', 'error'); }
   }
 };
 
@@ -870,30 +1125,42 @@ document.getElementById('form-reply-rule').addEventListener('submit', async (e) 
   }
 });
 
-// Global Groups Cache for Instant Filtering
+// Global Groups & Channels Cache for Instant Filtering
 let cachedGroupsData = [];
+let cachedChannelsData = [];
+let activeGroupFilter = 'all';
 
 function renderGroupsTable(groupsList) {
   const groupsTbody = document.getElementById('groups-tbody');
   if (!groupsTbody) return;
   groupsTbody.innerHTML = '';
 
-  if (!Array.isArray(groupsList) || groupsList.length === 0) {
+  let list = Array.isArray(groupsList) ? groupsList : [];
+  if (activeGroupFilter === 'owner-admin') {
+    list = list.filter(g => g.isOwnerAdmin);
+  } else if (activeGroupFilter === 'member-only') {
+    list = list.filter(g => !g.isOwnerAdmin);
+  }
+
+  if (list.length === 0) {
     groupsTbody.innerHTML = `
       <tr>
         <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
-          No WhatsApp groups found. Join a group or scan QR to sync!
+          ${activeGroupFilter === 'owner-admin' ? 'No groups found where owner (+923243877900) is admin.' : 'No WhatsApp groups found.'}
         </td>
       </tr>
     `;
     return;
   }
 
-  groupsList.forEach(g => {
+  list.forEach(g => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>
-        <div style="font-weight: 700; color: var(--text-main); font-size: 0.88rem;">${escapeHtml(g.subject || 'Unnamed Group')}</div>
+        <div style="font-weight: 700; color: var(--text-main); font-size: 0.88rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span>${escapeHtml(g.subject || 'Unnamed Group')}</span>
+          ${g.isOwnerAdmin ? '<span class="badge" style="background:#059669;color:#ffffff;font-size:0.68rem;padding:2px 7px;border-radius:12px;">👑 Owner Admin</span>' : '<span class="badge" style="background:#334155;color:#94a3b8;font-size:0.68rem;padding:2px 7px;border-radius:12px;">👤 Member</span>'}
+        </div>
         <div style="font-size: 0.72rem; color: #64748b; font-family: 'JetBrains Mono', monospace;">${escapeHtml(g.id)}</div>
       </td>
       <td>
@@ -901,8 +1168,8 @@ function renderGroupsTable(groupsList) {
         <span style="font-size: 0.74rem; color: #64748b;">(${g.adminCount || 0} 👑)</span>
       </td>
       <td>
-        <span class="badge ${g.isBotAdmin ? 'badge-success' : ''}">
-          ${g.isBotAdmin ? '👑 Admin' : '👤 Member'}
+        <span class="badge ${g.isOwnerAdmin ? 'badge-success' : (g.isBotAdmin ? 'badge-info' : '')}">
+          ${g.isOwnerAdmin ? '👑 Owner Admin' : (g.isBotAdmin ? '🤖 Bot Admin' : '👤 Member')}
         </span>
       </td>
       <td>
@@ -916,15 +1183,142 @@ function renderGroupsTable(groupsList) {
       <td>
         <div class="table-actions">
           <button class="btn-primary btn-sm" data-open-group="${escapeHtml(g.id)}" title="Open dedicated group page">📂 Open</button>
-          <button class="btn btn-sm ${g.isMuted ? 'btn-primary' : 'btn-outline'}" onclick="toggleGroupMute('${g.id}', ${g.isMuted})">
-            ${g.isMuted ? 'Unmute' : 'Mute'}
-          </button>
+          ${g.isCommunityAnnounce ? `
+            <button class="btn btn-sm btn-outline" disabled title="Community Announcement group is permanently announcement-only by WhatsApp design" style="opacity:0.6;cursor:not-allowed;">
+              📢 Announce
+            </button>
+          ` : `
+            <button class="btn btn-sm ${g.isMuted ? 'btn-primary' : 'btn-outline'}" onclick="toggleGroupMute('${g.id}', ${g.isMuted})">
+              ${g.isMuted ? 'Unmute' : 'Mute'}
+            </button>
+          `}
         </div>
       </td>
     `;
     groupsTbody.appendChild(tr);
   });
 }
+
+function populateStatusTargets() {
+  const targetSelect = document.getElementById('status-target-select');
+  if (!targetSelect) return;
+  const curVal = targetSelect.value;
+  targetSelect.innerHTML = `<option value="status@broadcast">📱 WhatsApp Story (Broadcast to All Contacts)</option>`;
+
+  if (cachedChannelsData && cachedChannelsData.length > 0) {
+    const optGroup = document.createElement('optgroup');
+    optGroup.label = '📢 WhatsApp Channels';
+    cachedChannelsData.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `📢 Channel: ${c.name} (${Number(c.subscribers || 0).toLocaleString()} followers)`;
+      opt.dataset.name = c.name;
+      optGroup.appendChild(opt);
+    });
+    targetSelect.appendChild(optGroup);
+  }
+
+  if (cachedGroupsData && cachedGroupsData.length > 0) {
+    const optGroup = document.createElement('optgroup');
+    optGroup.label = '👥 WhatsApp Groups';
+    cachedGroupsData.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = `👥 ${g.subject} (${g.totalMembers} members)${g.isOwnerAdmin ? ' [👑 Owner Admin]' : ''}`;
+      opt.dataset.name = g.subject;
+      optGroup.appendChild(opt);
+    });
+    targetSelect.appendChild(optGroup);
+  }
+
+  if (curVal) targetSelect.value = curVal;
+}
+
+// ─── Channel Management & Table ───
+let activeChannelFilter = 'owner-admin'; // Auto-show only channels where owner is admin by default
+
+function renderChannelsTable(channelsList) {
+  const tbody = document.getElementById('channels-tbody');
+  const counter = document.getElementById('channel-counter');
+  const countOwnerAdmin = document.getElementById('count-chan-owner-admin');
+  const countAll = document.getElementById('count-chan-all');
+
+  let list = Array.isArray(channelsList) ? channelsList : [];
+  const ownerAdminCount = list.filter(c => c.isOwnerAdmin || (c.role && (c.role.toUpperCase() === 'OWNER' || c.role.toUpperCase() === 'ADMIN'))).length;
+
+  if (countOwnerAdmin) countOwnerAdmin.textContent = ownerAdminCount;
+  if (countAll) countAll.textContent = list.length;
+  if (counter) counter.textContent = `${ownerAdminCount} Admin / ${list.length} Total`;
+
+  if (activeChannelFilter === 'owner-admin') {
+    list = list.filter(c => c.isOwnerAdmin || (c.role && (c.role.toUpperCase() === 'OWNER' || c.role.toUpperCase() === 'ADMIN')));
+  }
+
+  if (!tbody) return;
+  if (!list.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="td-empty" style="text-align:center;padding:24px;color:var(--text-muted);">
+          ${activeChannelFilter === 'owner-admin' ? 'No channels found where you are Owner/Admin. Click "+ Track Channel" above to add your channel.' : 'No tracked WhatsApp channels found.'}
+        </td>
+      </tr>
+    `;
+    populateStatusTargets();
+    return;
+  }
+
+  tbody.innerHTML = '';
+  list.forEach(c => {
+    const tr = document.createElement('tr');
+    const isOwnerAdmin = c.isOwnerAdmin || (c.role && (c.role.toUpperCase() === 'OWNER' || c.role.toUpperCase() === 'ADMIN'));
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:700;color:var(--text-main);font-size:0.88rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span>📢 ${escapeHtml(c.name || 'Unnamed Channel')}</span>
+          ${isOwnerAdmin ? '<span class="badge" style="background:#059669;color:#ffffff;font-size:0.68rem;padding:2px 7px;border-radius:12px;">👑 Owner Admin</span>' : '<span class="badge" style="background:#334155;color:#94a3b8;font-size:0.68rem;padding:2px 7px;border-radius:12px;">👤 Subscriber</span>'}
+        </div>
+        <div style="font-size:0.72rem;color:#64748b;font-family:'JetBrains Mono',monospace;">${escapeHtml(c.id)}</div>
+      </td>
+      <td>
+        <strong style="color:var(--text-main);">${Number(c.subscribers || 0).toLocaleString()}</strong>
+        <span style="font-size:0.74rem;color:#64748b;">followers</span>
+      </td>
+      <td>
+        <span class="badge ${isOwnerAdmin ? 'badge-success' : ''}">
+          ${isOwnerAdmin ? '👑 Owner Admin' : '👤 Subscriber'}
+        </span>
+      </td>
+      <td>
+        ${c.invite ? `<a href="https://whatsapp.com/channel/${c.invite}" target="_blank" style="color:#10b981;font-size:0.8rem;text-decoration:none;">Open ↗</a>` : '<span style="color:#64748b;font-size:0.8rem;">-</span>'}
+      </td>
+      <td>
+        <div class="table-actions">
+          <button class="btn-primary btn-sm" data-open-channel="${escapeHtml(c.id)}" title="Open dedicated channel page">📂 Open</button>
+          <button class="btn btn-sm btn-outline" onclick="openChannelStatusComposer('${escapeHtml(c.id)}')">📱 Post Status</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  populateStatusTargets();
+}
+
+async function loadChannels() {
+  try {
+    const res = await fetch('/api/channels');
+    const data = await res.json();
+    const channels = data.channels || [];
+    cachedChannelsData = channels;
+    renderChannelsTable(cachedChannelsData);
+  } catch (e) {
+    console.error('Failed to load channels:', e);
+  }
+}
+
+window.selectChannelForStatus = function(id, name) {
+  openChannelStatusComposer(id);
+};
 
 // Load Groups & Whitelist Controls
 async function loadGroupsAndTickets() {
@@ -948,7 +1342,7 @@ async function loadGroupsAndTickets() {
       modeSelect.value = data.mode;
     }
 
-    // Update Active Whitelist Counter
+    // Update Counts and Counters
     const activeCount = groupList.filter(g => g.isAllowed).length;
     const counterPill = document.getElementById('group-whitelist-counter');
     if (counterPill) {
@@ -956,21 +1350,24 @@ async function loadGroupsAndTickets() {
       counterPill.className = activeCount > 0 ? 'badge badge-success' : 'badge badge-warning';
     }
 
+    const totalAll = groupList.length;
+    const totalOwnerAdmin = groupList.filter(g => g.isOwnerAdmin).length;
+    const totalMember = totalAll - totalOwnerAdmin;
+    const countAllEl = document.getElementById('count-all-groups');
+    const countOwnerEl = document.getElementById('count-owner-admin');
+    const countMemberEl = document.getElementById('count-member-only');
+    if (countAllEl) countAllEl.textContent = totalAll;
+    if (countOwnerEl) countOwnerEl.textContent = totalOwnerAdmin;
+    if (countMemberEl) countMemberEl.textContent = totalMember;
+
     // Render Table
     renderGroupsTable(groupList);
 
-    // Populate Status Target Select
-    const targetSelect = document.getElementById('status-target-select');
-    if (targetSelect && Array.isArray(groupList) && groupList.length > 0) {
-      targetSelect.innerHTML = `<option value="status@broadcast">📱 WhatsApp Story (Broadcast to All Contacts)</option>`;
-      groupList.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.textContent = `👥 ${g.subject} (${g.totalMembers} members)${g.isAllowed ? ' [Bot Active]' : ''}`;
-        opt.dataset.name = g.subject;
-        targetSelect.appendChild(opt);
-      });
-    }
+    // Also update Status Targets
+    populateStatusTargets();
+
+    // Load channels alongside groups
+    loadChannels();
 
     // Render Tickets
     if (ticketsTbody) {
@@ -1363,6 +1760,113 @@ if (btnRefreshGroups) {
   });
 }
 
+// Group separation filter tabs (All Groups vs Owner Admin vs Member Only)
+const filterAllBtn = document.getElementById('filter-all-groups');
+const filterOwnerBtn = document.getElementById('filter-owner-admin');
+const filterMemberBtn = document.getElementById('filter-member-only');
+
+function updateFilterButtons(activeBtn) {
+  [filterAllBtn, filterOwnerBtn, filterMemberBtn].forEach(b => {
+    if (b) b.classList.remove('active');
+  });
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+if (filterAllBtn) {
+  filterAllBtn.addEventListener('click', () => {
+    activeGroupFilter = 'all';
+    updateFilterButtons(filterAllBtn);
+    renderGroupsTable(cachedGroupsData);
+  });
+}
+
+if (filterOwnerBtn) {
+  filterOwnerBtn.addEventListener('click', () => {
+    activeGroupFilter = 'owner-admin';
+    updateFilterButtons(filterOwnerBtn);
+    renderGroupsTable(cachedGroupsData);
+  });
+}
+
+if (filterMemberBtn) {
+  filterMemberBtn.addEventListener('click', () => {
+    activeGroupFilter = 'member-only';
+    updateFilterButtons(filterMemberBtn);
+    renderGroupsTable(cachedGroupsData);
+  });
+}
+
+// Channel separation filter tabs (Auto Owner Admin vs All Channels)
+const filterChanOwnerBtn = document.getElementById('filter-chan-owner-admin');
+const filterChanAllBtn = document.getElementById('filter-chan-all');
+
+function updateChannelFilterButtons(activeBtn) {
+  [filterChanOwnerBtn, filterChanAllBtn].forEach(b => {
+    if (b) b.classList.remove('active');
+  });
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+if (filterChanOwnerBtn) {
+  filterChanOwnerBtn.addEventListener('click', () => {
+    activeChannelFilter = 'owner-admin';
+    updateChannelFilterButtons(filterChanOwnerBtn);
+    renderChannelsTable(cachedChannelsData);
+  });
+}
+
+if (filterChanAllBtn) {
+  filterChanAllBtn.addEventListener('click', () => {
+    activeChannelFilter = 'all';
+    updateChannelFilterButtons(filterChanAllBtn);
+    renderChannelsTable(cachedChannelsData);
+  });
+}
+
+// Channels Tracking & Refresh
+const btnAddChannel = document.getElementById('btn-add-channel');
+const channelAddInput = document.getElementById('channel-add-input');
+const btnRefreshChannels = document.getElementById('btn-refresh-channels');
+
+if (btnAddChannel && channelAddInput) {
+  btnAddChannel.addEventListener('click', async () => {
+    const val = channelAddInput.value.trim();
+    if (!val) {
+      showToast('Please enter a channel link or JID', 'error');
+      return;
+    }
+    btnAddChannel.disabled = true;
+    btnAddChannel.textContent = 'Checking...';
+    try {
+      const res = await fetch('/api/channels/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: val })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        channelAddInput.value = '';
+        showToast(`Channel "${data.channel?.name || 'WhatsApp Channel'}" tracked successfully!`);
+        loadChannels();
+      } else {
+        showToast(data.error || 'Channel not found', 'error');
+      }
+    } catch (e) {
+      showToast('Failed to check channel: ' + e.message, 'error');
+    } finally {
+      btnAddChannel.disabled = false;
+      btnAddChannel.textContent = '+ Track Channel';
+    }
+  });
+}
+
+if (btnRefreshChannels) {
+  btnRefreshChannels.addEventListener('click', () => {
+    loadChannels();
+    showToast('Channels refreshed');
+  });
+}
+
 
 // --- Terminal logs tab (live tail-follow: only new lines stream in) ---
 (function () {
@@ -1494,46 +1998,71 @@ async function loadAccess() {
     if (!res.ok) throw new Error('load failed');
     const data = await res.json();
     const disp = document.getElementById('owner-number-display');
-    if (disp) disp.textContent = data.owner ? data.owner : 'Not set';
+    if (disp) {
+      disp.innerHTML = `<strong>+${escapeHtml(data.owner || '923243877900')}</strong> <span class="badge" style="background:#059669;color:#fff;font-size:0.75rem;padding:2px 8px;border-radius:12px;margin-left:6px;">👑 Supreme Owner</span><div style="font-size:0.75rem;color:#64748b;margin-top:3px;">Full master control & admin rights</div>`;
+    }
     const silentT = document.getElementById('toggle-silent-default');
     if (silentT) silentT.checked = !!data.silentDefault;
-    renderAdminList(data.admins || []);
+    renderAdminList(data.admins || [], data.owner, data.ownerLid);
   } catch (e) {
     showToast('Could not load access settings', 'error');
   }
 }
 
-function renderAdminList(admins) {
+function renderAdminList(admins, ownerNum = '923243877900', ownerLid = '108074899644670') {
   const list = document.getElementById('admin-list');
   if (!list) return;
   list.innerHTML = '';
-  if (!admins.length) {
+
+  const ownerNorm = String(ownerNum || '').replace(/\D/g, '');
+  const ownerLidNorm = String(ownerLid || '').replace(/\D/g, '');
+
+  const otherAdmins = (Array.isArray(admins) ? admins : []).filter(num => {
+    const norm = String(num).replace(/\D/g, '');
+    return norm && norm !== ownerNorm && norm !== ownerLidNorm;
+  });
+
+  if (!otherAdmins.length) {
     const empty = document.createElement('div');
     empty.className = 'row static';
-    empty.innerHTML = '<span class="row-txt"><span class="hint">No admins yet — admins can manage the bot.</span></span>';
+    empty.style.padding = '16px';
+    empty.innerHTML = '<span class="row-txt"><span class="hint">No additional admins added yet. Add a phone number or ID below to grant them bot access.</span></span>';
     list.appendChild(empty);
     return;
   }
-  admins.forEach(num => {
+
+  otherAdmins.forEach(num => {
     const div = document.createElement('div');
     div.className = 'row static';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.justifyContent = 'space-between';
+    div.style.padding = '12px 16px';
+
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.alignItems = 'center';
+    left.style.gap = '10px';
+
     const ic = document.createElement('span');
     ic.className = 'row-ic b';
-    ic.textContent = '👤';
-    const txt = document.createElement('span');
+    ic.textContent = '🛡️';
+
+    const txt = document.createElement('div');
     txt.className = 'row-txt';
-    const strong = document.createElement('strong');
-    strong.textContent = num;
-    txt.appendChild(strong);
+    txt.innerHTML = `<strong>+${escapeHtml(num)}</strong> <span class="badge" style="background:#2563eb;color:#fff;font-size:0.7rem;padding:2px 7px;border-radius:10px;margin-left:6px;">Admin (Can use bot)</span><div style="font-size:0.75rem;color:#64748b;margin-top:2px;">Granted full permission to use all bot commands & features</div>`;
+
+    left.appendChild(ic);
+    left.appendChild(txt);
+
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'btn-icon delete';
-    btn.title = 'Remove admin';
-    btn.textContent = '✕';
-    btn.setAttribute('aria-label', 'Remove admin ' + num);
+    btn.className = 'btn-danger-sm';
+    btn.textContent = '✕ Remove Admin';
+    btn.title = 'Remove bot access for ' + num;
     btn.addEventListener('click', () => removeAdmin(num));
-    div.appendChild(ic);
-    div.appendChild(txt);
+
+    div.appendChild(left);
     div.appendChild(btn);
     list.appendChild(div);
   });
@@ -1583,7 +2112,7 @@ if (formAddAdmin) {
       if (res.ok && data.ok) {
         renderAdminList(data.admins || []);
         input.value = '';
-        showToast('Admin added: ' + number);
+        showToast('Admin added: +' + number + ' (Can now use the bot!)', 'success');
       } else {
         showToast(data.error || 'Failed to add admin', 'error');
       }
@@ -1604,7 +2133,7 @@ async function removeAdmin(number) {
     const data = await res.json();
     if (res.ok && data.ok) {
       renderAdminList(data.admins || []);
-      showToast('Admin removed');
+      showToast('Admin removed: ' + number);
     } else {
       showToast(data.error || 'Failed to remove admin', 'error');
     }
@@ -2676,11 +3205,18 @@ setInterval(() => {
 document.getElementById('allcmds-search')?.addEventListener('input', renderAllCommands);
 document.getElementById('allcmds-cat-filter')?.addEventListener('change', renderAllCommands);
 
-// Open group detail from groups table (delegated — works for dynamically added rows)
+// Open group or channel detail from tables (delegated — works for dynamically added rows)
 document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-open-group]');
-  if (!btn) return;
-  window.location.hash = '#/groups/' + encodeURIComponent(btn.dataset.openGroup);
+  const btnGroup = e.target.closest('[data-open-group]');
+  if (btnGroup) {
+    window.location.hash = '#/groups/' + encodeURIComponent(btnGroup.dataset.openGroup);
+    return;
+  }
+  const btnChannel = e.target.closest('[data-open-channel]');
+  if (btnChannel) {
+    window.location.hash = '#/channels/' + encodeURIComponent(btnChannel.dataset.openChannel);
+    return;
+  }
 });
 
 // Initial boot
@@ -2689,6 +3225,7 @@ loadMenuCategories();
 loadAutoReplies();
 loadStatuses();
 loadGroupsAndTickets();
+loadAccess();
 
 // --- Video Downloader UI Logic ---
 let currentDownloadedVideo = null;
@@ -3001,11 +3538,23 @@ function selectMediaType(type) {
 window._selectedMediaType = 'text';
 
 // Pick an already-posted message to use as status (2026-10-17 per Hudson)
-async function pickRecentMessage(groupId, textareaId, previewId) {
+async function pickRecentMessage(targetId, textareaId, previewId) {
   try {
-    const res = await fetch('/api/groups/' + encodeURIComponent(groupId) + '/recent-messages');
+    let url = '/api/groups/' + encodeURIComponent(targetId) + '/recent-messages';
+    if (targetId && targetId.endsWith('@newsletter')) {
+      url = '/api/channels/' + encodeURIComponent(targetId) + '/activity';
+    }
+    const res = await fetch(url);
     const data = await res.json();
-    const msgs = data.messages || [];
+    let msgs = data.messages || [];
+    if (!msgs.length && data.activity) {
+      msgs = data.activity.map(a => ({
+        pushName: a.author || a.to || 'Channel Post',
+        sender: a.to || a.from || 'channel@newsletter',
+        text: a.text || a.caption || (typeof a === 'string' ? a : ''),
+        timestamp: a.timestamp || new Date().toISOString()
+      })).filter(m => m.text && m.text.trim());
+    }
     if (!msgs.length) { showToast('No recent messages yet', 'error'); return; }
     
     const bodyHTML = `
@@ -3042,6 +3591,7 @@ function selectRecentMessage(index, textareaId, previewId) {
 
 // Rich message composer modal
 function openMessageComposer(title, onSend, showMedia = false, groupId = null, prefillText = '') {
+  const isChannel = groupId && String(groupId).endsWith('@newsletter');
   const bodyHTML = `
     ${groupId ? `<button class="btn-small" onclick="pickRecentMessage('${groupId}', 'wa-text', 'wa-preview')" style="margin-bottom:10px;">📋 Pick from recent messages</button>` : ''}
     ${waFormatToolbar('wa-text', 'wa-preview')}
@@ -3052,18 +3602,47 @@ function openMessageComposer(title, onSend, showMedia = false, groupId = null, p
       <span class="hint">Preview will appear here...</span>
     </div>
     ${showMedia ? mediaOptionsHTML() : ''}
+    ${isChannel ? `
+      <div style="margin-top:12px;padding:10px 14px;background:var(--bg-subtle, #f8fafc);border:1px solid var(--border-color, #cbd5e1);border-radius:8px;font-size:13px;display:flex;flex-wrap:wrap;gap:16px;">
+        <span style="font-weight:700;color:var(--text-main, #1e293b);width:100%;">Destinations:</span>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;color:var(--text-main, #0f172a);">
+          <input type="checkbox" id="dest-story" checked style="cursor:pointer;accent-color:#25d366;width:16px;height:16px;">
+          <span>📱 24h WhatsApp Story (Updates Tab)</span>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;color:var(--text-main, #0f172a);">
+          <input type="checkbox" id="dest-feed" checked style="cursor:pointer;accent-color:#25d366;width:16px;height:16px;">
+          <span>📢 Channel Feed Message</span>
+        </label>
+      </div>
+    ` : ''}
   `;
   
   openModal(title, bodyHTML, async () => {
-    const text = document.getElementById('wa-text').value.trim();
-    if (!text) { showToast('Please enter a message', 'error'); return false; }
+    const text = document.getElementById('wa-text')?.value?.trim() || '';
     const mediaType = window._selectedMediaType || 'text';
-    const mediaUrl = document.getElementById('media-url')?.value.trim() || '';
+    const mediaUrl = document.getElementById('media-url')?.value?.trim() || '';
+    const fileInput = document.getElementById('media-file');
+    const hasFile = fileInput && fileInput.files && fileInput.files[0];
+    
+    if (!text && !hasFile && !mediaUrl) {
+      showToast('Please enter a message or choose a media file', 'error');
+      return false;
+    }
+
+    let postToStory = true;
+    let postToFeed = true;
+    if (document.getElementById('dest-story')) {
+      postToStory = document.getElementById('dest-story').checked;
+      postToFeed = document.getElementById('dest-feed')?.checked !== false;
+      if (!postToStory && !postToFeed) {
+        showToast('Please select at least one destination (Story or Channel Feed)', 'error');
+        return false;
+      }
+    }
     
     // Direct file upload (2026-10-17 per Hudson): no URL needed
     let mediaData = null, mediaName = null;
-    const fileInput = document.getElementById('media-file');
-    if (fileInput && fileInput.files && fileInput.files[0]) {
+    if (hasFile) {
       const file = fileInput.files[0];
       if (file.size > 50 * 1024 * 1024) {
         showToast('File too large (max 50MB)', 'error');
@@ -3074,7 +3653,7 @@ function openMessageComposer(title, onSend, showMedia = false, groupId = null, p
       mediaName = file.name;
     }
     
-    onSend({ text, mediaType, mediaUrl, mediaData, mediaName });
+    onSend({ text, mediaType, mediaUrl, mediaData, mediaName, postToStory, postToFeed });
   });
 }
 

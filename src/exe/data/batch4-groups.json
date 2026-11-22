@@ -1,157 +1,769 @@
 {
   "120363422277345192@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 2,
-      "leaves": 1
-    },
-    "lastseen": {}
-  },
-  "120363420573775296@g.us": {
-    "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
       "joins": 0,
       "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363420573775296@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363410975468944@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 30,
-      "joins": 1,
-      "leaves": 1
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
     },
     "lastseen": {
       "108074899644670@lid": 1792236659779,
       "156694080413885@lid": 1792195694301
     },
-    "antilink": true,
-    "autoreact": true,
-    "slowmode": 30
+    "antilink": false,
+    "autoreact": false,
+    "slowmode": 0,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false
   },
   "120363427965007001@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 4,
-      "leaves": 1
+      "date": "2026-11-21",
+      "msgs": 1,
+      "joins": 0,
+      "leaves": 2
     },
-    "lastseen": {}
+    "lastseen": {
+      "108074899644670@lid": 1795244304884
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363410829119440@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
+      "date": "2026-11-21",
+      "msgs": 1,
       "joins": 0,
       "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {
+      "108074899644670@lid": 1795247162921
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363407227707555@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
-      "joins": 4,
-      "leaves": 1
+      "joins": 0,
+      "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363408921334026@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
       "joins": 0,
       "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {
+      "145002843885754@lid": 1794838662686,
+      "109684925153508@lid": 1794842703102,
+      "139788887847021@lid": 1794842788760,
+      "109711114383487@lid": 1794843942046,
+      "245874059927643@lid": 1794844060825,
+      "28089639768301@lid": 1794844128432,
+      "34840825098342@lid": 1794844156653
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363410175442252@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
+      "date": "2026-11-21",
+      "msgs": 28,
       "joins": 0,
       "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {
+      "155632854368358@lid": 1795285019047,
+      "108074899644670@lid": 1795285002526,
+      "109711114383487@lid": 1795249590038,
+      "14298063609894@lid": 1795285304383,
+      "30365569802293@lid": 1795252180414,
+      "151204424343791@lid": 1795251987380
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363409649475153@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
       "joins": 0,
       "leaves": 0
     },
-    "lastseen": {}
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
   },
   "120363413030623100@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
-      "joins": 1,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363420935060072@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "10621487702135@lid": 1794754347298,
+      "269514113585294@lid": 1794755052105,
+      "182523242000621@lid": 1794758062151,
+      "74968939409414@lid": 1794764342120,
+      "212064010252414@lid": 1794764430209,
+      "158518703308881@lid": 1794770190160,
+      "215929782849620@lid": 1794770362865
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363425786470758@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363427573323740@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363407444776370@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 1
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363424020878374@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 1
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363420168715264@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363412765148428@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363404221541356@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "55005914632436@lid": 1794839273655,
+      "117394978656443@lid": 1794742184139,
+      "12516340011251@lid": 1794773578703,
+      "85530633072766@lid": 1794841150584,
+      "243241379229824@lid": 1794773540007,
+      "null": 1794753461351,
+      "18512164696072@lid": 1794768045567,
+      "162444672549116@lid": 1794841150331,
+      "259467966984196@lid": 1794773580779,
+      "262590659829833@lid": 1794773389467,
+      "146755509317867@lid": 1794814795122,
+      "113778649772061@lid": 1794813443019,
+      "148095421653035@lid": 1794815801174,
+      "181209518874650@lid": 1794814852522,
+      "32191551647795@lid": 1794815075333,
+      "88700402794551@lid": 1794839204952,
+      "123837463175200@lid": 1794838652945,
+      "84843606089859@lid": 1794839596091,
+      "264815251566642@lid": 1794841150501,
+      "85380409897074@lid": 1794841179383,
+      "202053129359489@lid": 1794843904422
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363384835894040@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "280161001939003@lid": 1794741193666
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363431042811102@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363430576588162@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "104793678848051@lid": 1794760775927
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363427519435578@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363410777397135@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "151204424343791@lid": 1794761327219,
+      "103985805533383@lid": 1794843362360,
+      "242996868022396@lid": 1794756128459,
+      "69608685981841@lid": 1794756234143,
+      "95580370038956@lid": 1794764494925,
+      "156263962964172@lid": 1794839598655,
+      "2594814599318@lid": 1794843342883,
+      "162272924180534@lid": 1794762820789,
+      "251036610592800@lid": 1794762979610,
+      "237233005179020@lid": 1794817560823,
+      "174646641086717@lid": 1794761245631,
+      "179714350153799@lid": 1794761271808,
+      "140741850447902@lid": 1794761272355,
+      "212596703658135@lid": 1794768929802,
+      "74968939409414@lid": 1794765230389,
+      "210647207911657@lid": 1794765243058,
+      "10347113091125@lid": 1794767166608
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363428926271558@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "149800607588522@lid": 1794816558594,
+      "262723535405279@lid": 1794815328717,
+      "252917789495509@lid": 1794815407038,
+      "6459714715790@lid": 1794816591465
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363427046287235@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "210647207911657@lid": 1794758607382,
+      "104793678848051@lid": 1794761102382
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363429537552284@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363429341414462@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "104793678848051@lid": 1794759869000
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363430580431471@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "266739011072023@lid": 1794771171821
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363431845978092@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363430321766922@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363413400618979@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363410468503032@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363414234444495@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363402356423326@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 4,
+      "joins": 0,
+      "leaves": 3
+    },
+    "lastseen": {
+      "278932741947500@lid": 1795264410548
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363283652991041@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {
+      "162779679948907@lid": 1794839341793
+    },
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363313983925675@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363334082511194@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363413349708423@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
+      "leaves": 0
+    },
+    "lastseen": {},
+    "antilink": false,
+    "antipromo": false,
+    "antispam": false,
+    "autoreply": false,
+    "chatbot": false,
+    "autoreact": false,
+    "slowmode": 0
+  },
+  "120363321493263583@g.us": {
+    "stats": {
+      "date": "2026-11-21",
+      "msgs": 0,
+      "joins": 0,
       "leaves": 1
     },
     "lastseen": {}
   },
-  "120363420935060072@g.us": {
+  "120363429984999885@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
       "joins": 0,
       "leaves": 0
     },
     "lastseen": {}
   },
-  "120363425786470758@g.us": {
+  "120363413100563113@g.us": {
     "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
+      "msgs": 201,
+      "joins": 2,
+      "leaves": 17
+    },
+    "lastseen": {
+      "62685400027234@lid": 1795272218056,
+      "162031953002545@lid": 1795254305766,
+      "94236028457077@lid": 1795252854031,
+      "90594147872932@lid": 1795253031667,
+      "142103422193820@lid": 1795253181628,
+      "231044208976075@lid": 1795253046409,
+      "null": 1795253591787,
+      "240286777217079@lid": 1795253033753,
+      "48387638468718@lid": 1795253038537,
+      "104947542671382@lid": 1795253246891,
+      "266752583807014@lid": 1795253306768,
+      "191065999032415@lid": 1795253443221,
+      "267864779034669@lid": 1795253862278,
+      "142700758204562@lid": 1795253295548,
+      "1555398975551@lid": 1795254009820,
+      "98827734364229@lid": 1795253533365,
+      "34909494243537@lid": 1795254618879,
+      "65138128338953@lid": 1795253865666,
+      "235372848136433@lid": 1795254550244,
+      "196430513860733@lid": 1795254187466,
+      "103010495672325@lid": 1795254313468,
+      "84289521733705@lid": 1795254329379,
+      "63029165183088@lid": 1795254302359,
+      "143851977228321@lid": 1795254309690,
+      "110394047758445@lid": 1795254346412,
+      "229845678211248@lid": 1795254569098,
+      "155705952739440@lid": 1795254585422
+    }
+  },
+  "120363432895598784@g.us": {
+    "stats": {
+      "date": "2026-11-21",
       "msgs": 0,
-      "joins": 0,
-      "leaves": 0
+      "joins": 2,
+      "leaves": 4
     },
     "lastseen": {}
   },
-  "120363427573323740@g.us": {
+  "120363312015655145@g.us": {
     "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 0,
-      "leaves": 0
-    },
-    "lastseen": {}
-  },
-  "120363407444776370@g.us": {
-    "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 0,
-      "leaves": 0
-    },
-    "lastseen": {}
-  },
-  "120363424020878374@g.us": {
-    "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 0,
-      "leaves": 0
-    },
-    "lastseen": {}
-  },
-  "120363420168715264@g.us": {
-    "stats": {
-      "date": "2026-10-17",
-      "msgs": 0,
-      "joins": 0,
-      "leaves": 0
-    },
-    "lastseen": {}
-  },
-  "120363412765148428@g.us": {
-    "stats": {
-      "date": "2026-10-17",
+      "date": "2026-11-21",
       "msgs": 0,
       "joins": 1,
       "leaves": 0

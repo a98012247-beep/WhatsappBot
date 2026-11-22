@@ -230,7 +230,14 @@ export const HANDLERS = {
   // ---- 1-6. Downloaders ----
   pindl: safe((ctx, q) => genericDl(ctx, q,
     '📌 Usage: .pindl <pinterest link>', 'Pinterest',
-    async (url) => pickDirectUrl(await jget('https://api.siputzx.my.id/api/d/pinterest?url=' + encodeURIComponent(url))))),
+    async (url) => {
+      try {
+        const { downloadVideo } = await import('./downloader.js');
+        const res = await downloadVideo(url);
+        if (res && (res.videoUrl || res.url)) return res.videoUrl || res.url;
+      } catch {}
+      return pickDirectUrl(await jget('https://api.siputzx.my.id/api/d/pinterest?url=' + encodeURIComponent(url)).catch(() => null));
+    })),
 
   redditdl: safe((ctx, q) => genericDl(ctx, q,
     '📌 Usage: .redditdl <reddit post link>', 'Reddit',
@@ -515,31 +522,83 @@ export const HANDLERS = {
 
   tempemail: safe(async (ctx, q) => {
     const a = q.split(/\s+/).filter(Boolean);
-    const base = 'https://www.1secmail.com/api/v1/';
-    if (a[0] === 'inbox' && a[1] && a[2]) {
+    const sub = a[0]?.toLowerCase();
+    const mailStore = readData('tempmail.json', {});
+    const userSession = mailStore[ctx.sender];
+
+    if (sub === 'inbox') {
+      if (!userSession || !userSession.token) {
+        return say(ctx, `⚠️ Aap ka koi active temp email nahi hai.\nPehle *${ctx.prefix || '!'}tempemail* likhein.`);
+      }
       try {
-        const j = await jget(`${base}?action=getMessages&login=${encodeURIComponent(a[1])}&domain=${encodeURIComponent(a[2])}`);
-        if (!j || !j.length) return say(ctx, `📭 Inbox khaali hai (${a[1]}@${a[2]})`);
-        const lines = j.slice(0, 10).map((m) => `• #${m.id} — ${m.from}\n  "${m.subject}" (${m.date})`).join('\n');
-        await say(ctx, `📥 Inbox (${a[1]}@${a[2]}):\n${lines}\n\nParhne ke liye: !tempemail read ${a[1]} ${a[2]} <id>`);
-      } catch { await say(ctx, '⚠️ Inbox nahi khul saka.'); }
+        const res = await fetch('https://api.mail.tm/messages', {
+          headers: { Authorization: `Bearer ${userSession.token}`, Accept: 'application/json' },
+          signal: AbortSignal.timeout(10000)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const msgs = (await res.json())?.['hydra:member'] || [];
+        if (!msgs.length) return say(ctx, `📭 Inbox khaali hai (${userSession.address})\nAbhi tak koi email nahi aayi.`);
+        const lines = msgs.slice(0, 10).map((m) => `• *ID:* \`${m.id}\`\n  *From:* ${m.from?.address || m.from?.name || 'Unknown'}\n  *Sub:* "${m.subject || '(no subject)'}"\n  *Waqt:* ${new Date(m.createdAt).toLocaleTimeString()}`).join('\n\n');
+        await say(ctx, `📥 *Inbox (${userSession.address}):*\n\n${lines}\n\n📖 Parhne ke liye: *${ctx.prefix || '!'}tempemail read <id>*`);
+      } catch (e) { await say(ctx, '⚠️ Inbox check nahi ho saka: ' + e.message); }
       return;
     }
-    if (a[0] === 'read' && a[1] && a[2] && a[3]) {
+
+    if (sub === 'read') {
+      const msgId = a[1];
+      if (!msgId) return say(ctx, `⚠️ Email ID likhein: *${ctx.prefix || '!'}tempemail read <id>*`);
+      if (!userSession || !userSession.token) {
+        return say(ctx, `⚠️ Pehle *${ctx.prefix || '!'}tempemail* banayein.`);
+      }
       try {
-        const j = await jget(`${base}?action=readMessage&login=${encodeURIComponent(a[1])}&domain=${encodeURIComponent(a[2])}&id=${encodeURIComponent(a[3])}`);
-        const body = (j.textBody || j.htmlBody || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1500);
-        await say(ctx, `✉️ ${j.subject || '(no subject)'}\nFrom: ${j.from || ''}\n\n${body || '(khaali)'}`);
-      } catch { await say(ctx, '⚠️ Email nahi khul saka.'); }
+        const res = await fetch(`https://api.mail.tm/messages/${encodeURIComponent(msgId)}`, {
+          headers: { Authorization: `Bearer ${userSession.token}`, Accept: 'application/json' },
+          signal: AbortSignal.timeout(10000)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const m = await res.json();
+        const body = (m.text || (m.html ? m.html.join(' ') : '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 1500);
+        await say(ctx, `✉️ *${m.subject || '(no subject)'}*\n*From:* ${m.from?.address || ''}\n*Date:* ${new Date(m.createdAt).toLocaleString()}\n\n${body || '(khaali)'}`);
+      } catch (e) { await say(ctx, '⚠️ Email nahi khul saka.'); }
       return;
     }
+
+    // Generate fresh temp mailbox
     try {
-      const j = await jget(base + '?action=genRandomMailbox&login=&domain=');
-      const addr = String(Array.isArray(j) ? j[0] : j || '');
-      if (!addr.includes('@')) throw new Error('no addr');
-      const [login, domain] = addr.split('@');
-      await say(ctx, `📧 Temp email tayyar:\n${addr}\n\n📥 Inbox dekhne ke liye:\n!tempemail inbox ${login} ${domain}`);
-    } catch { await say(ctx, '⚠️ Temp email nahi ban saka.'); }
+      await say(ctx, '⏳ Naya temp email banaya ja raha hai...');
+      const domRes = await fetch('https://api.mail.tm/domains', { signal: AbortSignal.timeout(8000) });
+      const domJson = await domRes.json();
+      const domain = domJson?.['hydra:member']?.[0]?.domain;
+      if (!domain) throw new Error('Domain nahi mil saka');
+
+      const rand = Math.floor(100000 + Math.random() * 900000);
+      const address = `user${rand}@${domain}`;
+      const password = `Pass_${rand}!`;
+
+      const createRes = await fetch('https://api.mail.tm/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, password }),
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!createRes.ok && createRes.status !== 201) throw new Error('Account nahi ban saka');
+
+      const tokenRes = await fetch('https://api.mail.tm/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, password }),
+        signal: AbortSignal.timeout(10000)
+      });
+      const tokenJson = await tokenRes.json();
+      if (!tokenJson.token) throw new Error('Token nahi mil saka');
+
+      mailStore[ctx.sender] = { address, password, token: tokenJson.token, createdAt: Date.now() };
+      writeData('tempmail.json', mailStore);
+
+      await say(ctx, `📧 *Temp Email Tayyar!*\n\n*Address:*\n\`${address}\`\n\n📥 *Inbox dekhne ke liye:*\n*${ctx.prefix || '!'}tempemail inbox*\n\n✉️ *Email parhne ke liye:*\n*${ctx.prefix || '!'}tempemail read <id>*\n\n_Naya email banane ke liye: *${ctx.prefix || '!'}tempemail new*_`);
+    } catch (e) {
+      await say(ctx, '⚠️ Temp email nahi ban saka: ' + e.message);
+    }
   }),
   fakemail: 'tempemail',
 
@@ -656,6 +715,7 @@ export const HANDLERS = {
     await say(ctx, `🎂 Age: ${y} years, ${mo} months, ${d} din\n🎉 Agli birthday mein ${daysTo} days baqi!`);
   }),
   agecalc: 'age',
+  bemyage: 'age',
 
   emi: safe(async (ctx, q) => {
     const a = q.split(/\s+/).map(Number);

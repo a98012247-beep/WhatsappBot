@@ -158,30 +158,39 @@ app.get('/api/statuses', (req, res) => {
 });
 
 app.post('/api/statuses', async (req, res) => {
-  const { groupId, groupName, text, isBroadcast } = req.body;
-  if (!text) return res.status(400).json({ error: 'Status message is required' });
+  const { groupId, groupName, text, isBroadcast, mediaType, mediaUrl, mediaData } = req.body;
+  if (!text && !mediaData && !mediaUrl) return res.status(400).json({ error: 'Status content is required' });
   try {
+    const mediaOpts = { mediaType, mediaUrl, mediaData };
     if (isBroadcast || groupId === 'status@broadcast') {
       try {
-        await botInstance.postWhatsAppStatus(text);
+        await botInstance.postWhatsAppStatus(text, mediaOpts);
       } catch (e) {
         console.warn('WhatsApp status broadcast notice:', e.message);
+      }
+    } else if (groupId && groupId.endsWith('@newsletter')) {
+      try {
+        await botInstance.postChannelStatus(groupId, text, mediaOpts);
+      } catch (e) {
+        console.warn('WhatsApp channel status post notice:', e.message);
       }
     } else if (groupId && groupId.endsWith('@g.us')) {
       try {
         // Silent by default (2026-10-17 per Hudson): story goes to Status tab only, no chat message
-        await botInstance.postGroupStatus(groupId, text, { silent: true });
+        await botInstance.postGroupStatus(groupId, text, { silent: true, ...mediaOpts });
       } catch (e) {
         console.warn('WhatsApp group status post notice:', e.message);
       }
     }
+    const isChannel = groupId && groupId.endsWith('@newsletter');
     const created = Store.setGroupStatus({
       groupId: isBroadcast ? 'status@broadcast' : groupId,
-      groupName: isBroadcast ? 'WhatsApp Story (Broadcast)' : (groupName || 'Group Chat'),
+      groupName: isBroadcast ? 'WhatsApp Story (Broadcast)' : (groupName || (isChannel ? 'WhatsApp Channel' : 'Group Chat')),
       text,
       author: 'Dashboard',
       authorName: 'Dashboard Admin',
-      isBroadcast: !!isBroadcast
+      isBroadcast: !!isBroadcast,
+      isChannel: !!isChannel
     });
     res.status(201).json(created);
   } catch (err) {
@@ -194,16 +203,189 @@ app.delete('/api/statuses/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// Channels Management & Status Hub
+app.get('/api/channels', async (req, res) => {
+  try {
+    const channels = botInstance.getAllChannels();
+    const ownerAdminChannels = channels.filter(c => c.isOwnerAdmin);
+    const memberChannels = channels.filter(c => !c.isOwnerAdmin);
+    res.json({
+      total: channels.length,
+      totalOwnerAdmin: ownerAdminChannels.length,
+      totalSubscriber: memberChannels.length,
+      channels,
+      ownerAdminChannels,
+      memberChannels
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Channel Detail Page API (dedicated channel view with live sync)
+app.get('/api/channels/:id/detail', async (req, res) => {
+  try {
+    const channelId = req.params.id;
+    const channels = botInstance.getAllChannels();
+    let found = channels.find(c => c.id === channelId);
+
+    if (botInstance.sock) {
+      try {
+        const meta = await Promise.race([
+          botInstance.sock.newsletterMetadata('JID', channelId),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+        ]);
+        if (meta && meta.id) {
+          botInstance.saveChannel(meta);
+          const freshChannels = botInstance.getAllChannels();
+          found = freshChannels.find(c => c.id === channelId) || found;
+        }
+      } catch (e) {
+        // Fall back to cached channel record
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: 'Channel not found' });
+    }
+
+    const settings = Store.getChannelSettings(channelId);
+    res.json({
+      ...found,
+      settings
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Channel Activity Feed (messages and status posts sent to this channel)
+app.get('/api/channels/:id/activity', (req, res) => {
+  try {
+    const channelId = req.params.id;
+    const logs = Store.getRecentLogs() || [];
+    const activity = logs.filter(l => {
+      const to = l.to || l.chat || l.groupId || '';
+      const from = l.from || '';
+      return to === channelId || from === channelId || to.includes(channelId) || from.includes(channelId);
+    }).slice(0, 50);
+    res.json({ channelId, activity });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Channel Quick Actions (Post, Mute, Unmute, Update Name, Update Description, Sync)
+app.post('/api/channels/:id/quick-action', async (req, res) => {
+  try {
+    const channelId = req.params.id;
+    const { action, text, options } = req.body || {};
+    if (!action) return res.status(400).json({ error: 'action is required' });
+
+    if (action === 'send' || action === 'post' || action === 'status') {
+      if (!text && !options?.mediaData && !options?.mediaUrl) {
+        return res.status(400).json({ error: 'Message text or media is required' });
+      }
+      await botInstance.postChannelStatus(channelId, text, options || {});
+      const chanMeta = botInstance.getAllChannels().find(c => c.id === channelId);
+      Store.setGroupStatus({
+        groupId: channelId,
+        groupName: chanMeta?.name || 'WhatsApp Channel',
+        text: text || '[Media Status Update]',
+        author: 'Dashboard',
+        authorName: 'Dashboard Admin',
+        isBroadcast: true,
+        isChannel: true,
+        mediaType: options?.mediaType || 'text'
+      });
+      return res.json({ ok: true, action });
+    } else if (action === 'mute') {
+      if (botInstance.sock?.newsletterMute) {
+        await botInstance.sock.newsletterMute(channelId);
+      }
+      return res.json({ ok: true, action: 'mute' });
+    } else if (action === 'unmute') {
+      if (botInstance.sock?.newsletterUnmute) {
+        await botInstance.sock.newsletterUnmute(channelId);
+      }
+      return res.json({ ok: true, action: 'unmute' });
+    } else if (action === 'setname') {
+      if (!text) return res.status(400).json({ error: 'New channel name is required' });
+      if (botInstance.sock?.newsletterUpdateName) {
+        await botInstance.sock.newsletterUpdateName(channelId, text);
+      }
+      return res.json({ ok: true, action: 'setname' });
+    } else if (action === 'setdesc') {
+      if (!text) return res.status(400).json({ error: 'New channel description is required' });
+      if (botInstance.sock?.newsletterUpdateDescription) {
+        await botInstance.sock.newsletterUpdateDescription(channelId, text);
+      }
+      return res.json({ ok: true, action: 'setdesc' });
+    } else if (action === 'sync') {
+      if (botInstance.sock) {
+        const meta = await botInstance.sock.newsletterMetadata('JID', channelId);
+        if (meta && meta.id) botInstance.saveChannel(meta);
+      }
+      return res.json({ ok: true, action: 'sync' });
+    } else {
+      return res.status(400).json({ error: `Unknown action: ${action}` });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Channel Feature Settings
+app.post('/api/channels/:id/settings', (req, res) => {
+  try {
+    const channelId = req.params.id;
+    const updated = Store.updateChannelSettings(channelId, req.body);
+    res.json({ ok: true, settings: updated });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/channels/check', async (req, res) => {
+  const { input } = req.body;
+  if (!input) return res.status(400).json({ error: 'Channel link or JID required' });
+  try {
+    let key = input.trim();
+    let type = 'JID';
+    if (key.includes('whatsapp.com/channel/')) {
+      key = key.split('whatsapp.com/channel/')[1].split('/')[0].split('?')[0];
+      type = 'INVITE';
+    } else if (!key.endsWith('@newsletter') && /^\d+$/.test(key)) {
+      key = `${key}@newsletter`;
+    }
+    if (!botInstance.sock) return res.status(503).json({ error: 'Bot is not connected' });
+    const meta = await botInstance.sock.newsletterMetadata(type, key);
+    if (meta && meta.id) {
+      botInstance.saveChannel(meta);
+      return res.json({ ok: true, channel: meta });
+    }
+    res.status(404).json({ error: 'Channel not found' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Groups Management & Whitelist Access Control
 app.get('/api/groups', async (req, res) => {
   try {
     const groups = await botInstance.getAllGroups();
     const settings = Store.getGroupSettings();
+    const ownerAdminGroups = groups.filter(g => g.isOwnerAdmin);
+    const memberGroups = groups.filter(g => !g.isOwnerAdmin);
     res.json({
       mode: settings.mode || 'whitelist',
       allowedGroups: settings.allowedGroups || [],
       totalJoined: groups.length,
       totalAllowed: groups.filter(g => g.isAllowed).length,
+      totalOwnerAdmin: ownerAdminGroups.length,
+      totalMemberOnly: memberGroups.length,
+      ownerAdminGroups,
+      memberGroups,
       groups
     });
   } catch (err) {
@@ -299,6 +481,34 @@ app.post('/api/owner/silent-default', async (req, res) => {
   const { silent } = req.body || {};
   const cfg = saveOwnerConfig({ silentDefault: !!silent });
   res.json({ ok: true, silentDefault: cfg.silentDefault });
+});
+
+// ─── Stopped Chats API (Per-Chat Stop/Resume) ───
+app.get('/api/stopped-chats', async (req, res) => {
+  const { getStoppedChats } = await import('./lib/access.js');
+  res.json(getStoppedChats());
+});
+
+app.post('/api/stopped-chats/stop', async (req, res) => {
+  try {
+    const { stopChat, cleanChatId } = await import('./lib/access.js');
+    const { chatId, sender } = req.body || {};
+    if (!chatId) return res.status(400).json({ error: 'chatId is required' });
+    const clean = cleanChatId(chatId);
+    stopChat(clean, sender || 'dashboard');
+    res.json({ ok: true, stopped: true, chatId: clean });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/stopped-chats/start', async (req, res) => {
+  try {
+    const { startChat, cleanChatId } = await import('./lib/access.js');
+    const { chatId } = req.body || {};
+    if (!chatId) return res.status(400).json({ error: 'chatId is required' });
+    const clean = cleanChatId(chatId);
+    startChat(clean);
+    res.json({ ok: true, stopped: false, chatId: clean });
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // ─── Per-group feature settings (2026-10-14) ───
@@ -830,6 +1040,33 @@ app.post('/api/send-video', async (req, res) => {
   }
 });
 
+function getCdnHeaders(url) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9'
+  };
+  if (/tiktok|byteoversea|ibyteimg|musical\.ly/i.test(url)) {
+    headers['Referer'] = 'https://www.tiktok.com/';
+    headers['Origin'] = 'https://www.tiktok.com';
+    headers['Sec-Fetch-Dest'] = 'video';
+    headers['Sec-Fetch-Mode'] = 'no-cors';
+  } else if (/instagram|fbcdn|cdninstagram/i.test(url)) {
+    headers['Referer'] = 'https://www.instagram.com/';
+    headers['Origin'] = 'https://www.instagram.com';
+  } else if (/twitter|twimg|x\.com/i.test(url)) {
+    headers['Referer'] = 'https://twitter.com/';
+    headers['Origin'] = 'https://twitter.com';
+  } else if (/facebook/i.test(url)) {
+    headers['Referer'] = 'https://www.facebook.com/';
+    headers['Origin'] = 'https://www.facebook.com';
+  } else if (/youtube|googlevideo/i.test(url)) {
+    headers['Referer'] = 'https://www.youtube.com/';
+    headers['Origin'] = 'https://www.youtube.com';
+  }
+  return headers;
+}
+
 // Direct MP4 Attachment File Downloader (Direct to Disk as .mp4)
 app.get('/api/download-file', async (req, res) => {
   const { url, title } = req.query;
@@ -837,15 +1074,16 @@ app.get('/api/download-file', async (req, res) => {
 
   try {
     const fetchRes = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'video/mp4,video/*,*/*;q=0.9',
-        'Referer': url
-      }
+      headers: getCdnHeaders(url)
     });
 
     if (!fetchRes.ok) {
-      return res.status(fetchRes.status).send('Failed to fetch remote MP4 stream.');
+      return res.status(fetchRes.status).send(`Failed to fetch remote media stream: HTTP ${fetchRes.status}`);
+    }
+
+    const contentType = fetchRes.headers.get('content-type') || '';
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
+      return res.status(403).send('Remote platform returned an error page or blocked access.');
     }
 
     const safeTitle = (title || 'video')
@@ -853,7 +1091,7 @@ app.get('/api/download-file', async (req, res) => {
       .replace(/_+/g, '_')
       .slice(0, 50) || 'video';
 
-    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Type', contentType.startsWith('video/') ? contentType : 'video/mp4');
     res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.mp4"`);
 
     const { Readable } = await import('stream');
@@ -871,14 +1109,19 @@ app.get('/api/video-proxy', async (req, res) => {
 
   try {
     const fetchRes = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'video/mp4,video/*,*/*;q=0.9',
-        'Referer': url
-      }
+      headers: getCdnHeaders(url)
     });
 
-    res.setHeader('Content-Type', fetchRes.headers.get('content-type') || 'video/mp4');
+    if (!fetchRes.ok) {
+      return res.status(fetchRes.status).send(`Stream fetch failed: HTTP ${fetchRes.status}`);
+    }
+
+    const contentType = fetchRes.headers.get('content-type') || 'video/mp4';
+    if (contentType.includes('text/html')) {
+      return res.status(403).send('Remote stream is not a valid video.');
+    }
+
+    res.setHeader('Content-Type', contentType);
     const { Readable } = await import('stream');
     Readable.fromWeb(fetchRes.body).pipe(res);
   } catch (err) {
@@ -919,6 +1162,11 @@ app.get('/api/groups/:id/detail', async (req, res) => {
       subject: meta?.subject || 'Unknown Group',
       creation: meta?.creation || null,
       owner: meta?.owner || null,
+      isCommunity: !!meta?.isCommunity,
+      isCommunityAnnounce: !!meta?.isCommunityAnnounce,
+      linkedParent: meta?.linkedParent || null,
+      announce: !!meta?.announce,
+      restrict: !!meta?.restrict,
       totalMembers: (meta?.participants || []).length,
       admins: (meta?.participants || []).filter(p => p.admin).map(p => ({
         id: p.id, admin: p.admin,
@@ -1461,7 +1709,7 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
       await botInstance.sendMessage(groupId, text);
       res.json({ ok: true, action: 'send' });
     } else if (action === 'status') {
-      if (!text) return res.status(400).json({ error: 'text is required' });
+      if (!text && !options?.mediaData && !options?.mediaUrl) return res.status(400).json({ error: 'text or media is required' });
       // Silent by default (2026-10-17 per Hudson): no message in group chat
       const opts = { ...(options || {}), silent: true };
       await botInstance.postGroupStatus(groupId, text, opts);
@@ -1513,11 +1761,12 @@ app.post('/api/groups/:id/quick-action', async (req, res) => {
       res.status(400).json({ error: 'Unknown action. Use: send, status, poll, mute, unmute, tagall, invite, setname, setdesc, pin, promote, demote, remove' });
     }
   } catch (e) {
+    console.error('[quick-action error details]:', e);
     let msg = e.message || 'Action failed';
     if (/bad-request/i.test(msg)) msg = 'WhatsApp rejected this — the bot probably needs to be a group admin for this action.';
     else if (/not-authorized|forbidden/i.test(msg)) msg = 'Not authorized — the bot needs admin rights in this group.';
     else if (/not connected/i.test(msg)) msg = 'Bot is not connected to WhatsApp.';
-    res.status(500).json({ error: msg });
+    res.status(500).json({ error: msg, raw: e.message, data: e.data });
   }
 });
 

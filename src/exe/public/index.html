@@ -193,6 +193,11 @@
           <h2 class="section-title" style="margin:0">Groups</h2>
           <span class="pill pill-green" id="group-whitelist-counter">0 of 0</span>
         </div>
+        <div class="group-filter-tabs" style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+          <button type="button" class="btn-soft active" id="filter-all-groups" data-filter="all">All Groups (<span id="count-all-groups">0</span>)</button>
+          <button type="button" class="btn-soft" id="filter-owner-admin" data-filter="owner-admin" style="font-weight:600;color:#10b981;border:1px solid #10b981;">👑 Owner Admin (<span id="count-owner-admin">0</span>)</button>
+          <button type="button" class="btn-soft" id="filter-member-only" data-filter="member-only">👤 Member Only (<span id="count-member-only">0</span>)</button>
+        </div>
         <div class="group pad row-wrap">
           <select id="select-group-mode">
             <option value="whitelist">🛡️ Selected groups only</option>
@@ -210,6 +215,36 @@
         </div>
         <div class="group table-group">
           <table class="tbl"><tbody id="groups-tbody"><tr><td class="td-empty">Loading…</td></tr></tbody></table>
+        </div>
+
+        <div class="sect-head" style="margin-top:28px;">
+          <h2 class="section-title" style="margin:0">📢 Channels (Newsletters)</h2>
+          <span class="pill pill-green" id="channel-counter">0 Channels</span>
+        </div>
+        <div class="channel-filter-tabs" style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap;">
+          <button type="button" class="btn-soft active" id="filter-chan-owner-admin" data-filter="owner-admin" style="font-weight:600;color:#10b981;border:1px solid #10b981;">👑 Owner Admin (<span id="count-chan-owner-admin">0</span>)</button>
+          <button type="button" class="btn-soft" id="filter-chan-all" data-filter="all">All Channels (<span id="count-chan-all">0</span>)</button>
+        </div>
+        <div class="group pad row-wrap" style="align-items:center;gap:10px;">
+          <input type="text" id="channel-add-input" placeholder="Channel invite link or JID (e.g. https://whatsapp.com/channel/xxx)…" style="flex:1;min-width:260px;">
+          <button type="button" class="btn-primary" id="btn-add-channel">+ Track Channel</button>
+          <button class="icon-btn" id="btn-refresh-channels" title="Refresh Channels">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-1.4-8.4L23 10"/></svg>
+          </button>
+        </div>
+        <div class="group table-group">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th>Followers</th>
+                <th>Role</th>
+                <th>Invite Link</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="channels-tbody"><tr><td colspan="5" class="td-empty">No channels tracked yet. Enter a channel link above or post in a channel to track.</td></tr></tbody>
+          </table>
         </div>
 
         <h2 class="section-title">Support tickets</h2>
@@ -345,6 +380,12 @@
       <section class="tab-pane" id="tab-group-detail">
         <button class="btn-soft btn-sm" id="btn-back-groups" style="margin-bottom:12px">← Back to Groups</button>
         <div id="group-detail-content"><div class="td-empty" style="padding:24px;text-align:center">Loading group…</div></div>
+      </section>
+
+      <!-- CHANNEL DETAIL (hash-routed page) -->
+      <section class="tab-pane" id="tab-channel-detail">
+        <button class="btn-soft btn-sm" id="btn-back-channels" style="margin-bottom:12px">← Back to Channels</button>
+        <div id="channel-detail-content"><div class="td-empty" style="padding:24px;text-align:center">Loading channel…</div></div>
       </section>
 
       <!-- AUTOMATION -->

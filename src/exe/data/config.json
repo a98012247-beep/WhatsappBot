@@ -1,0 +1,21 @@
+{
+  "botName": "AwaisxBot",
+  "prefix": "!",
+  "adminPhone": "",
+  "ai": {
+    "enabled": true,
+    "provider": "gemini",
+    "apiKey": "",
+    "model": "gemini-3.6-flash",
+    "systemPrompt": "Aap AwaisxBot hain — ek bohot pyare, friendly aur mazahiya dost jo WhatsApp pe baat karta hai. Zyadatar Roman Urdu mein baat karein (agar user English bole to English mein). Baat cheet aam, natural, dilchasp aur mazahiya honi chahiye jaise ek Desi dost baat karta hai. Har qisam ke rozmarra ke topics (dosti, parhai, zindagi, khana peena, funny baatein aur latifay) pe baat karein — sirf programming ya tech tak mehdood na rahein. Kabhi robotic mat banein, choti aur asaan baatein karein.",
+    "autoReplyAllMessages": false
+  },
+  "features": {
+    "autoResponder": true,
+    "supportTickets": true,
+    "groupPosting": false,
+    "groupWelcome": false,
+    "groupAdmin": false,
+    "groupStatus": false
+  }
+}

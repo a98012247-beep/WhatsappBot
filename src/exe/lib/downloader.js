@@ -85,10 +85,12 @@ function parseRahadData(res, defaultSource = 'Universal Video') {
     dl.watermark;
 
   if (vUrl && typeof vUrl === 'string') {
+    const isImage = dl.type === 'image' || /\.(jpe?g|png|webp)($|\?)/i.test(vUrl);
     return {
       success: true,
+      mediaType: isImage ? 'image' : 'video',
       source: d.source || defaultSource,
-      title: d.title || 'Video Stream',
+      title: d.title || (isImage ? 'Photo' : 'Video Stream'),
       videoUrl: vUrl,
       thumbnail: d.thumbnail || null
     };
@@ -250,12 +252,12 @@ async function raceTikTok(url) {
   if (alldl) {
     tasks.push(
       Promise.race([
-        alldl(url, { retries: 0 }).then(r => {
+        alldl(url, { retries: 1 }).then(r => {
           const p = parseRahadData(r, 'TikTok (Rahad)');
           if (p) return p;
           throw new Error('Rahad empty');
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
       ])
     );
   }
@@ -265,17 +267,18 @@ async function raceTikTok(url) {
     Promise.race([
       ttdl(url).then(data => {
         if (data.status && data.video && data.video.length > 0) {
+          const vUrl = Array.isArray(data.video) ? data.video[0] : data.video;
           return {
             success: true,
             source: 'TikTok (ttdl)',
             title: data.title || 'TikTok Video',
-            videoUrl: data.video[0],
+            videoUrl: vUrl,
             thumbnail: data.thumbnail
           };
         }
         throw new Error('ttdl empty');
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000))
     ])
   );
 
@@ -376,21 +379,23 @@ async function raceInstagram(url) {
     Promise.race([
       igdl(url).then(data => {
         if (data.status && data.result && data.result.length > 0) {
-          const first = data.result[0];
-          const vUrl = typeof first === 'string' ? first : (first.url || first.video);
+          const valid = data.result.find(i => (typeof i === 'string' && i) || (i && (i.url || i.video))) || data.result[0];
+          const vUrl = typeof valid === 'string' ? valid : (valid.url || valid.video);
           if (vUrl) {
+            const isImage = /\.(jpe?g|png|webp)($|\?)/i.test(vUrl) || (valid.filename && /\.(jpe?g|png|webp)/i.test(valid.filename));
             return {
               success: true,
+              mediaType: isImage ? 'image' : 'video',
               source: 'Instagram (igdl)',
-              title: 'Instagram Reel / Post',
+              title: 'Instagram Post',
               videoUrl: typeof vUrl === 'string' ? vUrl : vUrl.url,
-              thumbnail: first.thumbnail || null
+              thumbnail: valid.thumbnail || null
             };
           }
         }
         throw new Error('igdl empty');
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 12000))
     ])
   );
 
@@ -398,12 +403,12 @@ async function raceInstagram(url) {
   if (alldl) {
     tasks.push(
       Promise.race([
-        alldl(url, { retries: 0 }).then(r => {
+        alldl(url, { retries: 1 }).then(r => {
           const p = parseRahadData(r, 'Instagram (Rahad)');
           if (p) return p;
           throw new Error('Rahad empty');
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
       ])
     );
   }
@@ -411,7 +416,7 @@ async function raceInstagram(url) {
   try {
     return await Promise.any(tasks);
   } catch (e) {
-    throw new Error("Couldn't extract this Instagram video. Please check that the post or account is public.");
+    throw new Error("Couldn't extract this Instagram media. Please check that the post or account is public.");
   }
 }
 
@@ -543,17 +548,19 @@ async function raceYouTube(url) {
   if (ytIdMatch && ytIdMatch[1]) {
     const ytid = ytIdMatch[1];
     const invidiousHosts = [
-      'https://invidious.f5.si'
+      'https://invidious.f5.si',
+      'https://inv.bp.projectsegfau.lt',
+      'https://invidious.jing.rocks'
     ];
 
     invidiousHosts.forEach(host => {
       tasks.push(
-        fetch(`${host}/api/v1/videos/${ytid}`, { signal: AbortSignal.timeout(3500) })
+        fetch(`${host}/api/v1/videos/${ytid}`, { signal: AbortSignal.timeout(4500) })
           .then(r => r.json())
           .then(data => {
             const streams = (data.formatStreams || []).filter(s => s.url);
             if (streams.length > 0) {
-              const chosen = streams.find(s => /720p|480p/i.test(s.quality)) || streams[0];
+              const chosen = streams.find(s => /720p|480p|360p/i.test(s.quality)) || streams[0];
               return {
                 success: true,
                 source: `YouTube (Invidious)`,
@@ -569,24 +576,19 @@ async function raceYouTube(url) {
     });
   }
 
-  // Engine 3: Siputzx YouTube Downloader API
-  tasks.push(
-    fetch(`https://api.siputzx.my.id/api/d/youtube?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(3500) })
-      .then(r => r.json())
-      .then(data => {
-        const v = data.data?.video || data.data?.url || data.result?.url;
-        if (v) {
-          return {
-            success: true,
-            source: 'YouTube (Siputzx API)',
-            title: data.data?.title || 'YouTube Video',
-            videoUrl: typeof v === 'string' ? v : v[0],
-            thumbnail: data.data?.thumbnail || null
-          };
-        }
-        throw new Error('Siputzx YT empty');
-      })
-  );
+  // Engine 3: Rahad alldl (Highly reliable multi-format extractor)
+  if (alldl) {
+    tasks.push(
+      Promise.race([
+        alldl(url, { retries: 1 }).then(r => {
+          const p = parseRahadData(r, 'YouTube (Rahad)');
+          if (p) return p;
+          throw new Error('Rahad empty');
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 15000))
+      ])
+    );
+  }
 
   // Engine 4: btch youtube
   tasks.push(
@@ -604,23 +606,9 @@ async function raceYouTube(url) {
         }
         throw new Error('youtube empty');
       }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4500))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 12000))
     ])
   );
-
-  // Engine 5: Rahad alldl
-  if (alldl) {
-    tasks.push(
-      Promise.race([
-        alldl(url, { retries: 0 }).then(r => {
-          const p = parseRahadData(r, 'YouTube (Rahad)');
-          if (p) return p;
-          throw new Error('Rahad empty');
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4500))
-      ])
-    );
-  }
 
   try {
     return await Promise.any(tasks);

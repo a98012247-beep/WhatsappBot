@@ -19,6 +19,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 
 const OWNER_FILE = 'owner-config.json';
 const GROUP_SETTINGS_FILE = 'group-settings.json';
+const STOPPED_CHATS_FILE = 'stopped-chats.json';
 
 // Per-group features controllable from the dashboard.
 export const GROUP_FEATURES = [
@@ -36,15 +37,16 @@ export const GROUP_FEATURES = [
 ];
 
 // Built-in defaults when nothing is set anywhere.
+// (Group reply and auto-delete features are default FALSE per user configuration)
 const DEFAULTS = {
-  welcome: true,
-  goodbye: true,
-  antilink: true,
-  antipromo: true,
-  antispam: true,
-  autoreply: true,
-  chatbot: true,
-  keywordalerts: true,
+  welcome: false,
+  goodbye: false,
+  antilink: false,
+  antipromo: false,
+  antispam: false,
+  autoreply: false,
+  chatbot: false,
+  keywordalerts: false,
   slowmode: false,
   antidelete: false,
   silent: false,
@@ -76,12 +78,76 @@ export function normalizeNumber(jid) {
   return String(jid).split('@')[0].split(':')[0].replace(/\D/g, '');
 }
 
-// ─── Owner / admin ───
+// ─── Chat ID standardizer ───
+export function cleanChatId(jid) {
+  if (!jid) return '';
+  const str = String(jid).trim();
+  if (str.includes('@s.whatsapp.net')) {
+    const num = str.split('@')[0].split(':')[0].replace(/\D/g, '');
+    return `${num}@s.whatsapp.net`;
+  }
+  if (!str.includes('@') && /^\d+$/.test(str)) {
+    return `${str}@s.whatsapp.net`;
+  }
+  return str;
+}
+
+// ─── Stopped chats control ───
+export function isChatStopped(chatId) {
+  if (!chatId) return false;
+  const all = readJson(STOPPED_CHATS_FILE, {});
+  const raw = String(chatId).trim();
+  const clean = cleanChatId(raw);
+  const normNum = normalizeNumber(raw);
+
+  if (all[raw]?.stopped) return true;
+  if (all[clean]?.stopped) return true;
+  if (normNum && all[normNum]?.stopped) return true;
+  return false;
+}
+
+export function stopChat(chatId, sender) {
+  if (!chatId) return false;
+  const all = readJson(STOPPED_CHATS_FILE, {});
+  const clean = cleanChatId(chatId);
+  all[clean] = {
+    stopped: true,
+    stoppedAt: new Date().toISOString(),
+    stoppedBy: sender ? normalizeNumber(sender) : 'owner'
+  };
+  writeJson(STOPPED_CHATS_FILE, all);
+  return true;
+}
+
+export function startChat(chatId) {
+  if (!chatId) return false;
+  const all = readJson(STOPPED_CHATS_FILE, {});
+  const raw = String(chatId).trim();
+  const clean = cleanChatId(raw);
+  const normNum = normalizeNumber(raw);
+  let changed = false;
+  if (all[raw]) { delete all[raw]; changed = true; }
+  if (all[clean]) { delete all[clean]; changed = true; }
+  if (normNum && all[normNum]) { delete all[normNum]; changed = true; }
+  if (changed) {
+    writeJson(STOPPED_CHATS_FILE, all);
+  }
+  return true;
+}
+
+export function getStoppedChats() {
+  return readJson(STOPPED_CHATS_FILE, {});
+}
+
+// ─── Owner / admin (Sole Owner: +923243877900 / 108074899644670) ───
+const KNOWN_OWNER_IDS = new Set(['923243877900', '108074899644670']);
+
 export function getOwnerConfig() {
   const cfg = readJson(OWNER_FILE, {});
   return {
-    owner: cfg.owner || null,
-    admins: Array.isArray(cfg.admins) ? cfg.admins : [],
+    owner: cfg.owner || '923243877900',
+    ownerLid: cfg.ownerLid || '108074899644670',
+    admins: Array.isArray(cfg.admins) ? cfg.admins : ['923243877900', '108074899644670'],
     silentDefault: !!cfg.silentDefault,
     features: cfg.features && typeof cfg.features === 'object' ? cfg.features : {},
   };
@@ -90,10 +156,18 @@ export function getOwnerConfig() {
 export function saveOwnerConfig(patch) {
   const cfg = getOwnerConfig();
   const next = { ...cfg, ...patch };
-  // keep only known keys
+  const ownerNum = normalizeNumber(next.owner || '923243877900');
+  const ownerLid = normalizeNumber(next.ownerLid || '108074899644670');
+  const rawAdmins = Array.isArray(next.admins) ? next.admins : [];
+  const cleanAdmins = [...new Set([
+    ownerNum,
+    ownerLid,
+    ...rawAdmins.map(normalizeNumber).filter(Boolean)
+  ])];
   const clean = {
-    owner: next.owner || null,
-    admins: Array.isArray(next.admins) ? [...new Set(next.admins.map(normalizeNumber).filter(Boolean))] : [],
+    owner: ownerNum,
+    ownerLid: ownerLid,
+    admins: cleanAdmins,
     silentDefault: !!next.silentDefault,
     features: next.features && typeof next.features === 'object' ? next.features : {},
   };
@@ -109,32 +183,60 @@ export function setOwner(number) {
 
 export function addAdmin(number) {
   const n = normalizeNumber(number);
-  if (!n) throw new Error('Invalid number');
+  if (!n) throw new Error('Invalid number or ID');
   const cfg = getOwnerConfig();
-  if (!cfg.admins.includes(n)) cfg.admins.push(n);
-  return saveOwnerConfig({ admins: cfg.admins });
+  const admins = Array.isArray(cfg.admins) ? [...cfg.admins] : [];
+  if (!admins.map(normalizeNumber).includes(n)) {
+    admins.push(n);
+  }
+  return saveOwnerConfig({ admins });
 }
 
 export function removeAdmin(number) {
   const n = normalizeNumber(number);
+  if (!n) throw new Error('Invalid number or ID');
   const cfg = getOwnerConfig();
-  return saveOwnerConfig({ admins: cfg.admins.filter(a => a !== n) });
+  const ownerNum = normalizeNumber(cfg.owner || '923243877900');
+  const ownerLid = normalizeNumber(cfg.ownerLid || '108074899644670');
+  if (n === ownerNum || n === ownerLid) {
+    throw new Error('Cannot remove the Bot Owner from access');
+  }
+  const admins = (Array.isArray(cfg.admins) ? cfg.admins : []).filter(a => normalizeNumber(a) !== n);
+  return saveOwnerConfig({ admins });
 }
 
 export function isOwner(sender) {
-  const cfg = getOwnerConfig();
-  if (!cfg.owner) return false;
+  if (!sender) return false;
+  const raw = String(sender);
+  if (raw.includes('923243877900') || raw.includes('108074899644670')) return true;
   const norm = normalizeNumber(sender);
-  if (norm === cfg.owner) return true;
-  // Owner LIDs (2026-10-17): WhatsApp sends owner messages in @lid format
-  const ownerLids = ['69505992642696', '108074899644670'];
-  return ownerLids.includes(norm);
+  if (KNOWN_OWNER_IDS.has(norm)) return true;
+  const cfg = getOwnerConfig();
+  if (cfg.owner && norm === normalizeNumber(cfg.owner)) return true;
+  if (cfg.ownerLid && norm === normalizeNumber(cfg.ownerLid)) return true;
+  return false;
 }
 
 export function isAdmin(sender) {
+  if (!sender) return false;
   if (isOwner(sender)) return true;
   const cfg = getOwnerConfig();
-  return cfg.admins.includes(normalizeNumber(sender));
+  const raw = String(sender);
+  const norm = normalizeNumber(sender);
+  const admins = Array.isArray(cfg.admins) ? cfg.admins : [];
+
+  for (const adm of admins) {
+    const admNorm = normalizeNumber(adm);
+    if (!admNorm) continue;
+    if (raw.includes(admNorm) || norm === admNorm) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function canUseBot(sender) {
+  return isOwner(sender) || isAdmin(sender);
 }
 
 // ─── Per-group settings ───
@@ -167,7 +269,7 @@ export function updateGroupSettings(groupId, patch) {
 // Dashboard override with fallback to the command-set value, then default.
 // Use in hooks: groupFeatureOn(from, 'antilink', g.antilink)
 export function groupFeatureOn(groupId, feature, fallback) {
-  if (!GROUP_FEATURES.includes(feature)) return fallback !== undefined ? !!fallback : true;
+  if (!GROUP_FEATURES.includes(feature)) return fallback !== undefined ? !!fallback : false;
   const all = readGroupSettings();
   const explicit = all[groupId];
   if (explicit && feature in explicit) return !!explicit[feature];

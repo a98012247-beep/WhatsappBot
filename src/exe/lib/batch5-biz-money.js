@@ -874,6 +874,7 @@ export const HANDLERS = {
   orders: safe((ctx, q) => hOrderbook(ctx, (q || '').trim() ? q : 'list')),
 
   pricelist: safe(hPricelist),
+  price: 'pricelist',
 
   attendance: safe(hAttendance),
   attend: 'attendance',
