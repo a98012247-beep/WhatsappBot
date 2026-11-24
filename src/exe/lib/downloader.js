@@ -1,5 +1,9 @@
 import { ttdl, igdl, fbdown, twitter, youtube, pinterest, capcut, yts } from 'btch-downloader';
 import rahadPkg from 'rahad-all-downloader-v2';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 const alldl = rahadPkg.alldl || rahadPkg.default?.alldl;
 
 // In-Memory Ultra-Fast Video Cache (30 min TTL)
@@ -68,6 +72,135 @@ async function querySingleCobalt(srv, url, platform) {
 async function queryCobalt(url, platform = 'Video') {
   const tasks = COBALT_SERVERS.map(srv => querySingleCobalt(srv, url, platform));
   return await Promise.any(tasks);
+}
+
+/**
+ * SnapSave response unpacker (reconstructs obfuscated HTML payload)
+ */
+function decodeSnapSave(data) {
+  const match = data.match(/\}\s*\(\s*\"([^\"]+)\"\s*,\s*(\d+)\s*,\s*\"([^\"]+)\"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*\)/);
+  if (!match) return null;
+  const [_, h, uStr, n, tStr, eStr, rStr] = match;
+  const t = parseInt(tStr, 10);
+  const e = parseInt(eStr, 10);
+
+  function decodeBase(d, b1, b2) {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/'.split('');
+    const hArr = chars.slice(0, b1);
+    const iArr = chars.slice(0, b2);
+    let j = d.split('').reverse().reduce((acc, char, idx) => {
+      if (hArr.indexOf(char) !== -1) {
+        return acc + hArr.indexOf(char) * Math.pow(b1, idx);
+      }
+      return acc;
+    }, 0);
+    let k = '';
+    while (j > 0) {
+      k = iArr[j % b2] + k;
+      j = Math.floor((j - (j % b2)) / b2);
+    }
+    return k || '0';
+  }
+
+  let result = '';
+  for (let i = 0, len = h.length; i < len; i++) {
+    let s = '';
+    while (i < len && h[i] !== n[e]) {
+      s += h[i];
+      i++;
+    }
+    for (let j = 0; j < n.length; j++) {
+      s = s.replaceAll(n[j], j.toString());
+    }
+    result += String.fromCharCode(decodeBase(s, e, 10) - t);
+  }
+  return decodeURIComponent(escape(result));
+}
+
+/**
+ * Direct SnapSave Video Stream Resolver (Facebook, Instagram)
+ * Ultra-fast CDN extraction directly into WhatsApp
+ */
+async function querySnapSave(url, platform = 'Facebook') {
+  const res = await fetch('https://snapsave.app/action.php?lang=en', {
+    method: 'POST',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://snapsave.app/',
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams({ url }),
+    signal: AbortSignal.timeout(6000)
+  });
+  if (!res.ok) throw new Error(`SnapSave HTTP ${res.status}`);
+  const text = await res.text();
+  const decoded = decodeSnapSave(text);
+  if (!decoded) throw new Error('SnapSave decode failed');
+
+  const htmlMatch = decoded.match(/innerHTML\s*=\s*\"([\s\S]+?)\"\s*;\s*document/);
+  if (!htmlMatch) throw new Error('SnapSave innerHTML not found');
+  const html = htmlMatch[1].replace(/\\\"/g, '"').replace(/\\\//g, '/').replace(/\\'/g, "'");
+
+  const hrefs = [...html.matchAll(/href\s*=\s*\"([^\"]+)\"/g)].map(m => m[1]);
+  const videoUrl = hrefs.find(h => (h.includes('rapidcdn.app') || h.includes('.mp4') || h.includes('fbcdn.net') || h.includes('cdninstagram.com')) && !h.startsWith('#'));
+  if (videoUrl) {
+    return {
+      success: true,
+      source: `${platform} (SnapSave)`,
+      title: `${platform} Video`,
+      videoUrl,
+      thumbnail: null
+    };
+  }
+  throw new Error('SnapSave no video stream found');
+}
+
+/**
+ * Local High-Performance yt-dlp Video Stream Resolver
+ */
+async function queryYtDlp(url, platform = 'Video') {
+  try {
+    const { stdout } = await execFileAsync('yt-dlp', [
+      '-g',
+      '-f', 'b[ext=mp4]/b/best',
+      '--no-playlist',
+      '--no-warnings',
+      url
+    ], { timeout: 12000 });
+    const streamUrl = stdout.trim().split('\n')[0];
+    if (streamUrl && streamUrl.startsWith('http')) {
+      return {
+        success: true,
+        source: `${platform} (yt-dlp)`,
+        title: `${platform} Video`,
+        videoUrl: streamUrl,
+        thumbnail: null
+      };
+    }
+  } catch (e) {
+    throw new Error(`yt-dlp: ${e.message}`);
+  }
+  throw new Error('yt-dlp no video stream found');
+}
+
+/**
+ * Resolves shortlinks / mobile redirects (e.g. facebook.com/share/v/..., fb.watch/...)
+ */
+async function resolveRedirectUrl(url) {
+  try {
+    if (!/facebook\.com\/share\/|fb\.watch\//i.test(url)) return url;
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: AbortSignal.timeout(3500)
+    });
+    const loc = res.headers.get('location');
+    if (loc && loc.startsWith('http')) return loc;
+  } catch (e) {}
+  return url;
 }
 
 function parseRahadData(res, defaultSource = 'Universal Video') {
@@ -324,6 +457,12 @@ async function raceInstagram(url) {
       })
     );
   }
+
+  // Engine: SnapSave Instagram Extractor (Ultra-fast direct CDN, ~350ms)
+  tasks.push(querySnapSave(url, 'Instagram'));
+
+  // Engine: yt-dlp local extractor
+  tasks.push(queryYtDlp(url, 'Instagram'));
 
   // Engine 2: Siputzx Instagram Open API
   tasks.push(
@@ -620,7 +759,28 @@ async function raceYouTube(url) {
 async function raceFacebook(url) {
   const tasks = [];
 
-  // Engine 1: Siputzx Facebook API
+  // 1. Resolve redirect for mobile share links (facebook.com/share/v/..., /share/r/..., fb.watch/...)
+  const resolvedUrlPromise = resolveRedirectUrl(url);
+
+  // Engine 1: SnapSave (Ultra-fast direct decoder, handles share links, reels, videos, watch)
+  tasks.push(querySnapSave(url, 'Facebook'));
+
+  // Engine 2: SnapSave with resolved canonical URL (if redirect differed)
+  tasks.push(
+    resolvedUrlPromise.then(resolved => {
+      if (resolved && resolved !== url) {
+        return querySnapSave(resolved, 'Facebook');
+      }
+      throw new Error('Same url');
+    })
+  );
+
+  // Engine 3: yt-dlp local extractor (handles canonical reel/video/watch)
+  tasks.push(
+    resolvedUrlPromise.then(resolved => queryYtDlp(resolved || url, 'Facebook'))
+  );
+
+  // Engine 4: Siputzx Facebook API (fallback)
   tasks.push(
     fetch(`https://api.siputzx.my.id/api/d/facebook?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(3500) })
       .then(r => r.json())
@@ -639,7 +799,7 @@ async function raceFacebook(url) {
       })
   );
 
-  // Engine 2: GuruAPI Facebook Downloader
+  // Engine 5: GuruAPI Facebook Downloader (fallback)
   tasks.push(
     fetch(`https://api.guruapi.tech/fb/v1/download?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(3500) })
       .then(r => r.json())
@@ -658,10 +818,10 @@ async function raceFacebook(url) {
       })
   );
 
-  // Engine 3: Cobalt Parallel
+  // Engine 6: Cobalt Parallel
   tasks.push(queryCobalt(url, 'Facebook'));
 
-  // Engine 4: btch fbdown (Prefer Normal/SD for fast sending)
+  // Engine 7: btch fbdown
   tasks.push(
     Promise.race([
       fbdown(url).then(data => {
@@ -680,7 +840,7 @@ async function raceFacebook(url) {
     ])
   );
 
-  // Engine 5: Rahad alldl
+  // Engine 8: Rahad alldl
   if (alldl) {
     tasks.push(
       Promise.race([
@@ -787,6 +947,14 @@ async function raceCapCut(url) {
 }
 
 async function downloadUniversal(url) {
+  try {
+    return await queryYtDlp(url, 'Universal');
+  } catch (e) {}
+
+  try {
+    return await querySnapSave(url, 'Universal');
+  } catch (e) {}
+
   try {
     return await queryCobalt(url, 'Video');
   } catch (e) {}
