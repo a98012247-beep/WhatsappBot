@@ -66,10 +66,44 @@ export async function getMediaBuffer(msg, kind) {
   }
 }
 
-export async function isGroupAdmin(sock, groupId, userJid) {
+// In-memory group metadata cache (3-minute TTL) to avoid expensive round-trips to WhatsApp servers on every message
+const _metaCache = new Map();
+const META_TTL = 3 * 60 * 1000;
+
+export async function getCachedGroupMetadata(sock, groupId) {
+  if (!sock || !groupId) return null;
+  const now = Date.now();
+  const cached = _metaCache.get(groupId);
+  if (cached && (now - cached.t < META_TTL)) {
+    return cached.data;
+  }
   try {
     const meta = await sock.groupMetadata(groupId);
-    const p = (meta.participants || []).find(x => x.id === userJid);
+    if (meta) {
+      _metaCache.set(groupId, { data: meta, t: now });
+    }
+    return meta;
+  } catch (err) {
+    if (cached) return cached.data;
+    return null;
+  }
+}
+
+export function invalidateGroupMetadata(groupId) {
+  if (groupId) _metaCache.delete(groupId);
+  else _metaCache.clear();
+}
+
+export async function isGroupAdmin(sock, groupId, userJid) {
+  try {
+    const meta = await getCachedGroupMetadata(sock, groupId);
+    if (!meta || !userJid) return false;
+    const cleanUser = String(userJid).split('@')[0].split(':')[0];
+    const p = (meta.participants || []).find(x => {
+      if (x.id === userJid) return true;
+      const cleanP = String(x.id).split('@')[0].split(':')[0];
+      return cleanP && cleanP === cleanUser;
+    });
     return !!p && (p.admin === 'admin' || p.admin === 'superadmin');
   } catch { return false; }
 }

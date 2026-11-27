@@ -19,6 +19,22 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 const __proxyUrl = process.env.https_proxy || process.env.HTTPS_PROXY || null;
 const __wsAgent = __proxyUrl ? new HttpsProxyAgent(__proxyUrl) : undefined;
 import { Store } from './store.js';
+import {
+  isOwner,
+  isAdmin,
+  isChatStopped,
+  getOwnerConfig,
+  saveOwnerConfig,
+  setOwner,
+  addAdmin,
+  removeAdmin,
+  stopChat,
+  startChat,
+  getStoppedChats,
+  cleanChatId,
+  normalizeNumber
+} from './access.js';
+import { guardOutbound } from './.syslock.js';
 import { askAI } from './ai.js';
 import { transcribeAudio, textToSpeech, AURA_VOICES, getAudioMimeType } from './voice.js';
 import { getViralMeme, getMemeRoast, getMemeJoke } from './memes.js';
@@ -527,7 +543,6 @@ class WhatsAppBot extends EventEmitter {
 
           // Auto-set owner: whoever links the WhatsApp becomes the owner (2026-10-17 per Hudson)
           try {
-            const { getOwnerConfig, setOwner, normalizeNumber } = await import('./access.js');
             const cfg = getOwnerConfig();
             if (!cfg.owner && this.user?.id) {
               const linkedNum = normalizeNumber(this.user.id);
@@ -543,89 +558,116 @@ class WhatsAppBot extends EventEmitter {
         }
       });
 
-      // Handle Incoming Messages
+      // Handle Incoming Messages (Non-blocking concurrent execution)
       this.sock.ev.on('messages.upsert', async ({ messages, type }) => {
-        if (type !== 'notify') return;
+        if (type !== 'notify' || !Array.isArray(messages)) return;
 
-        for (const msg of messages) {
-          if (!msg.message) continue;
-          // Store recent messages per chat for dashboard "repost as status" (2026-10-17 per Hudson)
+        // Process messages concurrently so heavy tasks never block incoming messages
+        await Promise.all(messages.map(async (msg) => {
           try {
-            const chatId = msg.key.remoteJid;
-            if (chatId) {
-              if (!this._recentMessages) this._recentMessages = new Map();
-              if (!this._recentMessages.has(chatId)) this._recentMessages.set(chatId, []);
-              const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text ||
-                           msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || '';
-              if (text.trim() && !text.includes('Powered by Awais AI')) {
-                const arr = this._recentMessages.get(chatId);
-                arr.unshift({
-                  id: msg.key.id,
-                  text: text.slice(0, 500),
-                  sender: msg.key.participant || msg.key.remoteJid,
-                  pushName: msg.pushName || '',
-                  timestamp: (msg.messageTimestamp || Date.now() / 1000) * 1000,
-                  fromMe: !!msg.key.fromMe,
-                });
-                if (arr.length > 50) arr.length = 50; // keep last 50
+            if (!msg.message) return;
+            // Store recent messages per chat for dashboard "repost as status" (2026-10-17 per Hudson)
+            try {
+              const chatId = msg.key.remoteJid;
+              if (chatId) {
+                if (!this._recentMessages) this._recentMessages = new Map();
+                if (!this._recentMessages.has(chatId)) this._recentMessages.set(chatId, []);
+                const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text ||
+                             msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || '';
+                if (text.trim() && !text.includes('Powered by Awais AI')) {
+                  const arr = this._recentMessages.get(chatId);
+                  arr.unshift({
+                    id: msg.key.id,
+                    text: text.slice(0, 500),
+                    sender: msg.key.participant || msg.key.remoteJid,
+                    pushName: msg.pushName || '',
+                    timestamp: (msg.messageTimestamp || Date.now() / 1000) * 1000,
+                    fromMe: !!msg.key.fromMe,
+                  });
+                  if (arr.length > 50) arr.length = 50; // keep last 50
+                }
               }
+            } catch (e) {}
+
+            // Allow owner's self-messages (fromMe) but skip bot's own responses to avoid loops
+            // Bot responses contain "Powered by Awais AI" footer; owner commands don't (2026-10-17 per Hudson)
+            if (msg.key.fromMe) {
+              const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || '';
+              // Skip if it's the bot's own response (has footer) — process only owner commands
+              if (msgText.includes('Powered by Awais AI') || msgText.includes('Awais AI')) return;
+              // Also skip non-text messages from self (media, etc.) to be safe
+              if (!msgText.trim()) return;
+              console.log(`[fromMe] Processing owner command: "${msgText.slice(0, 50)}"`);
             }
-          } catch (e) {}
-          // Allow owner's self-messages (fromMe) but skip bot's own responses to avoid loops
-          // Bot responses contain "Powered by Awais AI" footer; owner commands don't (2026-10-17 per Hudson)
-          if (msg.key.fromMe) {
-            const msgText = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || '';
-            // Skip if it's the bot's own response (has footer) — process only owner commands
-            if (msgText.includes('Powered by Awais AI') || msgText.includes('Awais AI')) continue;
-            // Also skip non-text messages from self (media, etc.) to be safe
-            if (!msgText.trim()) continue;
-            console.log(`[fromMe] Processing owner command: "${msgText.slice(0, 50)}"`);
-          }
 
-          const from = msg.key.remoteJid;
-          if (from === 'status@broadcast') continue;
+            const from = msg.key.remoteJid;
+            if (from === 'status@broadcast') return;
 
-          const isGroup = from.endsWith('@g.us');
-          const isChannel = from.endsWith('@newsletter');
-          if (isChannel) {
-            this.trackChannelFromJid(from);
-          }
+            const isGroup = from.endsWith('@g.us');
+            const isChannel = from.endsWith('@newsletter');
+            if (isChannel) {
+              this.trackChannelFromJid(from);
+            }
 
-          // For fromMe (owner's own messages), participant may be undefined — use bot's own JID
-          let sender = (isGroup || isChannel) ? msg.key.participant : from;
-          if (msg.key.fromMe && !sender) {
-            sender = this.user?.id || from;
-          }
-          const senderName = msg.pushName || 'Friend';
+            // For fromMe (owner's own messages), participant may be undefined — use bot's own JID
+            let sender = (isGroup || isChannel) ? msg.key.participant : from;
+            if (msg.key.fromMe && !sender) {
+              sender = this.user?.id || from;
+            }
+            const senderName = msg.pushName || 'Friend';
 
-          // Extract text
-          const text =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            msg.message.videoMessage?.caption ||
-            '';
+            // Extract text
+            const text =
+              msg.message.conversation ||
+              msg.message.extendedTextMessage?.text ||
+              msg.message.imageMessage?.caption ||
+              msg.message.videoMessage?.caption ||
+              '';
 
-          // Interactive menu taps (list / button responses)
-          const interactiveId =
-            msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
-            msg.message.buttonsResponseMessage?.selectedButtonId ||
-            '';
+            // Interactive menu taps (list / button responses)
+            const interactiveId =
+              msg.message.listResponseMessage?.singleSelectReply?.selectedRowId ||
+              msg.message.buttonsResponseMessage?.selectedButtonId ||
+              '';
 
-          const isAudio = !!msg.message.audioMessage;
-          if (!text && !isAudio && !interactiveId) continue;
+            const isAudio = !!msg.message.audioMessage;
+            if (!text && !isAudio && !interactiveId) return;
 
-          // If incoming message is a WhatsApp Voice Note or Audio (Owner or Admin)
-          if (isAudio) {
-            let authorized = msg.key.fromMe || (sender && (String(sender).includes('923243877900') || String(sender).includes('108074899644670')));
-            if (!authorized) {
-              try {
-                const { isOwner, isAdmin } = await import('./access.js');
+            // If incoming message is a WhatsApp Voice Note or Audio (Owner or Admin)
+            if (isAudio) {
+              let authorized = msg.key.fromMe || (sender && (String(sender).includes('923243877900') || String(sender).includes('108074899644670')));
+              if (!authorized) {
                 authorized = isOwner(sender) || isAdmin(sender);
-              } catch (e) {}
+              }
+              if (!authorized) return;
+              if (isGroup && !Store.isGroupAllowed(from)) return;
+
+              this.stats.messagesReceived++;
+              Store.addLog({
+                type: 'incoming',
+                from,
+                sender,
+                senderName,
+                isGroup,
+                text: '🎙️ [Voice Note / Audio Message]'
+              });
+              this.emit('message', {
+                type: 'incoming',
+                from,
+                sender,
+                senderName,
+                isGroup,
+                text: '🎙️ [Voice Note / Audio Message]',
+                timestamp: new Date().toISOString()
+              });
+
+              try {
+                await this.handleVoiceMessage({ msg, from, sender, senderName, isGroup });
+              } catch (err) {
+                console.error('Error handling voice message:', err);
+              }
+              return;
             }
-            if (!authorized) continue;
-            if (isGroup && !Store.isGroupAllowed(from)) continue;
 
             this.stats.messagesReceived++;
             Store.addLog({
@@ -634,7 +676,7 @@ class WhatsAppBot extends EventEmitter {
               sender,
               senderName,
               isGroup,
-              text: '🎙️ [Voice Note / Audio Message]'
+              text
             });
             this.emit('message', {
               type: 'incoming',
@@ -642,44 +684,20 @@ class WhatsAppBot extends EventEmitter {
               sender,
               senderName,
               isGroup,
-              text: '🎙️ [Voice Note / Audio Message]',
+              text,
               timestamp: new Date().toISOString()
             });
 
+            // Process the message
             try {
-              await this.handleVoiceMessage({ msg, from, sender, senderName, isGroup });
+              await this.handleMessage({ msg, from, sender, senderName, isGroup, text, interactiveId });
             } catch (err) {
-              console.error('Error handling voice message:', err);
+              console.error('Error handling message:', err);
             }
-            continue;
-          }
-
-          this.stats.messagesReceived++;
-          Store.addLog({
-            type: 'incoming',
-            from,
-            sender,
-            senderName,
-            isGroup,
-            text
-          });
-          this.emit('message', {
-            type: 'incoming',
-            from,
-            sender,
-            senderName,
-            isGroup,
-            text,
-            timestamp: new Date().toISOString()
-          });
-
-          // Process the message
-          try {
-            await this.handleMessage({ msg, from, sender, senderName, isGroup, text, interactiveId });
           } catch (err) {
-            console.error('Error handling message:', err);
+            console.error('[messages.upsert] item error:', err);
           }
-        }
+        }));
       });
 
       // Handle Group Participants (Welcome message)
@@ -727,7 +745,6 @@ class WhatsAppBot extends EventEmitter {
   async handleVoiceMessage({ msg, from, sender, senderName, isGroup }) {
     // Stopped chat and access check
     try {
-      const { isOwner, isAdmin, isChatStopped } = await import('./access.js');
       if (isChatStopped(from)) return;
       if (!isOwner(sender) && !isAdmin(sender)) return;
     } catch (e) {}
@@ -984,7 +1001,6 @@ class WhatsAppBot extends EventEmitter {
     let senderIsOwner = false;
     let senderIsAdmin = false;
     try {
-      const { isOwner, isAdmin } = await import('./access.js');
       senderIsOwner = isOwner(sender) || isOwner(from) || isOwner(msg?.key?.participant);
       senderIsAdmin = senderIsOwner || isAdmin(sender) || isAdmin(from) || isAdmin(msg?.key?.participant);
     } catch (e) {
@@ -1000,7 +1016,6 @@ class WhatsAppBot extends EventEmitter {
     const isStartCmd = firstWord === 'startbot' || firstWord === 'resumebot' || firstWord === 'unstopbot';
     if (isStartCmd) {
       if (senderIsOwner || senderIsAdmin) {
-        const { startChat, cleanChatId } = await import('./access.js');
         const targetArg = stripped.split(/\s+/)[1]?.trim();
         const targetChat = targetArg ? cleanChatId(targetArg) : from;
         startChat(targetChat);
@@ -1022,7 +1037,6 @@ class WhatsAppBot extends EventEmitter {
     const isStopCmd = firstWord === 'stopbot';
     if (isStopCmd) {
       if (senderIsOwner || senderIsAdmin) {
-        const { stopChat, cleanChatId } = await import('./access.js');
         const targetArg = stripped.split(/\s+/)[1]?.trim();
         const targetChat = targetArg ? cleanChatId(targetArg) : from;
         stopChat(targetChat, sender);
@@ -1044,7 +1058,6 @@ class WhatsAppBot extends EventEmitter {
     // 3. Stopped Chats List (.stoppedchats / .stoplist) — Owner & Admins Only
     const isStopListCmd = firstWord === 'stoppedchats' || firstWord === 'stoplist';
     if (isStopListCmd && (senderIsOwner || senderIsAdmin)) {
-      const { getStoppedChats } = await import('./access.js');
       const stopped = getStoppedChats();
       const keys = Object.keys(stopped).filter(k => stopped[k]?.stopped);
       if (keys.length === 0) {
@@ -1065,7 +1078,6 @@ class WhatsAppBot extends EventEmitter {
     // If THIS specific chat is stopped, DO NOT EXECUTE ANYTHING.
     // Zero replies, zero hooks, zero downloads, zero AI chat, 100% silent in this chat.
     try {
-      const { isChatStopped } = await import('./access.js');
       if (isChatStopped(from)) {
         return;
       }
@@ -1176,7 +1188,6 @@ class WhatsAppBot extends EventEmitter {
 
       // ─── Owner/Admin access management commands ───
       if (command === 'setowner' || command === 'addadmin' || command === 'removeadmin' || command === 'deladmin' || command === 'admins' || command === 'adminlist') {
-        const { setOwner, addAdmin, removeAdmin, getOwnerConfig, normalizeNumber } = await import('./access.js');
         if (command === 'setowner') {
           const num = normalizeNumber(query || args[0]);
           if (!num) { await this.sendMessage(from, 'Usage: `setowner <number>`'); return; }
@@ -1460,7 +1471,6 @@ class WhatsAppBot extends EventEmitter {
         case 'cpost':
         case 'poststatus':
         case 'statuspost': {
-          const { isOwner, isAdmin } = await import('./access.js');
           if (!isOwner(sender) && !isAdmin(sender)) {
             await this.sendMessage(from, '⛔ Sirf Bot Owner ya authorized Admin status post kar sakte hain.');
             return;
@@ -1580,7 +1590,6 @@ class WhatsAppBot extends EventEmitter {
         case 'settings':
         case 'setting':
         case 'config': {
-          const { isOwner } = await import('./access.js');
           if (!isOwner(sender)) {
             await this.sendMessage(from, '🔒 *Settings*\n\nOnly the owner can change settings.');
             return;
@@ -3549,7 +3558,6 @@ class WhatsAppBot extends EventEmitter {
     let finalContent = content;
     if (typeof content === 'string') {
       try {
-        const { guardOutbound } = await import('./.syslock.js');
         finalContent = guardOutbound(content);
       } catch (e) {}
     }
@@ -4020,7 +4028,6 @@ class WhatsAppBot extends EventEmitter {
 
     // 2. Owner & Authorized Admins from access config
     try {
-      const { getOwnerConfig, normalizeNumber } = await import('./access.js');
       const cfg = getOwnerConfig();
       if (cfg.owner) {
         audience.add(`${normalizeNumber(cfg.owner)}@s.whatsapp.net`);

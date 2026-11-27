@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { registerBatch, readData, writeData, isGroupAdmin, isBotAdmin } from './batch-helpers.js';
-import { groupFeatureOn, isSilent } from './access.js';
+import { groupFeatureOn, isSilent, isOwner } from './access.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -632,7 +632,6 @@ export async function onMessage(ctx) {
           if (shouldDelete) {
             const admin = await isGroupAdmin(ctx.bot.sock, from, sender).catch(() => false);
             // Don't delete owner's or admins' messages
-            const { isOwner } = await import('./access.js').catch(() => ({ isOwner: () => false }));
             if (!admin && !isOwner(sender) && msg?.key) {
               await ctx.bot.sock.sendMessage(from, { delete: msg.key }).catch(() => {});
               await ctx.bot.sock.sendMessage(from, { react: { text: '⚠️', key: msg.key } }).catch(() => {});

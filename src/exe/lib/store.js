@@ -36,10 +36,16 @@ function writeJson(filename, data) {
   }
 }
 
+let _cachedConfig = null;
+let _cachedAutoReplies = null;
+let _cachedTickets = null;
+let _cachedStatuses = null;
+
 export const Store = {
   // Config
   getConfig() {
-    return readJson('config.json', {
+    if (_cachedConfig) return _cachedConfig;
+    _cachedConfig = readJson('config.json', {
       botName: 'AwaisxBot',
       prefix: '!',
       adminPhone: '',
@@ -60,10 +66,12 @@ export const Store = {
         groupStatus: false
       }
     });
+    return _cachedConfig;
   },
   updateConfig(newConfig) {
     const current = this.getConfig();
     const merged = { ...current, ...newConfig };
+    _cachedConfig = merged;
     writeJson('config.json', merged);
     return merged;
   },
@@ -126,7 +134,9 @@ export const Store = {
 
   // Auto Replies
   getAutoReplies() {
-    return readJson('autoReplies.json', []);
+    if (_cachedAutoReplies) return _cachedAutoReplies;
+    _cachedAutoReplies = readJson('autoReplies.json', []);
+    return _cachedAutoReplies;
   },
   addAutoReply(reply) {
     const list = this.getAutoReplies();
@@ -138,6 +148,7 @@ export const Store = {
       enabled: reply.enabled !== false
     };
     list.push(item);
+    _cachedAutoReplies = list;
     writeJson('autoReplies.json', list);
     return item;
   },
@@ -146,6 +157,7 @@ export const Store = {
     const idx = list.findIndex(r => r.id === id);
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...updated };
+      _cachedAutoReplies = list;
       writeJson('autoReplies.json', list);
       return list[idx];
     }
@@ -154,13 +166,16 @@ export const Store = {
   deleteAutoReply(id) {
     let list = this.getAutoReplies();
     list = list.filter(r => r.id !== id);
+    _cachedAutoReplies = list;
     writeJson('autoReplies.json', list);
     return true;
   },
 
   // Support Tickets
   getTickets() {
-    return readJson('tickets.json', []);
+    if (_cachedTickets) return _cachedTickets;
+    _cachedTickets = readJson('tickets.json', []);
+    return _cachedTickets;
   },
   addTicket(ticket) {
     const list = this.getTickets();
@@ -174,6 +189,7 @@ export const Store = {
       date: new Date().toISOString()
     };
     list.unshift(newTicket);
+    _cachedTickets = list;
     writeJson('tickets.json', list);
     return newTicket;
   },
@@ -182,6 +198,7 @@ export const Store = {
     const item = list.find(t => t.id.toLowerCase() === id.toLowerCase());
     if (item) {
       item.status = status;
+      _cachedTickets = list;
       writeJson('tickets.json', list);
       return item;
     }
@@ -190,14 +207,18 @@ export const Store = {
 
   // 24-Hour Group Statuses (Disappear after 24 hours)
   getStatuses() {
+    if (_cachedStatuses) {
+      const now = Date.now();
+      return _cachedStatuses.filter(s => s.expiresAt > now);
+    }
     const list = readJson('statuses.json', []);
     const now = Date.now();
-    // Filter out expired statuses
     const active = list.filter(s => s.expiresAt > now);
     if (active.length !== list.length) {
       writeJson('statuses.json', active);
     }
-    return active;
+    _cachedStatuses = active;
+    return _cachedStatuses;
   },
   getGroupStatus(groupId) {
     const active = this.getStatuses();
@@ -205,7 +226,6 @@ export const Store = {
   },
   setGroupStatus({ groupId, groupName, text, author, authorName, isBroadcast = false, isChannel = false }) {
     let list = this.getStatuses();
-    // Remove previous status for this target
     list = list.filter(s => s.groupId !== groupId);
 
     const now = Date.now();
@@ -225,6 +245,7 @@ export const Store = {
     };
 
     list.unshift(newStatus);
+    _cachedStatuses = list;
     writeJson('statuses.json', list);
     return newStatus;
   },
@@ -232,6 +253,7 @@ export const Store = {
     let list = this.getStatuses();
     const beforeLen = list.length;
     list = list.filter(s => s.id !== id && s.groupId !== id);
+    _cachedStatuses = list;
     writeJson('statuses.json', list);
     return list.length < beforeLen;
   },

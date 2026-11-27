@@ -52,6 +52,14 @@ const DEFAULTS = {
   silent: false,
 };
 
+// In-memory caches to eliminate disk I/O bottlenecks in hot message paths
+let _cachedOwnerConfig = null;
+let _cachedGroupSettings = null;
+let _cachedStoppedChats = null;
+let _cachedSectionConfig = null;
+let _cachedStats = null;
+let _statsSaveTimer = null;
+
 function readJson(file, def) {
   try {
     const p = path.join(DATA_DIR, file);
@@ -95,7 +103,7 @@ export function cleanChatId(jid) {
 // ─── Stopped chats control ───
 export function isChatStopped(chatId) {
   if (!chatId) return false;
-  const all = readJson(STOPPED_CHATS_FILE, {});
+  const all = getStoppedChats();
   const raw = String(chatId).trim();
   const clean = cleanChatId(raw);
   const normNum = normalizeNumber(raw);
@@ -108,20 +116,21 @@ export function isChatStopped(chatId) {
 
 export function stopChat(chatId, sender) {
   if (!chatId) return false;
-  const all = readJson(STOPPED_CHATS_FILE, {});
+  const all = getStoppedChats();
   const clean = cleanChatId(chatId);
   all[clean] = {
     stopped: true,
     stoppedAt: new Date().toISOString(),
     stoppedBy: sender ? normalizeNumber(sender) : 'owner'
   };
+  _cachedStoppedChats = all;
   writeJson(STOPPED_CHATS_FILE, all);
   return true;
 }
 
 export function startChat(chatId) {
   if (!chatId) return false;
-  const all = readJson(STOPPED_CHATS_FILE, {});
+  const all = getStoppedChats();
   const raw = String(chatId).trim();
   const clean = cleanChatId(raw);
   const normNum = normalizeNumber(raw);
@@ -130,27 +139,32 @@ export function startChat(chatId) {
   if (all[clean]) { delete all[clean]; changed = true; }
   if (normNum && all[normNum]) { delete all[normNum]; changed = true; }
   if (changed) {
+    _cachedStoppedChats = all;
     writeJson(STOPPED_CHATS_FILE, all);
   }
   return true;
 }
 
 export function getStoppedChats() {
-  return readJson(STOPPED_CHATS_FILE, {});
+  if (_cachedStoppedChats) return _cachedStoppedChats;
+  _cachedStoppedChats = readJson(STOPPED_CHATS_FILE, {});
+  return _cachedStoppedChats;
 }
 
 // ─── Owner / admin (Sole Owner: +923243877900 / 108074899644670) ───
 const KNOWN_OWNER_IDS = new Set(['923243877900', '108074899644670']);
 
 export function getOwnerConfig() {
+  if (_cachedOwnerConfig) return _cachedOwnerConfig;
   const cfg = readJson(OWNER_FILE, {});
-  return {
+  _cachedOwnerConfig = {
     owner: cfg.owner || '923243877900',
     ownerLid: cfg.ownerLid || '108074899644670',
     admins: Array.isArray(cfg.admins) ? cfg.admins : ['923243877900', '108074899644670'],
     silentDefault: !!cfg.silentDefault,
     features: cfg.features && typeof cfg.features === 'object' ? cfg.features : {},
   };
+  return _cachedOwnerConfig;
 }
 
 export function saveOwnerConfig(patch) {
@@ -171,6 +185,7 @@ export function saveOwnerConfig(patch) {
     silentDefault: !!next.silentDefault,
     features: next.features && typeof next.features === 'object' ? next.features : {},
   };
+  _cachedOwnerConfig = clean;
   writeJson(OWNER_FILE, clean);
   return clean;
 }
@@ -241,7 +256,9 @@ export function canUseBot(sender) {
 
 // ─── Per-group settings ───
 function readGroupSettings() {
-  return readJson(GROUP_SETTINGS_FILE, {});
+  if (_cachedGroupSettings) return _cachedGroupSettings;
+  _cachedGroupSettings = readJson(GROUP_SETTINGS_FILE, {});
+  return _cachedGroupSettings;
 }
 
 export function getGroupSettings(groupId) {
@@ -262,6 +279,7 @@ export function updateGroupSettings(groupId, patch) {
     if (GROUP_FEATURES.includes(k)) cur[k] = !!v;
   }
   all[groupId] = cur;
+  _cachedGroupSettings = all;
   writeJson(GROUP_SETTINGS_FILE, all);
   return getGroupSettings(groupId);
 }
@@ -321,7 +339,9 @@ function writeJsonFile(p, data) {
 }
 
 export function getSectionConfig() {
-  return readJsonFile(SECTION_FILE, {});
+  if (_cachedSectionConfig) return _cachedSectionConfig;
+  _cachedSectionConfig = readJsonFile(SECTION_FILE, {});
+  return _cachedSectionConfig;
 }
 
 export function isCommandEnabled(slug, cmdName) {
@@ -340,6 +360,7 @@ export function setCommandEnabled(slug, cmdName, enabled) {
   const key = (cmdName || '').toLowerCase();
   if (!cfg[slug].commands[key]) cfg[slug].commands[key] = {};
   cfg[slug].commands[key].enabled = !!enabled;
+  _cachedSectionConfig = cfg;
   writeJsonFile(SECTION_FILE, cfg);
   return cfg[slug].commands[key];
 }
@@ -353,17 +374,29 @@ export function getDisabledCommands(slug) {
     .map(([k]) => k);
 }
 
-// ─── Command usage stats (lightweight counter) ───
+// ─── Command usage stats (lightweight counter with throttled disk writes) ───
 export function recordCommandUse(cmdName) {
   try {
-    const stats = readJsonFile(STATS_FILE, {});
+    if (!_cachedStats) {
+      _cachedStats = readJsonFile(STATS_FILE, {});
+    }
     const key = (cmdName || '').toLowerCase();
-    stats[key] = (stats[key] || 0) + 1;
-    stats._updated = new Date().toISOString();
-    writeJsonFile(STATS_FILE, stats);
+    _cachedStats[key] = (_cachedStats[key] || 0) + 1;
+    _cachedStats._updated = new Date().toISOString();
+
+    if (!_statsSaveTimer) {
+      _statsSaveTimer = setTimeout(() => {
+        _statsSaveTimer = null;
+        if (_cachedStats) {
+          writeJsonFile(STATS_FILE, _cachedStats);
+        }
+      }, 15000); // Batch write to disk every 15 seconds max
+    }
   } catch { /* never break dispatch */ }
 }
 
 export function getCommandStats() {
-  return readJsonFile(STATS_FILE, {});
+  if (_cachedStats) return _cachedStats;
+  _cachedStats = readJsonFile(STATS_FILE, {});
+  return _cachedStats;
 }
