@@ -178,6 +178,11 @@ export const MENU_CATEGORIES = [
     "primary": true
    },
    {
+    "name": "muse",
+    "desc": "Muse.ai video downloader",
+    "primary": true
+   },
+   {
     "name": "togif",
     "desc": "Video se GIF banayein (reply)",
     "primary": true

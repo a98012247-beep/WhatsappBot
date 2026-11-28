@@ -250,9 +250,14 @@ export async function downloadVideo(url) {
   }
 
   const startTime = Date.now();
+  let result = null;
 
-  // 1. Direct Video Link (.mp4, .mov, .webm, etc.)
-  if (/\.(mp4|mov|webm|mkv|m4v)(\?.*)?$/i.test(cleanUrl)) {
+  // 1. Muse.ai / Skiv (Dedicated high-speed handler for muse.ai direct files & pages)
+  if (/muse\.ai|skiv\.com/i.test(cleanUrl)) {
+    result = await raceMuse(cleanUrl);
+  }
+  // 2. Direct Video Link (.mp4, .mov, .webm, etc.)
+  else if (/\.(mp4|mov|webm|mkv|m4v)(\?.*)?$/i.test(cleanUrl)) {
     const directResult = {
       success: true,
       source: 'Direct MP4 Video',
@@ -264,10 +269,8 @@ export async function downloadVideo(url) {
     return directResult;
   }
 
-  let result = null;
-
-  // 2. TikTok (Concurrent race: TikWM + Tiklydown + Siputzx + Cobalt + Rahad + ttdl)
-  if (/tiktok\.com/i.test(cleanUrl)) {
+  // 3. TikTok (Concurrent race: TikWM + Tiklydown + Siputzx + Cobalt + Rahad + ttdl)
+  else if (/tiktok\.com/i.test(cleanUrl)) {
     result = await raceTikTok(cleanUrl);
   }
   // 3. Instagram (Concurrent race: Direct Embed Scraper + Siputzx + GuruAPI + Cobalt + igdl + Rahad)
@@ -946,6 +949,132 @@ async function raceCapCut(url) {
   }
 }
 
+/**
+ * Muse.ai / Skiv Fast Video Extractor
+ * Supports direct file streams, watch pages (/v/, /w/), embed pages (/e/, /embed/),
+ * and cleans up URL filenames into human-readable titles.
+ */
+export async function raceMuse(url) {
+  if (!url || typeof url !== 'string') {
+    throw new Error('Please provide a valid Muse.ai link.');
+  }
+
+  const cleanUrl = url.trim();
+  let title = 'Muse.ai Video';
+  let videoUrl = cleanUrl;
+  let thumbnail = null;
+
+  try {
+    const parsed = new URL(cleanUrl);
+    const pathname = parsed.pathname || '';
+
+    // 1. Direct file link: /files/<user>/<video>/<token>/<filename>.mp4
+    if (pathname.includes('/files/')) {
+      const parts = pathname.split('/').filter(Boolean);
+      const last = parts[parts.length - 1] || '';
+      if (last && /\.(mp4|mov|webm|mkv|m4v)$/i.test(last)) {
+        let raw = decodeURIComponent(last).replace(/\.(mp4|mov|webm|mkv|m4v)$/i, '');
+        raw = raw.replace(/[-_.]+/g, ' ').trim();
+        if (raw) {
+          title = raw.replace(/\b\w/g, c => c.toUpperCase());
+        }
+      }
+
+      // Fast HEAD check for Content-Disposition filename
+      try {
+        const head = await fetch(cleanUrl, {
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Referer': 'https://muse.ai/'
+          },
+          signal: AbortSignal.timeout(3500)
+        });
+        if (head.ok) {
+          const cd = head.headers.get('content-disposition');
+          if (cd) {
+            const m = cd.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i);
+            if (m && m[1]) {
+              const cleanFn = decodeURIComponent(m[1].trim()).replace(/\.(mp4|mov|webm|mkv|m4v)$/i, '');
+              if (cleanFn) {
+                title = cleanFn.replace(/[-_.]+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      return {
+        success: true,
+        source: 'Muse.ai',
+        title: title || 'Muse.ai Video',
+        videoUrl: cleanUrl,
+        thumbnail: null
+      };
+    }
+
+    // 2. Watch / Embed / Page link: /v/<id>, /w/<id>, /e/<id>, /embed/<id>
+    const pageRes = await fetch(cleanUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Referer': 'https://muse.ai/'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+
+    if (pageRes.ok) {
+      const html = await pageRes.text();
+
+      // Extract title from og:title or title tag
+      const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
+                         html.match(/<title>([^<]+)<\/title>/i);
+      if (titleMatch && titleMatch[1]) {
+        title = titleMatch[1].replace(/[-|]\s*(?:muse\.ai|skiv).*$/i, '').trim();
+      }
+
+      // Extract thumbnail
+      const thumbMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+                         html.match(/<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i);
+      if (thumbMatch && thumbMatch[1]) {
+        thumbnail = thumbMatch[1];
+      }
+
+      // Extract video stream URL
+      const videoMatch = html.match(/<meta\s+property=["']og:video(?::secure_url|:url)?["']\s+content=["']([^"']+)["']/i) ||
+                         html.match(/<meta\s+name=["']twitter:player:stream["']\s+content=["']([^"']+)["']/i) ||
+                         html.match(/https?:\/\/(?:[a-zA-Z0-9_-]+\.)?(?:muse\.ai|skiv\.com)\/files\/[^\s"']+\.(?:mp4|webm)[^\s"']*/i) ||
+                         html.match(/"(?:video_url|download_url|src|url)"\s*:\s*"(https?:\\\/\\\/[^"]+\.mp4[^"]*)"/i);
+
+      if (videoMatch && videoMatch[1]) {
+        const stream = videoMatch[1].replace(/\\\//g, '/');
+        return {
+          success: true,
+          source: 'Muse.ai',
+          title: title || 'Muse.ai Video',
+          videoUrl: stream,
+          thumbnail
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[Muse.ai] Extraction warning:', err.message);
+  }
+
+  // Fallback: return direct URL if it's already on muse.ai or skiv.com
+  if (/muse\.ai|skiv\.com/i.test(cleanUrl)) {
+    return {
+      success: true,
+      source: 'Muse.ai',
+      title: title || 'Muse.ai Video',
+      videoUrl: cleanUrl,
+      thumbnail
+    };
+  }
+
+  throw new Error("Couldn't extract video from this Muse.ai link.");
+}
+
 async function downloadUniversal(url) {
   try {
     return await queryYtDlp(url, 'Universal');
@@ -1005,6 +1134,20 @@ export async function downloadAudio(url) {
           title: data.data.music_info?.title || 'TikTok Audio',
           audioUrl: data.data.music.startsWith('http') ? data.data.music : `https://www.tikwm.com${data.data.music}`,
           mimetype: 'audio/mpeg'
+        };
+      }
+    } catch (e) {}
+  }
+
+  // Muse.ai Audio Extraction
+  if (/muse\.ai|skiv\.com/i.test(cleanUrl)) {
+    try {
+      const v = await raceMuse(cleanUrl);
+      if (v && v.videoUrl) {
+        return {
+          title: v.title || 'Muse.ai Audio',
+          audioUrl: v.videoUrl,
+          mimetype: 'audio/mp4'
         };
       }
     } catch (e) {}

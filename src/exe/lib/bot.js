@@ -189,6 +189,8 @@ const KNOWN_COMMANDS = new Set([
   'menu',
   'more',
   'mp3',
+  'muse',
+  'musedl',
   'music',
   'mute',
   'namaz',
@@ -1821,7 +1823,9 @@ class WhatsAppBot extends EventEmitter {
         case 'likee':
         case 'kwai':
         case 'vimeo':
-        case 'dailymotion': {
+        case 'dailymotion':
+        case 'muse':
+        case 'musedl': {
           let targetUrl = query;
           // Check if quoted message had a URL
           if (!targetUrl) {
@@ -1842,8 +1846,9 @@ class WhatsAppBot extends EventEmitter {
               `• *${prefix}dl https://vm.tiktok.com/...*\n` +
               `• *${prefix}reel https://www.instagram.com/reel/...*\n` +
               `• *${prefix}yt https://youtu.be/...*\n` +
-              `• *${prefix}fb https://www.facebook.com/...*\n\n` +
-              `_Supported: TikTok (no watermark), Instagram Reels, YouTube, Facebook, Twitter/X, Pinterest, CapCut, and direct MP4!_`
+              `• *${prefix}fb https://www.facebook.com/...*\n` +
+              `• *${prefix}muse https://muse.ai/files/...*\n\n` +
+              `_Supported: TikTok (no watermark), Instagram Reels, YouTube, Facebook, Twitter/X, Pinterest, CapCut, Muse.ai, and direct MP4!_`
             );
             return;
           }
@@ -2948,7 +2953,7 @@ class WhatsAppBot extends EventEmitter {
     }
 
     // Auto-detect all media links in message (1-on-1 private chat only; in groups, only explicit commands like .dl work to prevent group spam)
-    const videoMatch = trimmed.match(/https?:\/\/(?:www\.|vm\.|vt\.|m\.)?(?:tiktok\.com|instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch|twitter\.com|x\.com|pinterest\.com|pin\.it|capcut\.com|threads\.net|snapchat\.com|likee\.video|kwai\.com|dailymotion\.com|vimeo\.com|[^\s]+\.(mp4|mov|webm|mkv))\/?[^\s]*/i);
+    const videoMatch = trimmed.match(/https?:\/\/(?:www\.|vm\.|vt\.|m\.)?(?:tiktok\.com|instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch|twitter\.com|x\.com|pinterest\.com|pin\.it|capcut\.com|threads\.net|snapchat\.com|likee\.video|kwai\.com|dailymotion\.com|vimeo\.com|muse\.ai|skiv\.com|[^\s]+\.(mp4|mov|webm|mkv))\/?[^\s]*/i);
     if (videoMatch && !isGroup) {
       try {
         try {
@@ -3674,6 +3679,9 @@ class WhatsAppBot extends EventEmitter {
     } else if (/youtube|googlevideo/i.test(videoUrl)) {
       cdnHeaders['Referer'] = 'https://www.youtube.com/';
       cdnHeaders['Origin'] = 'https://www.youtube.com';
+    } else if (/muse\.ai|skiv\.com/i.test(videoUrl)) {
+      cdnHeaders['Referer'] = 'https://muse.ai/';
+      cdnHeaders['Origin'] = 'https://muse.ai';
     }
 
     let buf = null;
