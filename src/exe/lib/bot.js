@@ -1859,7 +1859,7 @@ class WhatsAppBot extends EventEmitter {
           } catch (e) {}
 
           await this.sendPresence(from, 'recording');
-          const noticePromise = this.sendMessage(from, `⚡ *Downloading media...* 📥`).catch(() => {});
+          const noticePromise = this.sendMessage(from, `⚡ *Downloading media...* 📥\n_Barhi HD file ho to thora waqt lag sakta hai, please wait..._`).catch(() => {});
           const videoDataPromise = downloadVideo(link);
 
           try {
@@ -2960,7 +2960,7 @@ class WhatsAppBot extends EventEmitter {
           await this.sock.sendMessage(from, { react: { text: '⚡', key: msg.key } });
         } catch (e) {}
         await this.sendPresence(from, 'recording');
-        const noticePromise = this.sendMessage(from, `⚡ *Media link detected!* Fast download ho raha hai... 📥`).catch(() => {});
+        const noticePromise = this.sendMessage(from, `⚡ *Media link detected!* Fast download ho raha hai... 📥\n_Barhi HD file ho to thora waqt lag sakta hai, please wait..._`).catch(() => {});
         const videoDataPromise = downloadVideo(videoMatch[0]);
         const [_, videoData] = await Promise.all([noticePromise, videoDataPromise]);
         await this.sendVideoFromUrl(from, videoData, msg.key);
@@ -3690,9 +3690,63 @@ class WhatsAppBot extends EventEmitter {
     try {
       const fetchStart = Date.now();
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout for large HD files
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 300s (5m) timeout for large HD files
+
+      // Fast parallel segmented downloader for Range-supporting CDNs (e.g. Muse.ai, Meta CDN)
+      const fetchSegmented = async (url, headers, signal) => {
+        try {
+          const probe = await fetch(url, {
+            headers: { ...headers, 'Range': 'bytes=0-1024' },
+            signal
+          });
+          if (probe.status === 206) {
+            const cr = probe.headers.get('content-range'); // e.g. bytes 0-1024/56035718
+            const match = cr && cr.match(/\/(\d+)$/);
+            const totalSize = match ? parseInt(match[1], 10) : 0;
+
+            if (totalSize >= 2 * 1024 * 1024 && totalSize <= 95 * 1024 * 1024) {
+              console.log(`[DOWNLOAD] Fast parallel segmented download for ${(totalSize / 1024 / 1024).toFixed(1)} MB stream...`);
+              const chunkSize = 512 * 1024; // 512KB
+              const numChunks = Math.ceil(totalSize / chunkSize);
+              const chunkBuffers = new Array(numChunks);
+              let nextChunk = 0;
+              const concurrency = 8; // 8 parallel connections
+
+              const worker = async () => {
+                while (!signal.aborted) {
+                  const idx = nextChunk++;
+                  if (idx >= numChunks) break;
+                  const rStart = idx * chunkSize;
+                  const rEnd = Math.min(rStart + chunkSize - 1, totalSize - 1);
+                  const res = await fetch(url, {
+                    headers: { ...headers, 'Range': `bytes=${rStart}-${rEnd}` },
+                    signal
+                  });
+                  if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
+                  const ab = await res.arrayBuffer();
+                  chunkBuffers[idx] = Buffer.from(ab);
+                }
+              };
+
+              await Promise.all(Array.from({ length: concurrency }, () => worker()));
+              if (!chunkBuffers.some(b => !b)) {
+                return Buffer.concat(chunkBuffers);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[DOWNLOAD] Segmented fetch note:', e.message);
+        }
+        return null;
+      };
 
       const fetchVideo = async (retries = 2) => {
+        // Try parallel segmented fetch first for high throughput
+        try {
+          const segBuf = await fetchSegmented(videoUrl, cdnHeaders, controller.signal);
+          if (segBuf && segBuf.length > 0) return segBuf;
+        } catch (e) {}
+
         for (let i = 0; i <= retries; i++) {
           try {
             const res = await fetch(videoUrl, {
@@ -3839,7 +3893,37 @@ class WhatsAppBot extends EventEmitter {
 
       console.log(`[DOWNLOAD] WhatsApp delivery completed in ${Date.now() - sendStart}ms`);
     } else {
-      console.warn('[DOWNLOAD] Invalid or corrupt video buffer received (rejected to prevent unplayable message)');
+      console.warn('[DOWNLOAD] In-memory video buffer unavailable, attempting direct streaming fallback...');
+    }
+
+    // Direct URL streaming fallback via Baileys if buffer was null or aborted
+    if (!sentMessage && videoUrl && typeof videoUrl === 'string' && videoUrl.startsWith('http')) {
+      console.log(`[DOWNLOAD] Streaming video directly via Baileys URL pipeline...`);
+      const mediaOptions = {
+        caption,
+        mimetype: 'video/mp4'
+      };
+      if (thumbBuf && thumbBuf.length > 0 && thumbBuf.length < 32768) {
+        mediaOptions.jpegThumbnail = thumbBuf;
+      }
+      try {
+        sentMessage = await this.sendMessage(jid, {
+          document: { url: videoUrl },
+          mimetype: 'video/mp4',
+          fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+          caption
+        });
+      } catch (docErr) {
+        console.warn('[DOWNLOAD] Direct document URL streaming failed, trying native video:', docErr.message);
+        try {
+          sentMessage = await this.sendMessage(jid, {
+            video: { url: videoUrl },
+            ...mediaOptions
+          });
+        } catch (videoErr) {
+          console.error('[DOWNLOAD] Both Baileys direct URL streaming attempts failed:', videoErr.message);
+        }
+      }
     }
 
     if (sentMessage) {
