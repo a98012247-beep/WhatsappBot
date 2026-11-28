@@ -3859,10 +3859,9 @@ class WhatsAppBot extends EventEmitter {
       }
 
       const sendStart = Date.now();
-      // WhatsApp in-chat video streaming is reliable up to 16MB.
-      // Larger files (16MB to 95MB) or high-bitrate HD videos are sent as .mp4 document
-      // to guarantee mobile playback without "This video is not available" codec errors.
-      if (buf.length <= 16 * 1024 * 1024) {
+      // WhatsApp in-chat video streaming is reliable up to 64MB on modern protocol.
+      // Larger files (64MB to 95MB) are sent as .mp4 document to prevent Baileys delivery aborts.
+      if (buf.length <= 64 * 1024 * 1024) {
         try {
           sentMessage = await this.sendMessage(jid, {
             video: buf,
@@ -3908,20 +3907,20 @@ class WhatsAppBot extends EventEmitter {
       }
       try {
         sentMessage = await this.sendMessage(jid, {
-          document: { url: videoUrl },
-          mimetype: 'video/mp4',
-          fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
-          caption
+          video: { url: videoUrl },
+          ...mediaOptions
         });
-      } catch (docErr) {
-        console.warn('[DOWNLOAD] Direct document URL streaming failed, trying native video:', docErr.message);
+      } catch (videoErr) {
+        console.warn('[DOWNLOAD] Direct video URL streaming failed, trying document:', videoErr.message);
         try {
           sentMessage = await this.sendMessage(jid, {
-            video: { url: videoUrl },
-            ...mediaOptions
+            document: { url: videoUrl },
+            mimetype: 'video/mp4',
+            fileName: `${cleanTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4`,
+            caption
           });
-        } catch (videoErr) {
-          console.error('[DOWNLOAD] Both Baileys direct URL streaming attempts failed:', videoErr.message);
+        } catch (docErr) {
+          console.error('[DOWNLOAD] Both Baileys direct URL streaming attempts failed:', docErr.message);
         }
       }
     }
